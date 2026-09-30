@@ -1,0 +1,176 @@
+# Tatimmah — outcome: Qualified Meetings
+# NOTE: ICP, offer and copy below are starting assumptions to be refined with the client.
+version: 1
+
+client:
+  id: tatimmah
+  name: Tatimmah
+  industry: B2B services
+  timezone: Asia/Riyadh
+
+campaign:
+  id: tatimmah-qualified-meetings
+  name: Tatimmah — Qualified Meetings (MVP)
+  status: active
+
+outcome:
+  key: qualified_meeting
+  label: Qualified Meeting
+  unit: meeting
+  description: A held discovery meeting with a prospect that meets the qualification criteria.
+  achievedWhen:
+    all:
+      - { field: event.type, op: in, value: [meeting.held] }
+  requiresQualification: true
+  value: { amount: 500, currency: SAR }
+  target: { count: 20 }
+  conversionStep: { template: booking_link }
+
+fields:
+  - { key: budget_band, label: Budget band, entity: prospect, type: enum, options: [low, mid, high] }
+  - { key: timeline, label: Buying timeline, entity: prospect, type: enum, options: [now, quarter, later] }
+  - { key: sector, label: Sector, entity: account, type: string }
+
+icp:
+  description: Established companies in KSA with a decision maker for the service being offered.
+  targetType: account
+  personas:
+    - key: executive
+      label: C-level / GM
+      match: { field: contact.title, op: containsAny, value: [ceo, coo, "general manager", managing director, "مدير عام"] }
+    - key: department_head
+      label: Department head
+      match: { field: contact.title, op: containsAny, value: [head, director, manager, "مدير"] }
+  fit:
+    all:
+      - { field: account.country, op: eq, value: SA }
+      - { field: account.employees, op: gte, value: 50 }
+
+market:
+  geographies: [SA]
+  languages: [ar, en]
+  segments: [mid-market, enterprise]
+
+offer:
+  name: Tatimmah services
+  valueProposition: We help companies close operational gaps with a delivery team that plugs into how you already work.
+  proofPoints: [Local delivery team, Measurable results within 90 days]
+  callToAction: a 30-minute discovery call
+
+discovery:
+  source: apollo
+  query: { locations: [Saudi Arabia], employee_ranges: ["51,200", "201,1000", "1001,5000"], seniorities: [c_suite, director, head] }
+  targetActivePool: 150
+  batchSize: 30
+
+research:
+  questions:
+    - { key: recent_initiative, prompt: Any recent expansion, hiring wave or transformation initiative?, mapsTo: recent_initiative }
+    - { key: sector, prompt: Primary sector of the company, mapsTo: sector }
+
+scoring:
+  signals:
+    - { key: exec, label: Executive persona, weight: 35, when: { field: contact.title, op: containsAny, value: [ceo, coo, general manager, managing director] } }
+    - { key: head, label: Department head, weight: 20, when: { field: contact.title, op: containsAny, value: [head, director] } }
+    - { key: size, label: 200+ employees, weight: 20, when: { field: account.employees, op: gte, value: 200 } }
+    - { key: initiative, label: Active initiative, weight: 25, when: { field: attributes.recent_initiative, op: exists } }
+
+qualification:
+  framework: BANT
+  criteria:
+    - { key: authority, label: Decision maker, required: true, when: { field: prospect.persona, op: in, value: [executive, department_head] } }
+    - { key: need, label: Expressed need, required: true, when: { field: engagement.lastIntent, op: in, value: [interested, meeting_request] } }
+    - { key: budget, label: Budget signalled, when: { field: attributes.budget_band, op: in, value: [mid, high] } }
+    - { key: timeline, label: Timeline this quarter, when: { field: attributes.timeline, op: in, value: [now, quarter] } }
+  minCriteriaMet: 2
+
+funnel:
+  stages:
+    - { key: identified, label: Identified, milestone: discovered }
+    - { key: researched, label: Researched, milestone: researched }
+    - { key: in_sequence, label: In Outreach, milestone: contacted }
+    - { key: conversation, label: In Conversation, milestone: engaged }
+    - { key: qualified, label: Qualified, milestone: qualified }
+    - { key: meeting_held, label: Meeting Held, milestone: outcome }
+    - { key: disqualified, label: Disqualified, milestone: lost }
+
+personalization:
+  tone: respectful, consultative
+  language: en
+  snippets:
+    - key: opener
+      when: { field: attributes.recent_initiative, op: exists }
+      text: I saw {{account.name}} is {{attributes.recent_initiative}}.
+    - key: opener
+      when: { always: true }
+      text: I've been following {{account.name}}'s growth in {{account.city | "the Kingdom"}}.
+  templates:
+    intro:
+      variants:
+        - key: initiative_led
+          subject: "{{account.name}} — quick idea"
+          body: |
+            Dear {{contact.firstName | "Sir/Madam"}},
+            {{snippet.opener}} {{offer.valueProposition}}
+            Would you be open to {{offer.callToAction}}?
+        - key: outcome_led
+          subject: Measurable results in 90 days
+          body: |
+            Dear {{contact.firstName | "Sir/Madam"}},
+            Companies like {{account.name}} use us to deliver measurable results within 90 days. Would {{offer.callToAction}} be useful?
+    follow_up:
+      body: |
+        Dear {{contact.firstName | "Sir/Madam"}}, a gentle follow-up on my note. Happy to share how we've helped similar companies in {{attributes.sector | "your sector"}}.
+    booking_link:
+      subject: Scheduling our call
+      body: |
+        Thank you, {{contact.firstName | "Sir/Madam"}}. Please pick a time that suits you: https://tatimmah.example/book
+    meeting_ack:
+      body: |
+        Thank you {{contact.firstName | "Sir/Madam"}} — happy to find a time. I'll send a booking link shortly.
+
+outreach:
+  channels:
+    - { key: email, handle: email }
+    - { key: linkedin, handle: linkedin }
+    - { key: whatsapp, handle: phone, consentRequired: true }
+  sequence:
+    - { key: t1_intro, channel: auto, dayOffset: 0, template: intro }
+    - { key: t2_follow_up, channel: email, dayOffset: 4, template: follow_up }
+    - { key: t3_linkedin, channel: linkedin, dayOffset: 8, template: follow_up, when: { field: contact.handles.linkedin, op: exists } }
+  minScore: 35
+
+replies:
+  intents:
+    - { key: meeting_request, label: Wants a meeting, sentiment: positive, keywords: [meeting, call, schedule, "available", "اجتماع", "موعد"], milestone: engaged, stopSequence: true, respondWith: meeting_ack }
+    - { key: interested, label: Interested, sentiment: positive, keywords: [interested, "tell me more", "more details", "مهتم"], milestone: engaged, stopSequence: true }
+    - { key: referral, label: Referred elsewhere, sentiment: neutral, keywords: ["contact my colleague", "reach out to", cc] }
+    - { key: not_interested, label: Not interested, sentiment: negative, keywords: ["not interested", "no thank", "غير مهتم"], milestone: lost, stopSequence: true }
+    - { key: unsubscribe, label: Opt-out, sentiment: negative, keywords: [unsubscribe, "remove me"], milestone: lost, stopSequence: true, suppress: true }
+    - { key: other, label: Other, sentiment: neutral }
+  defaultIntent: other
+
+autonomy:
+  level: human_approval
+
+constraints:
+  quietHours: { startHour: 20, endHour: 8 }
+  maxTouchesPerProspect: 4
+  minHoursBetweenTouches: 72
+  rateLimits:
+    - { action: send_message, perDay: 40 }
+    - { action: send_message, channel: whatsapp, perDay: 10 }
+
+escalation:
+  rules:
+    - key: referral
+      when: { field: reply.intent, op: eq, value: referral }
+      severity: low
+      reason: Prospect referred us to someone else — confirm the new contact.
+    - key: senior_exec_reply
+      when: { all: [ { field: reply.sentiment, op: eq, value: positive }, { field: prospect.persona, op: eq, value: executive } ] }
+      severity: medium
+      reason: Positive reply from an executive — human to review before booking.
+      pauseProspect: false
+
+optimization: { enabled: true, minSampleSize: 25 }

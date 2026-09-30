@@ -1,0 +1,184 @@
+# DataSpeaks — outcome: Paid Subscribers
+# NOTE: ICP, offer and copy below are starting assumptions to be refined with the client.
+version: 1
+
+client:
+  id: dataspeaks
+  name: DataSpeaks
+  industry: Data & analytics SaaS
+  timezone: Asia/Riyadh
+
+campaign:
+  id: dataspeaks-paid-subscribers
+  name: DataSpeaks — Paid Subscribers (MVP)
+  status: active
+
+outcome:
+  key: paid_subscriber
+  label: Paid Subscriber
+  unit: subscriber
+  description: A prospect who starts a paid subscription.
+  achievedWhen:
+    all:
+      - { field: event.type, op: eq, value: subscription.paid }
+      - { field: event.payload.amount, op: gt, value: 0 }
+  requiresQualification: false
+  value: { amount: 99, currency: USD, recurrence: monthly, fromField: event.payload.amount }
+  target: { count: 50 }
+  conversionStep: { template: trial_invite }
+
+fields:
+  - { key: team_size, label: Data team size, entity: account, type: number }
+  - { key: current_tool, label: Current BI / reporting tool, entity: account, type: string }
+
+icp:
+  description: Companies with a data/reporting need and a decision maker who can buy a self-serve plan.
+  targetType: account
+  personas:
+    - key: data_leader
+      label: Head of Data / Analytics
+      match: { field: contact.title, op: containsAny, value: [data, analytics, bi, insights] }
+    - key: founder
+      label: Founder / CEO
+      match: { field: contact.title, op: containsAny, value: [founder, ceo, owner] }
+  fit:
+    all:
+      - { field: account.employees, op: between, value: [10, 1000] }
+  exclusions:
+    any:
+      - { field: account.industry, op: in, value: [government] }
+
+market:
+  geographies: [SA, AE, KW, QA, BH, OM]
+  languages: [en, ar]
+  segments: [smb, mid-market]
+
+offer:
+  name: DataSpeaks subscription
+  valueProposition: Ask questions of your business data in plain language and get answers in seconds.
+  proofPoints: [No SQL required, Connects to your existing tools]
+  callToAction: Start a free trial
+  pricing: From $99 / month
+
+discovery:
+  source: apollo
+  query: { titles: [head of data, analytics manager, founder], employee_ranges: ["11,50", "51,200", "201,1000"], locations: [Saudi Arabia, United Arab Emirates] }
+  targetActivePool: 200
+  batchSize: 50
+
+research:
+  provider: default
+  questions:
+    - { key: current_tool, prompt: Which BI or reporting tool does the company use?, mapsTo: current_tool }
+    - { key: data_pain, prompt: Any public signal of reporting or data pain (job posts, posts)?, mapsTo: data_pain }
+
+scoring:
+  signals:
+    - { key: data_persona, label: Data leader, weight: 30, when: { field: contact.title, op: containsAny, value: [data, analytics, bi] } }
+    - { key: founder, label: Founder in small company, weight: 20, when: { all: [ { field: contact.title, op: containsAny, value: [founder, ceo] }, { field: account.employees, op: lte, value: 100 } ] } }
+    - { key: uses_spreadsheets, label: Reporting in spreadsheets, weight: 25, when: { field: attributes.current_tool, op: containsAny, value: [excel, sheets, spreadsheet] } }
+    - { key: gcc, label: In core market, weight: 15, when: { field: account.country, op: in, value: [SA, AE] } }
+    - { key: pain, label: Visible data pain, weight: 10, when: { field: attributes.data_pain, op: exists } }
+
+qualification:
+  framework: self-serve-fit
+  criteria:
+    - { key: engaged, label: Replied positively, required: true, when: { field: engagement.lastIntent, op: in, value: [interested, question] } }
+    - { key: fit_persona, label: Buyer persona, when: { field: prospect.persona, op: exists } }
+  minCriteriaMet: 1
+
+funnel:
+  stages:
+    - { key: new, label: New, milestone: discovered }
+    - { key: researched, label: Researched, milestone: researched }
+    - { key: contacted, label: Contacted, milestone: contacted }
+    - { key: engaged, label: Engaged, milestone: engaged }
+    - { key: trial_ready, label: Trial Ready, milestone: qualified }
+    - { key: subscribed, label: Subscribed, milestone: outcome }
+    - { key: closed_lost, label: Closed Lost, milestone: lost }
+
+personalization:
+  tone: friendly, concise
+  language: en
+  snippets:
+    - key: hook
+      when: { field: attributes.current_tool, op: containsAny, value: [excel, sheets] }
+      text: Most teams we speak to still rebuild the same spreadsheet reports every week.
+    - key: hook
+      when: { always: true }
+      text: Getting a straight answer from company data usually takes longer than it should.
+  templates:
+    intro:
+      variants:
+        - key: pain_led
+          subject: "{{account.name}} reporting"
+          body: |
+            Hi {{contact.firstName | "there"}},
+            {{snippet.hook}} {{offer.valueProposition}}
+            Worth a look? {{offer.callToAction}} — {{offer.pricing}}.
+        - key: question_led
+          subject: Quick question, {{contact.firstName | "there"}}
+          body: |
+            Hi {{contact.firstName | "there"}}, how does {{account.name}} answer ad-hoc data questions today?
+            {{offer.valueProposition}} {{offer.callToAction}}?
+    follow_up:
+      body: |
+        Hi {{contact.firstName | "there"}}, following up — happy to set up a trial for {{account.name}} so you can try it on your own data.
+    breakup:
+      body: |
+        Hi {{contact.firstName | "there"}}, I'll close the loop here. If data questions become a priority, reply and I'll send a trial link.
+    trial_invite:
+      subject: Your DataSpeaks trial
+      body: |
+        Great to hear, {{contact.firstName | "there"}}. Here is your trial link: https://dataspeaks.example/trial — it takes 5 minutes to connect your first source.
+    answer_question:
+      body: |
+        Thanks for the question, {{contact.firstName | "there"}}. Short answer: {{offer.valueProposition}} I'll have someone follow up with details.
+
+outreach:
+  channels:
+    - { key: email, handle: email }
+    - { key: linkedin, handle: linkedin }
+  sequence:
+    - { key: s1_intro, channel: email, dayOffset: 0, template: intro }
+    - { key: s2_linkedin, channel: linkedin, dayOffset: 2, template: follow_up, when: { field: contact.handles.linkedin, op: exists } }
+    - { key: s3_follow_up, channel: email, dayOffset: 5, template: follow_up }
+    - { key: s4_breakup, channel: email, dayOffset: 12, template: breakup }
+  minScore: 30
+
+replies:
+  intents:
+    - { key: interested, label: Interested, sentiment: positive, keywords: [interested, "sounds good", trial, "sign me up", "let's try", yes], milestone: engaged, stopSequence: true }
+    - { key: question, label: Question, sentiment: positive, keywords: [how, price, pricing, cost, "?"], milestone: engaged, stopSequence: true, respondWith: answer_question }
+    - { key: not_now, label: Not now, sentiment: neutral, keywords: ["not now", later, "next quarter"], stopSequence: true }
+    - { key: not_interested, label: Not interested, sentiment: negative, keywords: ["not interested", "no thanks"], milestone: lost, stopSequence: true }
+    - { key: unsubscribe, label: Opt-out, sentiment: negative, keywords: [unsubscribe, "remove me", "stop emailing"], milestone: lost, stopSequence: true, suppress: true }
+    - { key: other, label: Other, sentiment: neutral }
+  defaultIntent: other
+  minClassificationConfidence: 0.6
+
+autonomy:
+  level: human_approval # MVP: every external action is approved by a human
+
+constraints:
+  quietHours: { startHour: 21, endHour: 8 }
+  maxTouchesPerProspect: 5
+  minHoursBetweenTouches: 48
+  rateLimits:
+    - { action: send_message, channel: email, perDay: 60, perHour: 15 }
+    - { action: send_message, channel: linkedin, perDay: 20 }
+  retry: { maxAttempts: 3, backoffSeconds: 120 }
+
+escalation:
+  rules:
+    - key: pricing_negotiation
+      when: { field: reply.text, op: containsAny, value: [discount, enterprise, contract, invoice] }
+      severity: medium
+      reason: Commercial negotiation — needs a human.
+    - key: complaint
+      when: { field: reply.text, op: containsAny, value: [spam, complaint, gdpr, legal] }
+      severity: high
+      reason: Complaint or compliance mention.
+
+optimization: { enabled: true, minSampleSize: 30, cadenceHours: 24 }
+scheduling: { tickMinutes: 15 }
