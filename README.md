@@ -20,7 +20,9 @@ campaign: `human_approval` (MVP) → `assisted` → `autonomous`.
 | `campaigns/tatimmah/saudi-enterprise-outreach.yaml` | Tatimmah — Saudi Enterprise Outreach | Qualified Meeting |
 | `campaigns/templates/real-estate-qualified-leads.yaml` | template | Qualified Lead |
 
-A new client or industry is a new YAML file. No engine code changes.
+A new client or industry is a new YAML file — or the answers to the setup
+flow, which `buildCampaignConfig()` turns into the same validated config
+using the outcome presets in `presets/`. No engine code changes.
 
 ## Commands
 
@@ -37,8 +39,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design.
 
 ## Prototype UI
 
-`prototype/app.html` is the client/operator interface prototype (Arabic-first,
-RTL, English toggle). `npm run prototype` runs every campaign config on the
+`prototype/app.html` is the interface prototype (Arabic-first, RTL, English
+toggle): first-time onboarding, add client, a 7-step campaign setup wizard, an
+approvals center, and the client/operator workspaces. `npm run prototype` runs every campaign config on the
 real engine with fictional prospects, exports the dataset and inlines it into
 `prototype/dist/acquisition-os.html`. Everything it shows is DEMO DATA.
 

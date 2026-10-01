@@ -1,21 +1,10 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "yaml";
-import { CampaignConfigSchema, type CampaignConfig } from "./schema.js";
+import type { CampaignConfig } from "./schema.js";
+import { parseCampaignConfig } from "./validate.js";
 
-export class ConfigError extends Error {
-  constructor(source: string, public readonly issues: string[]) {
-    super(`Invalid campaign config (${source}):\n  - ${issues.join("\n  - ")}`);
-  }
-}
-
-export function parseCampaignConfig(raw: unknown, source = "<inline>"): CampaignConfig {
-  const result = CampaignConfigSchema.safeParse(raw);
-  if (!result.success) {
-    throw new ConfigError(source, result.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`));
-  }
-  return result.data;
-}
+export { ConfigError, parseCampaignConfig } from "./validate.js";
 
 export async function loadCampaignFile(path: string): Promise<CampaignConfig> {
   return parseCampaignConfig(parse(await readFile(path, "utf8")), path);

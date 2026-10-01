@@ -1,10 +1,7 @@
-import {
-  ACTION_TYPES,
-  DEFAULT_MIN_CONFIDENCE,
-  DEFAULT_MODES,
-  type ActionMode,
-  type ActionType,
-} from "../config/actions.js";
+import { ACTION_TYPES, type ActionType } from "../config/actions.js";
+import { resolveMode } from "../config/autonomy.js";
+
+export { resolveMode } from "../config/autonomy.js";
 import type { CampaignConfig } from "../config/schema.js";
 import type { Action, Actor, Attributes, ExceptionItem } from "../domain/types.js";
 import { TransientError, type Clock } from "../adapters/ports.js";
@@ -37,14 +34,6 @@ export interface ProposeInput {
 const APPROVER_ROLES = ["approver", "admin"];
 const REOPENABLE = new Set(["failed", "cancelled"]);
 
-export function resolveMode(cfg: CampaignConfig, type: ActionType): { mode: ActionMode; minConfidence: number } {
-  const level = cfg.autonomy.level;
-  const override = cfg.autonomy.actions[type] ?? {};
-  return {
-    mode: override.mode ?? DEFAULT_MODES[level][ACTION_TYPES[type].risk],
-    minConfidence: override.minConfidence ?? DEFAULT_MIN_CONFIDENCE[level],
-  };
-}
 
 /**
  * The single choke point every agent action passes through:

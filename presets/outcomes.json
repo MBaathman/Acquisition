@@ -1,0 +1,138 @@
+{
+  "$comment": "Outcome presets used by the campaign builder (setup wizard). Data, not engine code: add a preset here to offer a new outcome type. Every preset produces a normal campaign config validated by the engine schema.",
+  "presets": [
+    {
+      "key": "paid_subscriber",
+      "label": { "en": "Paid Subscriber", "ar": "مشترك مدفوع" },
+      "plural": { "en": "Paid Subscribers", "ar": "مشتركون مدفوعون" },
+      "unit": { "en": "subscriber", "ar": "مشترك" },
+      "description": { "en": "Turn prospects into paying subscribers.", "ar": "تحويل العملاء المحتملين إلى مشتركين يدفعون." },
+      "example": { "en": "50 agencies on a paid plan", "ar": "50 وكالة على باقة مدفوعة" },
+      "achievedEvent": "subscription.paid",
+      "valueFromEvent": "event.payload.amount",
+      "requiresQualification": false,
+      "stages": [
+        { "key": "discovered", "milestone": "discovered", "label": { "en": "Discovered", "ar": "اكتُشف" } },
+        { "key": "researched", "milestone": "researched", "label": { "en": "Researched", "ar": "تمت دراسته" } },
+        { "key": "high_fit", "milestone": "fit", "label": { "en": "High fit", "ar": "ملاءمة عالية" } },
+        { "key": "contacted", "milestone": "contacted", "label": { "en": "Contacted", "ar": "تم التواصل" } },
+        { "key": "replied", "milestone": "replied", "label": { "en": "Replied", "ar": "ردّ" } },
+        { "key": "trial", "onEvent": "trial.started", "label": { "en": "Trial started", "ar": "بدأ التجربة" } },
+        { "key": "subscribed", "milestone": "outcome", "label": { "en": "Paid subscriber", "ar": "مشترك مدفوع" } },
+        { "key": "closed_lost", "milestone": "lost", "label": { "en": "Closed lost", "ar": "خرج من المسار" } }
+      ],
+      "conversion": {
+        "cta": { "en": "Start a free trial", "ar": "ابدأ تجربة مجانية" },
+        "subject": { "en": "Your trial", "ar": "رابط التجربة" },
+        "body": { "en": "Great to hear, {{contact.firstName | \"there\"}}. Here is your link: {{offer.link}}", "ar": "سعيدون باهتمامك {{contact.firstName | \"\"}}. هذا رابط البدء: {{offer.link}}" }
+      }
+    },
+    {
+      "key": "qualified_meeting",
+      "label": { "en": "Qualified Meeting", "ar": "اجتماع مؤهَّل" },
+      "plural": { "en": "Qualified Meetings", "ar": "اجتماعات مؤهَّلة" },
+      "unit": { "en": "meeting", "ar": "اجتماع" },
+      "description": { "en": "Book and hold meetings with decision makers who fit.", "ar": "حجز وعقد اجتماعات مع أصحاب قرار مناسبين." },
+      "example": { "en": "20 discovery calls held", "ar": "20 اجتماعاً تعريفياً منعقداً" },
+      "achievedEvent": "meeting.held",
+      "requiresQualification": true,
+      "stages": [
+        { "key": "discovered", "milestone": "discovered", "label": { "en": "Discovered", "ar": "اكتُشف" } },
+        { "key": "researched", "milestone": "researched", "label": { "en": "Researched", "ar": "تمت دراسته" } },
+        { "key": "high_fit", "milestone": "fit", "label": { "en": "High fit", "ar": "ملاءمة عالية" } },
+        { "key": "contacted", "milestone": "contacted", "label": { "en": "Contacted", "ar": "تم التواصل" } },
+        { "key": "positive", "milestone": "engaged", "label": { "en": "Positive reply", "ar": "رد إيجابي" } },
+        { "key": "meeting_booked", "onEvent": "meeting.booked", "label": { "en": "Meeting booked", "ar": "اجتماع محجوز" } },
+        { "key": "meeting_held", "onEvent": "meeting.held", "label": { "en": "Meeting held", "ar": "اجتماع منعقد" } },
+        { "key": "qualified_meeting", "milestone": "outcome", "label": { "en": "Qualified meeting", "ar": "اجتماع مؤهَّل" } },
+        { "key": "disqualified", "milestone": "lost", "label": { "en": "Disqualified", "ar": "غير مؤهَّل" } }
+      ],
+      "appointments": {
+        "label": { "en": "Meetings", "ar": "الاجتماعات" },
+        "singular": { "en": "Meeting", "ar": "اجتماع" },
+        "events": { "booked": "meeting.booked", "held": "meeting.held", "cancelled": "meeting.cancelled", "noShow": "meeting.no_show" }
+      },
+      "conversion": {
+        "cta": { "en": "Book a 30-minute call", "ar": "احجز اجتماعاً لمدة 30 دقيقة" },
+        "subject": { "en": "Scheduling our call", "ar": "تحديد موعد الاجتماع" },
+        "body": { "en": "Thank you, {{contact.firstName | \"\"}}. Please pick a time that suits you: {{offer.link}}", "ar": "شكراً لك {{contact.firstName | \"\"}}. اختر الوقت المناسب لك من هنا: {{offer.link}}" }
+      }
+    },
+    {
+      "key": "qualified_lead",
+      "label": { "en": "Qualified Lead", "ar": "عميل محتمل مؤهَّل" },
+      "plural": { "en": "Qualified Leads", "ar": "عملاء محتملون مؤهَّلون" },
+      "unit": { "en": "lead", "ar": "عميل محتمل" },
+      "description": { "en": "Hand over verified, sales-ready leads.", "ar": "تسليم عملاء محتملين جاهزين للبيع وتم التحقق منهم." },
+      "example": { "en": "100 verified buyer leads", "ar": "100 عميل محتمل مؤكَّد" },
+      "achievedEvent": "lead.verified",
+      "requiresQualification": true,
+      "stages": [
+        { "key": "discovered", "milestone": "discovered", "label": { "en": "Discovered", "ar": "اكتُشف" } },
+        { "key": "researched", "milestone": "researched", "label": { "en": "Researched", "ar": "تمت دراسته" } },
+        { "key": "high_fit", "milestone": "fit", "label": { "en": "High fit", "ar": "ملاءمة عالية" } },
+        { "key": "contacted", "milestone": "contacted", "label": { "en": "Contacted", "ar": "تم التواصل" } },
+        { "key": "positive", "milestone": "engaged", "label": { "en": "Positive reply", "ar": "رد إيجابي" } },
+        { "key": "qualified", "milestone": "qualified", "label": { "en": "Qualified", "ar": "مؤهَّل" } },
+        { "key": "lead_verified", "milestone": "outcome", "label": { "en": "Verified lead", "ar": "عميل محتمل مؤكَّد" } },
+        { "key": "not_a_fit", "milestone": "lost", "label": { "en": "Not a fit", "ar": "غير ملائم" } }
+      ],
+      "conversion": {
+        "cta": { "en": "Share your requirements", "ar": "شاركنا احتياجك" },
+        "subject": { "en": "Next step", "ar": "الخطوة التالية" },
+        "body": { "en": "Thank you, {{contact.firstName | \"\"}}. The next step is here: {{offer.link}}", "ar": "شكراً لك {{contact.firstName | \"\"}}. الخطوة التالية من هنا: {{offer.link}}" }
+      }
+    },
+    {
+      "key": "opportunity",
+      "label": { "en": "Opportunity", "ar": "فرصة بيع" },
+      "plural": { "en": "Opportunities", "ar": "فرص بيع" },
+      "unit": { "en": "opportunity", "ar": "فرصة" },
+      "description": { "en": "Create qualified sales opportunities in your pipeline.", "ar": "إنشاء فرص بيع مؤهَّلة في خط المبيعات." },
+      "example": { "en": "30 opportunities worth SAR 2M", "ar": "30 فرصة بقيمة 2 مليون ر.س" },
+      "achievedEvent": "opportunity.created",
+      "valueFromEvent": "event.payload.amount",
+      "requiresQualification": true,
+      "stages": [
+        { "key": "discovered", "milestone": "discovered", "label": { "en": "Discovered", "ar": "اكتُشف" } },
+        { "key": "researched", "milestone": "researched", "label": { "en": "Researched", "ar": "تمت دراسته" } },
+        { "key": "high_fit", "milestone": "fit", "label": { "en": "High fit", "ar": "ملاءمة عالية" } },
+        { "key": "contacted", "milestone": "contacted", "label": { "en": "Contacted", "ar": "تم التواصل" } },
+        { "key": "positive", "milestone": "engaged", "label": { "en": "Positive reply", "ar": "رد إيجابي" } },
+        { "key": "qualified", "milestone": "qualified", "label": { "en": "Qualified", "ar": "مؤهَّل" } },
+        { "key": "opportunity", "milestone": "outcome", "label": { "en": "Opportunity", "ar": "فرصة بيع" } },
+        { "key": "closed_lost", "milestone": "lost", "label": { "en": "Closed lost", "ar": "خرج من المسار" } }
+      ],
+      "conversion": {
+        "cta": { "en": "Talk to our team", "ar": "تحدث مع فريقنا" },
+        "subject": { "en": "Next step", "ar": "الخطوة التالية" },
+        "body": { "en": "Thank you, {{contact.firstName | \"\"}}. You can reach our team here: {{offer.link}}", "ar": "شكراً لك {{contact.firstName | \"\"}}. يمكنك التواصل مع فريقنا من هنا: {{offer.link}}" }
+      }
+    },
+    {
+      "key": "custom",
+      "custom": true,
+      "label": { "en": "Custom outcome", "ar": "نتيجة مخصصة" },
+      "plural": { "en": "Custom outcomes", "ar": "نتائج مخصصة" },
+      "unit": { "en": "outcome", "ar": "نتيجة" },
+      "description": { "en": "Define your own result and how it is confirmed.", "ar": "حدّد نتيجتك الخاصة وكيف يتم تأكيدها." },
+      "example": { "en": "Demo requests, applications, store visits…", "ar": "طلبات عرض، تسجيلات، زيارات…" },
+      "achievedEvent": "outcome.achieved",
+      "requiresQualification": false,
+      "stages": [
+        { "key": "discovered", "milestone": "discovered", "label": { "en": "Discovered", "ar": "اكتُشف" } },
+        { "key": "researched", "milestone": "researched", "label": { "en": "Researched", "ar": "تمت دراسته" } },
+        { "key": "high_fit", "milestone": "fit", "label": { "en": "High fit", "ar": "ملاءمة عالية" } },
+        { "key": "contacted", "milestone": "contacted", "label": { "en": "Contacted", "ar": "تم التواصل" } },
+        { "key": "positive", "milestone": "engaged", "label": { "en": "Positive reply", "ar": "رد إيجابي" } },
+        { "key": "achieved", "milestone": "outcome", "label": { "en": "Achieved", "ar": "تحققت" } },
+        { "key": "closed_lost", "milestone": "lost", "label": { "en": "Closed lost", "ar": "خرج من المسار" } }
+      ],
+      "conversion": {
+        "cta": { "en": "Take the next step", "ar": "الخطوة التالية" },
+        "subject": { "en": "Next step", "ar": "الخطوة التالية" },
+        "body": { "en": "Thank you, {{contact.firstName | \"\"}}. Here is the next step: {{offer.link}}", "ar": "شكراً لك {{contact.firstName | \"\"}}. هذه الخطوة التالية: {{offer.link}}" }
+      }
+    }
+  ]
+}

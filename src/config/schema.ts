@@ -96,6 +96,8 @@ export const OfferSchema = z.object({
   proofPoints: z.array(z.string()).default([]),
   callToAction: z.string(),
   pricing: z.string().optional(),
+  /** Where the conversion step points (trial, booking page, form...). */
+  link: z.string().optional(),
 });
 
 // ---------------------------------------------------------------------------

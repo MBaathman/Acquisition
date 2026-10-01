@@ -215,6 +215,154 @@ td .sub { display: block; color: var(--ink-3); font-size: .78rem; }
 
 .toast { position: fixed; inset-inline: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); margin-inline: auto; max-width: 440px; background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 8px; font-size: .86rem; text-align: center; z-index: 60; }
 
+
+/* ---------- onboarding, setup, approvals ---------- */
+.btn.lg { padding: 10px 20px; font-size: .95rem; border-radius: 9px; }
+.btn.small { padding: 3px 9px; font-size: .78rem; }
+.btn[aria-disabled="true"] { opacity: .6; }
+.actions.center { justify-content: center; }
+.create-btn { display: inline-flex; align-items: center; gap: 6px; }
+.create-wrap { position: relative; }
+.create-menu { position: absolute; inset-inline-end: 0; top: calc(100% + 6px); z-index: 30; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 32px rgb(8 12 20 / .18); padding: 6px; width: 260px; display: grid; }
+.create-menu button { text-align: start; border: 0; background: transparent; border-radius: 7px; padding: 8px 10px; cursor: pointer; display: grid; gap: 1px; }
+.create-menu button:hover:not([disabled]) { background: var(--surface-2); }
+.create-menu button[disabled] { opacity: .45; cursor: not-allowed; }
+.create-menu button span { font-size: .76rem; color: var(--ink-3); }
+.create-menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 6px; }
+.welcome { display: grid; gap: 22px; justify-items: center; padding-block: 24px; }
+.welcome-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 36px 28px; max-width: 620px; width: 100%; display: grid; gap: 14px; justify-items: center; text-align: center; }
+.welcome-card h1 { font-size: 1.7rem; }
+.welcome-card p { color: var(--ink-2); max-width: 46ch; }
+.welcome-card.success .success-mark { width: 56px; height: 56px; border-radius: 50%; background: var(--good-soft); color: var(--good-ink); display: grid; place-items: center; font-size: 1.6rem; font-weight: 700; }
+.how { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 860px; width: 100%; counter-reset: how; }
+.how li { counter-increment: how; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 4px; }
+.how li::before { content: counter(how); width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: .8rem; }
+.how li span, .flow li span { font-size: .84rem; color: var(--ink-2); }
+.flow { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 6px; text-align: start; }
+.flow li { display: grid; gap: 1px; padding: 8px 12px; border-inline-start: 3px solid var(--line); background: var(--surface-2); border-radius: 6px; }
+.flow li.on { border-inline-start-color: var(--accent); }
+@media (max-width: 700px) { .how { grid-template-columns: minmax(0, 1fr); } }
+.modal { position: fixed; z-index: 55; inset-inline: 16px; top: 50%; transform: translateY(-50%); margin-inline: auto; max-width: 520px; max-height: calc(100vh - 40px); overflow-y: auto; background: var(--surface); border-radius: 14px; padding: 22px; display: grid; gap: 12px; box-shadow: 0 24px 60px rgb(8 12 20 / .3); }
+.modal + .scrim, .scrim { z-index: 50; }
+.modal-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field-label { font-size: .82rem; font-weight: 600; color: var(--ink); }
+.field-hint { font-size: .76rem; color: var(--ink-3); }
+.field input, .field select, .field textarea, .crit input, .crit-adv select, .hours select, .th-val input, .edit-area { font: inherit; font-size: .9rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0; }
+.field textarea, .edit-area { resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus, .chips:focus-within, .crit input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .row2 { grid-template-columns: minmax(0, 1fr); } }
+.form-error { color: var(--critical-ink); font-size: .84rem; }
+.inline { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; }
+.client-pill { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--surface-2); }
+.wizard { display: grid; gap: 16px; max-width: 1080px; width: 100%; margin-inline: auto; }
+.wiz-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.stepper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.stepper a { display: grid; justify-items: center; gap: 4px; text-decoration: none; color: var(--ink-3); font-size: .78rem; padding-block: 4px; border-top: 3px solid var(--line); }
+.stepper .dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); font-weight: 700; font-size: .8rem; margin-top: 6px; }
+.stepper li.done a { border-top-color: var(--good); color: var(--ink-2); }
+.stepper li.done .dot { background: var(--good-soft); color: var(--good-ink); }
+.stepper li.cur a { border-top-color: var(--accent); color: var(--ink); font-weight: 600; }
+.stepper li.cur .dot { background: var(--accent); color: #fff; }
+@media (max-width: 640px) { .stepper .lbl { display: none; } }
+.wiz-body { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .wiz-body { grid-template-columns: minmax(0, 1fr); } }
+.wiz-main { gap: 16px; padding: 22px; }
+.step-head { display: grid; gap: 4px; }
+.step-head h2 { font-size: 1.35rem; }
+.step-head p { color: var(--ink-2); max-width: 62ch; }
+.helper { background: var(--accent-soft); color: var(--ink); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; position: sticky; top: 90px; }
+.helper ul { margin: 0; padding-inline-start: 18px; display: grid; gap: 6px; font-size: .85rem; color: var(--ink-2); }
+.wiz-foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
+.outcome-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.ocard, .lvcard, .chcard { text-align: start; border: 1.5px solid var(--line); background: var(--surface); border-radius: 11px; padding: 14px; cursor: pointer; display: grid; gap: 6px; align-content: start; }
+.ocard:hover, .lvcard:hover, .chcard:hover:not(.off) { border-color: var(--accent); }
+.ocard.on, .lvcard.on, .chcard.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px var(--accent-soft); }
+.ocard b, .lvcard b, .chcard b { font-size: 1rem; }
+.ocard span, .lvcard span, .chcard span { font-size: .84rem; color: var(--ink-2); }
+.ocard em { font-style: normal; font-size: .76rem; color: var(--ink-3); }
+.lv-grid, .ch-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 760px) { .lv-grid, .ch-grid { grid-template-columns: minmax(0, 1fr); } }
+.chcard .check { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--line); display: grid; place-items: center; color: #fff; font-weight: 700; }
+.chcard.on .check { background: var(--accent); border-color: var(--accent); }
+.chcard.off { opacity: .55; cursor: not-allowed; }
+.reveal { display: grid; gap: 10px; border-top: 1px dashed var(--line); padding-top: 12px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+.tg { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 13px; cursor: pointer; font-size: .86rem; }
+.tg.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: var(--surface); }
+.chips input { border: 0; outline: 0; flex: 1; min-width: 140px; font: inherit; font-size: .9rem; background: transparent; color: var(--ink); padding: 3px; }
+.chip-v { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); color: var(--accent-ink); border-radius: 999px; padding: 2px 4px 2px 10px; font-size: .84rem; font-weight: 600; }
+[dir="rtl"] .chip-v { padding: 2px 10px 2px 4px; }
+.chip-v button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 4px; }
+.suggest { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.suggest button { border: 1px dashed var(--line); background: transparent; border-radius: 999px; padding: 3px 10px; font-size: .8rem; color: var(--accent-ink); cursor: pointer; }
+.adv { border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; display: grid; gap: 10px; }
+.adv summary { cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--accent-ink); }
+.adv[open] { padding-bottom: 12px; }
+.preview-box { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .split { grid-template-columns: minmax(0, 1fr); } }
+.fields { display: grid; gap: 12px; }
+.preview-col { display: grid; gap: 8px; align-content: start; }
+.mail { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.mail-head { display: grid; gap: 2px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); font-size: .8rem; color: var(--ink-3); }
+.mail-head b { color: var(--ink); font-size: .92rem; }
+.mail-body { padding: 12px; font-size: .9rem; line-height: 1.7; overflow-wrap: anywhere; }
+.crit-list { display: grid; gap: 8px; }
+.crit { display: grid; grid-template-columns: minmax(0, 1fr) 96px auto; gap: 8px; align-items: center; }
+.crit .pts { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-data); color: var(--ink-3); }
+.crit .pts input { text-align: center; }
+.crit-adv { display: grid; grid-template-columns: minmax(0, 1fr) 170px auto; gap: 8px; align-items: center; font-size: .86rem; }
+@media (max-width: 640px) { .crit-adv { grid-template-columns: minmax(0, 1fr); } }
+.threshold { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; background: var(--surface-2); border-radius: 10px; padding: 14px; }
+.threshold input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.th-val { display: inline-flex; align-items: center; gap: 6px; font-size: 1.1rem; }
+.th-val input { width: 76px; text-align: center; font-weight: 700; }
+.hours { display: flex; align-items: center; gap: 8px; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; font-size: .88rem; }
+.kv span { color: var(--ink-3); }
+.review { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .review { grid-template-columns: minmax(0, 1fr); } }
+.rv { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
+.rv-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.rv-head a { font-size: .82rem; }
+.launch-box { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 12px; padding: 16px; }
+.ok-line { color: var(--good-ink); }
+.warn-note { background: var(--warn-soft); color: var(--ink); }
+.warn-note ul { margin: 6px 0 0; padding-inline-start: 18px; }
+pre.code { background: var(--surface-2); border-radius: 8px; padding: 12px; font-size: .74rem; max-height: 320px; overflow: auto; margin: 0; }
+.empty-state { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 40px 20px; border: 1px dashed var(--line); border-radius: 12px; background: var(--surface); }
+.empty-state p { color: var(--ink-2); max-width: 52ch; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.checklist li { display: flex; gap: 10px; align-items: center; font-size: .9rem; color: var(--ink-2); }
+.checklist li span { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: .72rem; flex: none; }
+.checklist li.done { color: var(--ink); }
+.checklist li.done span { background: var(--good); border-color: var(--good); color: #fff; }
+.item.linkish { text-align: start; cursor: pointer; text-decoration: none; color: inherit; font: inherit; }
+.item.linkish:hover { border-color: var(--accent); }
+.ap-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; justify-content: space-between; }
+.ap-list { display: grid; gap: 12px; }
+.ap-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; border-inline-start: 4px solid var(--accent); }
+.ap-card.k-decision, .ap-card.k-outcome { border-inline-start-color: var(--warn); }
+.ap-card.k-change { border-inline-start-color: var(--pace); }
+.ap-card.done { opacity: .6; }
+.ap-card h3 { font-size: 1rem; }
+.ap-kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 14px; margin: 0; font-size: .88rem; }
+.ap-kv dt { color: var(--ink-3); font-size: .8rem; padding-top: 2px; }
+.ap-kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 560px) { .ap-kv { grid-template-columns: minmax(0, 1fr); } .ap-kv dt { padding-top: 6px; } }
+.onb-steps { list-style: none; margin: 0; padding: 0 8px; display: grid; gap: 8px; font-size: .84rem; }
+.onb-steps li { display: flex; gap: 8px; align-items: center; color: var(--side-ink-2); }
+.onb-steps li span { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--side-line); display: grid; place-items: center; font-size: .7rem; }
+.onb-steps li.done { color: var(--side-ink); } .onb-steps li.done span { background: var(--good); border-color: var(--good); color: #fff; }
+.onb-steps li.cur { color: #fff; font-weight: 600; } .onb-steps li.cur span { border-color: var(--accent); }
+.side .btn.primary { width: 100%; }
+.side-foot button { background: transparent; border: 1px solid var(--side-line); color: var(--side-ink); border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: .74rem; text-align: start; }
+.side-foot button:hover { background: var(--side-active); }
+.banner-fresh { background: var(--surface-2); color: var(--ink-2); }
+
 @media (max-width: 960px) {
   .app { grid-template-columns: minmax(0, 1fr); }
   .side { position: fixed; inset-block: 0; inset-inline-start: 0; width: 272px; z-index: 50; transform: translateX(100%); transition: transform .2s ease; }
@@ -246,8 +394,10 @@ td .sub { display: block; color: var(--ink-3); font-size: .78rem; }
 <div id="overlay"></div>
 <div class="toast" id="toast" hidden role="status"></div>
 
+<script>/*__ENGINE__*/</script>
 <script>
 const DATA = __DATA__;
+const PRESETS = __PRESETS__;
 
 /* =========================================================== i18n */
 const UI = {
@@ -262,7 +412,7 @@ const UI = {
     replies: "الردود", positive: "إيجابية", neutral: "محايدة", negative: "سلبية", needsAttention: "تحتاج انتباهاً",
     upcoming: "القادمة", qualified: "المؤهَّلة", held: "المنعقدة", cancelled: "الملغاة", noShow: "لم يحضر",
     outcomes: "النتائج", analytics: "التحليلات", reports: "التقارير", integrations: "التكاملات", automation: "الأتمتة", audit: "النشاط والتدقيق", settings: "الإعدادات",
-    attention: "يحتاج انتباهك", recommendations: "التوصيات", results: "النتائج المحققة",
+    attention: "يحتاج انتباهك", approvals: "الموافقات", recommendations: "التوصيات", results: "النتائج المحققة",
     goal: "الهدف", period: "الفترة", progress: "التقدم", since: "منذ", today: "حتى اليوم",
     of: "من", target: "الهدف", remaining: "متبقٍ", last7: "آخر 7 أيام", value: "القيمة", costPer: "التكلفة لكل نتيجة", notConfigured: "غير محدد",
     paceLine: "الوتيرة المطلوبة للهدف", cumulative: "تراكمي", tableView: "عرض البيانات كجدول",
@@ -302,7 +452,7 @@ const UI = {
     replies: "Replies", positive: "Positive", neutral: "Neutral", negative: "Negative", needsAttention: "Needs attention",
     upcoming: "Upcoming", qualified: "Qualified", held: "Held", cancelled: "Cancelled", noShow: "No-show",
     outcomes: "Outcomes", analytics: "Analytics", reports: "Reports", integrations: "Integrations", automation: "Automation", audit: "Activity & audit", settings: "Settings",
-    attention: "Needs your attention", recommendations: "Recommendations", results: "Results",
+    attention: "Needs your attention", approvals: "Approvals", recommendations: "Recommendations", results: "Results",
     goal: "Goal", period: "Period", progress: "Progress", since: "since", today: "to date",
     of: "of", target: "Target", remaining: "Remaining", last7: "Last 7 days", value: "Value", costPer: "Cost per outcome", notConfigured: "Not configured",
     paceLine: "Pace needed for the goal", cumulative: "cumulative", tableView: "Show data as a table",
@@ -355,6 +505,7 @@ const AR = {
   retail: "تجزئة", logistics: "لوجستيات", healthcare: "رعاية صحية", manufacturing: "تصنيع", hospitality: "ضيافة", construction: "إنشاءات", marketing: "تسويق",
   investor: "مستثمر", end_user: "مشترٍ للسكن", business_owner: "صاحب عمل",
   decision_maker: "صاحب قرار", performance_lead: "مسؤول الأداء", executive: "قيادي تنفيذي", department_head: "رئيس إدارة",
+  AE: "الإمارات", SA: "السعودية", KW: "الكويت", QA: "قطر", BH: "البحرين", OM: "عُمان", EG: "مصر", JO: "الأردن",
   Dubai: "دبي", "Abu Dhabi": "أبوظبي", Sharjah: "الشارقة", Riyadh: "الرياض", Jeddah: "جدة", Dammam: "الدمام", Khobar: "الخبر",
   "North Riyadh": "شمال الرياض", "Jeddah Waterfront": "واجهة جدة البحرية", "Al Khobar Corniche": "كورنيش الخبر",
   email: "البريد", linkedin: "لينكدإن", whatsapp: "واتساب", phone: "هاتف",
@@ -393,7 +544,7 @@ const AUDIT_CAT_LABEL = {
 };
 
 /* =========================================================== state */
-const S = { clientId: DATA.clients[0].id, campaignId: null, view: "operator", lang: "ar", route: "overview", sub: "", filters: {}, decided: {}, limit: 50, drawer: null, analyticsDim: null, auditCat: "" };
+const S = { clientId: null, campaignId: null, modal: null, menu: false, apScope: "one", editing: null, edits: {}, launched: null, view: "operator", lang: "ar", route: "overview", sub: "", filters: {}, decided: {}, limit: 50, drawer: null, analyticsDim: null, auditCat: "" };
 try {
   const saved = JSON.parse(localStorage.getItem("acq-os") || "{}");
   for (const k of ["clientId", "campaignId", "view", "lang"]) if (saved[k]) S[k] = saved[k];
@@ -421,16 +572,18 @@ const ago = (iso) => {
   return S.lang === "ar" ? `قبل ${d} يوم` : `${d}d ago`;
 };
 
-const clientCampaigns = (cid) => DATA.campaigns.filter((c) => c.clientId === cid);
+const clientCampaigns = (cid) => campaigns().filter((c) => c.clientId === cid);
 function C() {
-  let c = DATA.campaigns.find((x) => x.config.id === S.campaignId && x.clientId === S.clientId);
-  if (!c) { c = clientCampaigns(S.clientId).find((x) => x.config.status === "active") || clientCampaigns(S.clientId)[0]; S.campaignId = c.config.id; }
+  const list = clientCampaigns(S.clientId);
+  const c = list.find((x) => x.config.id === S.campaignId) || list.find((x) => x.config.status === "active") || list[0];
+  if (c) S.campaignId = c.config.id;
   return c;
 }
-const clientName = (id) => DATA.clients.find((c) => c.id === id)?.name ?? id;
+const clientName = (id) => clients().find((c) => c.id === id)?.name ?? id;
 const outcomeLabel = (c = C()) => L(c.config.outcome.label);
+for (const p of PRESETS.outcomes) for (const lang of ["ar", "en"]) for (const lab of [p.label.ar, p.label.en]) PLURAL[lang][lab] ??= p.plural[lang];
 const outcomePlural = (c = C()) => PLURAL[S.lang][c.config.outcome.label] ?? L(c.config.outcome.label);
-const unit = (c = C(), n = 2) => UNIT[S.lang][c.config.outcome.unit] ?? (n === 1 ? c.config.outcome.unit : c.config.outcome.unit + "s");
+const unit = (c = C(), n = 2) => { const u = c.config.outcome.unit; if (UNIT[S.lang][u]) return UNIT[S.lang][u]; return S.lang === "en" && n !== 1 && /^[a-z ]+$/i.test(u) ? u + "s" : u; };
 const stepLabel = (k) => (S.lang === "ar" ? STEP_AR : STEP_EN)[k] ?? k ?? "";
 const TEMPLATE_NAMES = { ar: { trial_invite: "رابط التجربة", booking_link: "رابط الحجز", answer_question: "الرد على سؤال", meeting_ack: "تأكيد طلب الاجتماع", viewing_invite: "دعوة المعاينة", follow_up: "رسالة المتابعة", breakup: "رسالة الختام", intro: "الرسالة الأولى" }, en: { trial_invite: "Trial link", booking_link: "Booking link", answer_question: "Answer to a question", meeting_ack: "Meeting acknowledgement", viewing_invite: "Viewing invite", follow_up: "Follow-up", breakup: "Break-up note", intro: "Intro" } };
 const variantLabel = (k) => { if (VARIANT[S.lang][k]) return VARIANT[S.lang][k]; const [tpl, v] = String(k).split(":"); const name = TEMPLATE_NAMES[S.lang][tpl] ?? tpl.replace(/_/g, " "); return v && v !== "default" ? `${name} · ${v.replace(/_/g, " ")}` : name; };
@@ -453,18 +606,596 @@ function X() {
   return x;
 }
 
+/* =========================================================== workspace
+   A first-time user starts with an empty workspace. The demo dataset is only
+   shown when the user chooses "try a demo campaign". Clients and campaigns the
+   user creates are real campaign configs built by the engine's own builder
+   (AcqEngine.buildCampaignConfig) and validated by the engine schema. They are
+   kept in this browser only (prototype). */
+const WS_KEY = "acq-ws-v1";
+let WS = { mode: "fresh", clients: [], campaigns: [], draft: null };
+try { const saved = JSON.parse(localStorage.getItem(WS_KEY) || "null"); if (saved && typeof saved === "object") WS = { ...WS, ...saved }; } catch {}
+const saveWS = () => { try { localStorage.setItem(WS_KEY, JSON.stringify(WS)); } catch {} };
+const tr = (ar, en) => (S.lang === "ar" ? ar : en);
+const uid = (p) => `${p}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const nowIso = () => new Date().toISOString();
+
+const clients = () => [...(WS.mode === "demo" ? DATA.clients.map((c) => ({ ...c, demo: true })) : []), ...WS.clients];
+const clientLabel = (c) => (c.demo ? `${c.name} (${tr("تجريبي", "demo")})` : c.name);
+const userObjs = new Map();
+function userCampaign(uc) {
+  let o = userObjs.get(uc.cfg.campaign.id);
+  if (!o) {
+    const s = uc.summary;
+    o = {
+      clientId: uc.clientId, config: s, isUser: true, launchedAt: uc.launchedAt,
+      report: { outcome: { key: s.outcome.key, label: s.outcome.label, unit: s.outcome.unit, achieved: 0, target: s.outcome.target, progressPct: 0, value: s.outcome.currency ? { amount: 0, currency: s.outcome.currency } : null, uncounted: 0 }, activity: { prospects: 0, contacted: 0, replied: 0, positiveReplies: 0, messagesSent: 0 }, attribution: { byChannel: {}, byStep: {}, byVariant: {}, byPersona: {} } },
+      daily: [], analytics: [], prospects: uc.prospects, outreach: [], drafts: [], replies: [], appointments: [], outcomes: [], recommendations: [], exceptions: [], audit: uc.audit, auditCounts: {}, governance: {},
+    };
+    userObjs.set(uc.cfg.campaign.id, o);
+  }
+  o.report.activity.prospects = uc.prospects.length;
+  o.auditCounts = uc.audit.reduce((m, e) => ((m[e.event] = (m[e.event] || 0) + 1), m), {});
+  return o;
+}
+const campaigns = () => [...(WS.mode === "demo" ? DATA.campaigns : []), ...WS.campaigns.map(userCampaign)];
+const userCampaignRec = (id) => WS.campaigns.find((u) => u.cfg.campaign.id === id);
+function logUser(campaignId, event, detail = {}, prospectId) {
+  const uc = userCampaignRec(campaignId); if (!uc) return;
+  uc.audit.unshift({ at: nowIso(), event, actor: "user", prospectId, detail });
+}
+
+const COUNTRIES = [["SA", "السعودية", "Saudi Arabia"], ["AE", "الإمارات", "UAE"], ["KW", "الكويت", "Kuwait"], ["QA", "قطر", "Qatar"], ["BH", "البحرين", "Bahrain"], ["OM", "عُمان", "Oman"], ["EG", "مصر", "Egypt"], ["JO", "الأردن", "Jordan"]];
+const countryName = (code) => { const c = COUNTRIES.find((x) => x[0] === code); return c ? (S.lang === "ar" ? c[1] : c[2]) : code; };
+const preset = (key) => PRESETS.outcomes.find((p) => p.key === key);
+
+/* =========================================================== onboarding */
+const ONB_ICON = `<svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="var(--accent-soft)"/><circle cx="32" cy="32" r="18" fill="none" stroke="var(--accent)" stroke-width="3"/><circle cx="32" cy="32" r="7" fill="var(--accent)"/><path d="M32 4v10M32 50v10M4 32h10M50 32h10" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/></svg>`;
+function pageWelcome() {
+  const cl = clients(); const hasClient = cl.length > 0; const current = cl.find((c) => c.id === S.clientId) || cl[0];
+  const resume = WS.draft && WS.draft.campaignName;
+  return `<section class="welcome">
+    <div class="welcome-card">
+      ${ONB_ICON}
+      <h1>${esc(hasClient ? tr(`أنشئ أول حملة لـ ${current.name}`, `Create the first campaign for ${current.name}`) : tr("ابدأ أول محرك اكتساب", "Start your first acquisition engine"))}</h1>
+      <p>${esc(tr("حدد النتيجة التي تريد تحقيقها، وسنساعدك في بناء حملة اكتساب خطوة بخطوة.", "Choose the result you want, and we'll help you build an acquisition campaign step by step."))}</p>
+      <div class="actions center">
+        <button class="btn primary lg" type="button" data-act="newCampaign">${esc(resume ? tr("أكمل إعداد الحملة", "Continue campaign setup") : tr("+ إنشاء أول حملة", "+ Create your first campaign"))}</button>
+        ${hasClient ? "" : `<button class="btn lg" type="button" data-act="newClient">${esc(tr("إضافة عميل", "Add a client"))}</button>`}
+      </div>
+      ${WS.mode !== "demo" ? `<button class="btn ghost" type="button" data-act="tryDemo">${esc(tr("أو جرّب حملة تجريبية", "Or explore a demo campaign"))}</button>` : ""}
+    </div>
+    <ol class="how">
+      <li><b>${esc(tr("حدّد النتيجة", "Pick the outcome"))}</b><span>${esc(tr("مشتركون، اجتماعات، عملاء محتملون… وكم تريد.", "Subscribers, meetings, leads… and how many."))}</span></li>
+      <li><b>${esc(tr("صف جمهورك وعرضك", "Describe who and what"))}</b><span>${esc(tr("من نستهدف، وماذا نعرض عليهم، وكيف نعرف أنهم مناسبون.", "Who to reach, what to offer, and how to tell a good fit."))}</span></li>
+      <li><b>${esc(tr("راجع وشغّل", "Review and launch"))}</b><span>${esc(tr("المحرك يكتشف ويبحث ويكتب الرسائل، وأنت توافق قبل أي إرسال.", "The engine finds, researches and drafts; you approve before anything is sent."))}</span></li>
+    </ol>
+  </section>`;
+}
+
+/* =========================================================== create menu & modals */
+function createMenu() {
+  const items = [
+    ["newClient", tr("عميل جديد", "New client"), tr("الشركة التي نعمل لصالحها", "The company we work for")],
+    ["newCampaign", tr("حملة جديدة", "New campaign"), tr("نتيجة نريد تحقيقها لعميل", "An outcome to produce for a client")],
+    ["newProspect", tr("عميل محتمل", "Prospect"), tr("شركة تريد أن يدرسها المحرك", "A company for the engine to research")],
+    ["newContact", tr("جهة اتصال", "Contact"), tr("شخص محدد داخل شركة", "A specific person at a company")],
+  ];
+  return `<div class="create-menu" role="menu">${items.map(([act, label, hint], i) => `<button type="button" role="menuitem" data-act="${act}" ${i > 1 && !C() ? "disabled" : ""}><b>${esc(label)}</b><span>${esc(hint)}</span></button>${i === 1 ? '<hr>' : ""}`).join("")}</div>`;
+}
+
+function field(id, label, input, hint) {
+  return `<label class="field"><span class="field-label">${esc(label)}</span>${input}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}</label>`;
+}
+function modalHtml() {
+  const m = S.modal; if (!m) return "";
+  let body = "";
+  if (m.type === "client") {
+    const d = m.data;
+    body = `<h2 id="mTitle">${esc(tr("إضافة عميل", "Add a client"))}</h2>
+      <p class="muted small">${esc(tr("العميل هو الشركة التي نعمل لصالحها. تكفي هذه المعلومات للبدء، ويمكن إضافة المزيد لاحقاً.", "The client is the company we work for. This is enough to start; you can add more later."))}</p>
+      ${field("mName", tr("اسم العميل", "Client name"), `<input id="mName" data-m="name" value="${esc(d.name)}" placeholder="${esc(tr("مثال: DataSpeaks", "e.g. DataSpeaks"))}" autocomplete="off">`)}
+      ${field("mCompany", tr("الشركة (الاسم القانوني)", "Company (legal name)"), `<input id="mCompany" data-m="company" value="${esc(d.company)}" placeholder="${esc(tr("اختياري", "Optional"))}">`)}
+      <div class="row2">${field("mIndustry", tr("المجال", "Industry"), `<input id="mIndustry" data-m="industry" value="${esc(d.industry)}" placeholder="${esc(tr("مثال: برمجيات تقارير", "e.g. Reporting software"))}">`)}
+      ${field("mMarket", tr("الدولة / السوق", "Country / market"), `<select id="mMarket" data-m="market"><option value="">${esc(tr("اختر", "Choose"))}</option>${COUNTRIES.map(([c]) => `<option value="${c}" ${d.market === c ? "selected" : ""}>${esc(countryName(c))}</option>`).join("")}</select>`)}</div>
+      ${field("mDesc", tr("وصف مختصر", "Short description"), `<textarea id="mDesc" data-m="description" rows="2" placeholder="${esc(tr("ماذا تقدّم الشركة؟ جملة واحدة تكفي.", "What does the company offer? One sentence is enough."))}">${esc(d.description)}</textarea>`)}
+      ${m.error ? `<p class="form-error">${esc(m.error)}</p>` : ""}
+      <div class="modal-actions"><button class="btn primary" type="button" data-act="saveClient">${esc(tr("حفظ والمتابعة", "Save and continue"))}</button><button class="btn" type="button" data-act="closeModal">${esc(tr("إلغاء", "Cancel"))}</button></div>
+      <p class="muted tiny">${esc(tr("بعد الحفظ ننتقل مباشرة إلى إنشاء أول حملة لهذا العميل.", "After saving we go straight to creating this client's first campaign."))}</p>`;
+  } else if (m.type === "prospect" || m.type === "contact") {
+    const d = m.data; const isC = m.type === "contact";
+    body = `<h2 id="mTitle">${esc(isC ? tr("إضافة جهة اتصال", "Add a contact") : tr("إضافة عميل محتمل", "Add a prospect"))}</h2>
+      <p class="muted small">${esc(tr(`سيُضاف إلى حملة «${L(C().config.name)}». يبحث المحرك عنه ويقيّمه قبل أي تواصل.`, `It will be added to "${C().config.name}". The engine researches and scores it before any outreach.`))}</p>
+      ${field("mCo", tr("الشركة", "Company"), `<input id="mCo" data-m="company" value="${esc(d.company)}" ${isC ? "" : 'placeholder="' + esc(tr("مطلوب", "Required")) + '"'}>`)}
+      <div class="row2">${field("mPerson", tr("اسم الشخص", "Person's name"), `<input id="mPerson" data-m="contact" value="${esc(d.contact)}">`)}${field("mTitle2", tr("المسمى الوظيفي", "Job title"), `<input id="mTitle2" data-m="title" value="${esc(d.title)}">`)}</div>
+      <div class="row2">${field("mEmail", tr("البريد", "Email"), `<input id="mEmail" class="ltr" data-m="email" type="email" value="${esc(d.email)}">`)}${field("mLi", "LinkedIn", `<input id="mLi" class="ltr" data-m="linkedin" value="${esc(d.linkedin)}" placeholder="linkedin.com/in/…">`)}</div>
+      ${field("mCity", tr("المدينة", "City"), `<input id="mCity" data-m="city" value="${esc(d.city)}">`)}
+      ${m.error ? `<p class="form-error">${esc(m.error)}</p>` : ""}
+      <div class="modal-actions"><button class="btn primary" type="button" data-act="saveProspect">${esc(tr("إضافة", "Add"))}</button><button class="btn" type="button" data-act="closeModal">${esc(tr("إلغاء", "Cancel"))}</button></div>`;
+  } else if (m.type === "confirm") {
+    body = `<h2 id="mTitle">${esc(m.title)}</h2><p>${esc(m.text)}</p>${m.note ? `<p class="note">${esc(m.note)}</p>` : ""}
+      <div class="modal-actions"><button class="btn primary" type="button" data-act="confirmYes">${esc(m.yes)}</button><button class="btn" type="button" data-act="closeModal">${esc(tr("إلغاء", "Cancel"))}</button></div>`;
+  }
+  return `<div class="scrim" data-act="closeModal"></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">${body}</div>`;
+}
+
+function openClientModal(then) { S.modal = { type: "client", then, data: { name: "", company: "", industry: "", market: "", description: "" } }; S.menu = false; render(); setTimeout(() => document.getElementById("mName")?.focus(), 0); }
+function saveClient() {
+  const d = S.modal.data;
+  if (!d.name.trim()) { S.modal.error = tr("اكتب اسم العميل للمتابعة.", "Enter the client's name to continue."); render(); return; }
+  const cl = { id: uid("cl"), name: d.name.trim(), company: d.company.trim(), industry: d.industry.trim(), market: d.market, description: d.description.trim(), createdAt: nowIso() };
+  WS.clients.push(cl); S.clientId = cl.id; S.campaignId = null; persist();
+  const then = S.modal.then; S.modal = null;
+  if (then !== "stay") { WS.draft = newDraft(cl.id); if (cl.market) WS.draft.audience.countries = [cl.market]; }
+  saveWS();
+  toast(tr(`تم حفظ ${cl.name}`, `${cl.name} saved`));
+  if (then === "stay") render(); else location.hash = "#new-campaign.1";
+}
+function saveProspect() {
+  const m = S.modal; const d = m.data; const c = C();
+  if (m.type === "prospect" && !d.company.trim()) { m.error = tr("اكتب اسم الشركة.", "Enter the company name."); render(); return; }
+  if (m.type === "contact" && !d.contact.trim()) { m.error = tr("اكتب اسم الشخص.", "Enter the person's name."); render(); return; }
+  const channels = [d.email && "email", d.linkedin && "linkedin"].filter(Boolean);
+  const p = {
+    id: uid("pro"), company: d.company.trim() || undefined, contact: d.contact.trim() || "—", title: d.title.trim(), city: d.city.trim(), channels,
+    researchStatus: "needs_research", contactStatus: channels.length ? "found" : "needs_contact", stage: c.config.funnel[0].key, status: "active",
+    breakdown: [], signals: [], missing: [], rejected: [], milestones: { discovered: nowIso() }, touches: 0, lastActivity: nowIso(), createdAt: nowIso(), manual: true,
+  };
+  c.prospects.unshift(p); cache.delete(c.config.id);
+  if (c.isUser) { logUser(c.config.id, "prospect.added", { company: p.company || p.contact }, p.id); saveWS(); }
+  S.modal = null; toast(tr("تمت الإضافة — سيبحث المحرك عنه أولاً قبل أي تواصل", "Added — the engine will research it before any outreach"));
+  location.hash = "#prospects"; render();
+}
+
+/* =========================================================== campaign wizard */
+const STEPS = [
+  ["outcome", "النتيجة", "Outcome"], ["audience", "الجمهور", "Audience"], ["offer", "العرض", "Offer"], ["qualify", "التأهيل", "Qualification"],
+  ["channels", "التواصل", "Channels"], ["control", "التشغيل", "Control"], ["review", "المراجعة", "Review"],
+];
+function newDraft(clientId) {
+  return {
+    clientId, campaignId: uid("cp"), campaignName: "",
+    outcome: { preset: null, goal: "", customLabel: "", customUnit: "", valueAmount: "", currency: "USD" },
+    audience: { countries: [], companyTypes: [], sizeMin: "", sizeMax: "", sectors: [], cities: [], titles: [], traits: [], advanced: { growthSignals: [], technologies: [], customFilters: "" } },
+    offer: { name: "", valueProposition: "", callToAction: "", mainMessage: "", link: "", language: S.lang },
+    qualification: { criteria: [], threshold: "", requirePositiveReply: true },
+    channels: { email: true, linkedin: true, touches: 2, waitDays: 3, language: S.lang, sendWindow: { startHour: 9, endHour: 18 } },
+    automation: { level: "human_approval" },
+  };
+}
+const D = () => WS.draft;
+const getPath = (o, p) => p.split(".").reduce((x, k) => (x == null ? undefined : x[k]), o);
+const setPath = (o, p, v) => { const ks = p.split("."); const last = ks.pop(); const t2 = ks.reduce((x, k) => (x[k] ??= {}), o); t2[last] = v; };
+const totalPoints = () => D().qualification.criteria.reduce((s, c) => s + Math.max(0, Number(c.points) || 0), 0);
+
+function stepIssues(i) {
+  const d = D(); const out = [];
+  if (i === 0) {
+    if (!d.clientId) out.push(tr("اختر العميل", "Choose the client"));
+    if (!d.campaignName.trim()) out.push(tr("اسم الحملة", "Campaign name"));
+    if (!d.outcome.preset) out.push(tr("اختر النتيجة", "Choose an outcome"));
+    if (!(Number(d.outcome.goal) > 0)) out.push(tr("حدد الهدف (رقم)", "Set the goal (a number)"));
+    if (d.outcome.preset === "custom" && !d.outcome.customLabel.trim()) out.push(tr("اسم النتيجة المخصصة", "Name of the custom outcome"));
+  }
+  if (i === 1) {
+    if (!d.audience.countries.length) out.push(tr("اختر سوقاً واحداً على الأقل", "Choose at least one market"));
+    if (!d.audience.companyTypes.length && !d.audience.sectors.length) out.push(tr("نوع الشركات أو القطاع", "Company type or sector"));
+  }
+  if (i === 2) {
+    if (!d.offer.name.trim()) out.push(tr("اسم العرض", "Offer name"));
+    if (!d.offer.valueProposition.trim()) out.push(tr("القيمة الأساسية", "Core value"));
+    if (!d.offer.callToAction.trim()) out.push(tr("الدعوة لاتخاذ إجراء", "Call to action"));
+    if (!d.offer.mainMessage.trim()) out.push(tr("الرسالة الرئيسية", "Main message"));
+  }
+  if (i === 3) {
+    if (!d.qualification.criteria.length) out.push(tr("أضف معياراً واحداً على الأقل", "Add at least one criterion"));
+    if (d.qualification.criteria.some((c) => !c.label.trim())) out.push(tr("كل معيار يحتاج اسماً", "Every criterion needs a name"));
+    const th = Number(d.qualification.threshold); if (!(th > 0) || th > totalPoints()) out.push(tr(`الدرجة المطلوبة بين 1 و${totalPoints()}`, `Required score between 1 and ${totalPoints()}`));
+  }
+  if (i === 4 && !d.channels.email && !d.channels.linkedin) out.push(tr("فعّل قناة واحدة على الأقل", "Enable at least one channel"));
+  return out;
+}
+function checkFor(c) {
+  const a = D().audience; const t2 = c.check || "research";
+  if (t2 === "size") return { type: "size", min: Number(a.sizeMin) || 0, max: Number(a.sizeMax) || 1000000 };
+  if (t2 === "role") return { type: "role", titles: a.titles.length ? a.titles : ["CEO", "Founder", "Managing Director", "مدير عام", "مؤسس"] };
+  if (t2 === "location") return a.cities.length ? { type: "location", cities: a.cities } : { type: "location", countries: a.countries };
+  return { type: "research" };
+}
+function toBuilderDraft(status) {
+  const d = D(); const cl = clients().find((c) => c.id === d.clientId);
+  const num = (v) => (v === "" || v == null ? undefined : Number(v));
+  return {
+    locale: S.lang,
+    client: { id: cl.id, name: cl.name, industry: cl.industry || undefined, market: cl.market || undefined },
+    campaign: { id: d.campaignId, name: d.campaignName.trim(), status, periodStart: nowIso().slice(0, 10) },
+    outcome: {
+      preset: d.outcome.preset, goal: Number(d.outcome.goal), customLabel: d.outcome.customLabel || undefined, customUnit: d.outcome.customUnit || undefined,
+      value: Number(d.outcome.valueAmount) > 0 ? { amount: Number(d.outcome.valueAmount), currency: d.outcome.currency || "USD", recurrence: d.outcome.preset === "paid_subscriber" ? "monthly" : "one_time" } : undefined,
+    },
+    audience: { ...d.audience, sizeMin: num(d.audience.sizeMin), sizeMax: num(d.audience.sizeMax), advanced: { ...d.audience.advanced, customFilters: d.audience.advanced.customFilters || undefined } },
+    offer: { ...d.offer, link: d.offer.link || undefined },
+    qualification: { criteria: d.qualification.criteria.map((c) => ({ label: c.label.trim(), points: Number(c.points) || 0, timing: Boolean(c.timing), check: checkFor(c) })), threshold: Number(d.qualification.threshold), requirePositiveReply: d.qualification.requirePositiveReply },
+    channels: { ...d.channels, touches: Number(d.channels.touches) === 1 ? 1 : 2, waitDays: Number(d.channels.waitDays) || 3, sendWindow: { startHour: Number(d.channels.sendWindow.startHour), endHour: Number(d.channels.sendWindow.endHour) } },
+    automation: { ...d.automation },
+  };
+}
+function tryBuild(status = "draft") {
+  try { const cfg = AcqEngine.buildCampaignConfig(toBuilderDraft(status), PRESETS); return { cfg, summary: AcqEngine.summarizeCampaign(cfg) }; }
+  catch (e) { return { error: e.issues ? e.issues : [String(e.message || e)] }; }
+}
+
+const chipInput = (path, placeholder, suggestions = []) => {
+  const vals = getPath(D(), path) || [];
+  const sugg = suggestions.filter((s) => !vals.includes(s));
+  return `<div class="chips">${vals.map((v, i) => `<span class="chip-v">${esc(v)}<button type="button" data-act="chipDel" data-path="${path}" data-i="${i}" aria-label="${esc(tr("حذف", "Remove"))} ${esc(v)}">×</button></span>`).join("")}<input type="text" data-chips="${path}" id="chip-${path.replace(/\./g, "-")}" placeholder="${esc(placeholder)}" autocomplete="off"></div>
+  ${sugg.length ? `<div class="suggest">${sugg.map((s) => `<button type="button" data-act="chipAdd" data-path="${path}" data-v="${esc(s)}">+ ${esc(s)}</button>`).join("")}</div>` : ""}`;
+};
+const textIn = (path, opts = {}) => `<input id="w-${path.replace(/\./g, "-")}" data-bind="${path}" type="${opts.type || "text"}" value="${esc(getPath(D(), path) ?? "")}" ${opts.placeholder ? `placeholder="${esc(opts.placeholder)}"` : ""} ${opts.min != null ? `min="${opts.min}"` : ""} ${opts.max != null ? `max="${opts.max}"` : ""} class="${opts.cls || ""}">`;
+const areaIn = (path, rows, placeholder) => `<textarea id="w-${path.replace(/\./g, "-")}" data-bind="${path}" rows="${rows}" placeholder="${esc(placeholder || "")}">${esc(getPath(D(), path) ?? "")}</textarea>`;
+const segIn = (path, options) => `<div class="seg" role="radiogroup">${options.map(([v, l]) => `<button type="button" role="radio" data-act="setv" data-path="${path}" data-v="${esc(v)}" aria-checked="${String(getPath(D(), path)) === String(v)}" aria-pressed="${String(getPath(D(), path)) === String(v)}">${esc(l)}</button>`).join("")}</div>`;
+const helpCard = (title, items) => `<aside class="helper"><h3>${esc(title)}</h3><ul>${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></aside>`;
+
+function audienceSentence() {
+  const a = D().audience; const ar = S.lang === "ar"; const sep = SEP();
+  const who = a.companyTypes.length ? a.companyTypes.join(sep) : tr("شركات", "companies");
+  const where = a.countries.length ? a.countries.map(countryName).join(sep) : tr("السوق الذي تختاره", "the market you choose");
+  const size = a.sizeMin || a.sizeMax ? tr(` بحجم ${a.sizeMin || 1}–${a.sizeMax || "+"} موظفاً`, ` with ${a.sizeMin || 1}–${a.sizeMax || "+"} employees`) : "";
+  const sec = a.sectors.length ? tr(` في قطاع ${a.sectors.join(sep)}`, ` in ${a.sectors.join(sep)}`) : "";
+  const city = a.cities.length ? tr(` (${a.cities.join(sep)})`, ` (${a.cities.join(sep)})`) : "";
+  const roles = a.titles.length ? a.titles.join(sep) : tr("أصحاب القرار", "decision makers");
+  return ar ? `سيبحث المحرك عن ${who} في ${where}${city}${size}${sec}، ويتواصل مع ${roles}.` : `The engine will look for ${who} in ${where}${city}${size}${sec}, and reach out to ${roles}.`;
+}
+function messagePreview() {
+  const o = D().offer; const lang = o.language; const ar = lang === "ar";
+  const name = ar ? "ليلى" : "Layla";
+  const cta = o.callToAction ? (o.link ? `${o.callToAction}: ${o.link}` : o.callToAction) : (ar ? "[الدعوة لاتخاذ إجراء]" : "[call to action]");
+  return `<div class="mail ${ar ? "" : "ltr"}" dir="${ar ? "rtl" : "ltr"}"><div class="mail-head"><span>${esc(tr("إلى", "To"))}: ${esc(name)} · ${esc(ar ? "مؤسسة، شركة مثال" : "Founder, Example Co")}</span><b>${esc(o.name || (ar ? "[اسم العرض]" : "[Offer name]"))}</b></div>
+    <div class="mail-body">${esc(ar ? `مرحباً ${name}،` : `Hi ${name},`)}<br>${esc(o.mainMessage || (ar ? "[الرسالة الرئيسية]" : "[Main message]"))}<br>${esc(cta)}</div></div>
+    <p class="tiny muted">${esc(tr("هذه معاينة. المحرك يخصّص كل رسالة بالاسم والمعلومات الموثقة عن الشركة، ولا تُرسل إلا بعد موافقتك.", "This is a preview. The engine personalizes each message with the name and sourced company facts, and nothing is sent without your approval."))}</p>`;
+}
+function qualificationSuggestions() {
+  const a = D().audience; const have = new Set(D().qualification.criteria.map((c) => c.label));
+  const out = [];
+  for (const ct of a.companyTypes.slice(0, 2)) out.push({ label: ct, points: 20, check: "research" });
+  if (a.sizeMin || a.sizeMax) out.push({ label: tr(`حجم الشركة ${a.sizeMin || 1}–${a.sizeMax || "+"} موظفاً`, `${a.sizeMin || 1}–${a.sizeMax || "+"} employees`), points: 10, check: "size" });
+  out.push({ label: tr("صاحب قرار", "Decision maker"), points: 5, check: "role" });
+  for (const t2 of a.traits) out.push({ label: t2, points: 10, check: "research" });
+  for (const t2 of a.advanced.technologies || []) out.push({ label: tr(`يستخدم ${t2}`, `Uses ${t2}`), points: 10, check: "research" });
+  out.push({ label: tr("مؤشر نمو حديث (توظيف، توسع)", "Recent growth signal (hiring, expansion)"), points: 5, check: "research", timing: true });
+  return out.filter((s) => !have.has(s.label));
+}
+
+function wizardStep(i) {
+  const d = D(); const ar = S.lang === "ar";
+  if (i === 0) {
+    const cl = clients();
+    const clientBlock = cl.length > 1
+      ? field("w-client", tr("العميل", "Client"), `<select id="w-client" data-bind="clientId">${cl.map((c) => `<option value="${esc(c.id)}" ${c.id === d.clientId ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>`)
+      : `<div class="field"><span class="field-label">${esc(tr("العميل", "Client"))}</span><div class="client-pill"><b>${esc(cl[0]?.name)}</b><button type="button" class="btn ghost small" data-act="newClientStay">${esc(tr("+ عميل آخر", "+ Another client"))}</button></div></div>`;
+    const p = preset(d.outcome.preset);
+    return `<div class="step-head"><h2>${esc(tr("ما النتيجة التي تريد تحقيقها؟", "What result do you want?"))}</h2><p>${esc(tr("اختر النتيجة النهائية التي سيقاس عليها نجاح المحرك.", "Pick the final result the engine's success will be measured by."))}</p></div>
+      <div class="row2">${clientBlock}${field("w-name", tr("اسم الحملة", "Campaign name"), textIn("campaignName", { placeholder: tr("مثال: استقطاب وكالات الإمارات", "e.g. UAE agency acquisition") }), tr("اسم يسهل عليك تمييزه لاحقاً.", "A name you'll recognize later."))}</div>
+      <div class="outcome-grid" role="radiogroup" aria-label="${esc(tr("النتيجة", "Outcome"))}">${PRESETS.outcomes.map((o) => `<button type="button" role="radio" class="ocard ${d.outcome.preset === o.key ? "on" : ""}" aria-checked="${d.outcome.preset === o.key}" data-act="pickOutcome" data-v="${o.key}"><b>${esc(o.plural[S.lang])}</b><span>${esc(o.description[S.lang])}</span><em>${esc(tr("مثال: ", "e.g. "))}${esc(o.example[S.lang])}</em></button>`).join("")}</div>
+      ${p ? `<div class="reveal">
+        ${p.custom ? `<div class="row2">${field("w-cl", tr("اسم النتيجة", "Outcome name"), textIn("outcome.customLabel", { placeholder: tr("مثال: طلب عرض توضيحي", "e.g. Demo request") }))}${field("w-cu", tr("الوحدة", "Unit"), textIn("outcome.customUnit", { placeholder: tr("مثال: طلب", "e.g. request") }))}</div>` : ""}
+        <div class="row2">${field("w-goal", tr(`كم ${p.custom ? (d.outcome.customLabel || "نتيجة") : p.plural[S.lang]} تريد؟`, `How many ${p.custom ? (d.outcome.customLabel || "outcomes") : p.plural.en.toLowerCase()} do you want?`), textIn("outcome.goal", { type: "number", min: 1, placeholder: "50", cls: "num-in" }), tr("هذا هو الهدف الذي يظهر في لوحة التقدم.", "This is the goal shown on the progress board."))}
+        <details class="adv"><summary>${esc(tr("قيمة كل نتيجة (اختياري)", "Value per outcome (optional)"))}</summary><div class="row2">${field("w-val", tr("القيمة", "Amount"), textIn("outcome.valueAmount", { type: "number", min: 0, cls: "num-in" }))}${field("w-cur", tr("العملة", "Currency"), `<select id="w-cur" data-bind="outcome.currency">${["USD", "SAR", "AED", "KWD", "QAR"].map((c2) => `<option ${d.outcome.currency === c2 ? "selected" : ""}>${c2}</option>`).join("")}</select>`)}</div></details></div>
+        <p class="small muted">${esc(tr(`يُحتسب «${p.label.ar}» عندما يصل حدث التأكيد من نظامك (مثل: ${p.achievedEvent}).`, `A "${p.label.en}" counts when the confirming event arrives from your systems (e.g. ${p.achievedEvent}).`))}</p>
+      </div>` : ""}`;
+  }
+  if (i === 1) {
+    const a = d.audience;
+    const sizes = [["1", "10"], ["5", "50"], ["11", "50"], ["51", "200"], ["201", "1000"], ["1000", ""]];
+    return `<div class="step-head"><h2>${esc(tr("من نريد أن نصل إليه؟", "Who do we want to reach?"))}</h2><p>${esc(tr("صف الجمهور المستهدف بكلماتك. ابدأ بالأساسيات، ويمكنك التفصيل لاحقاً.", "Describe your target audience in your own words. Start with the basics; you can refine later."))}</p></div>
+      <div class="field"><span class="field-label">${esc(tr("السوق", "Market"))}</span><div class="toggles">${COUNTRIES.map(([c2]) => `<button type="button" class="tg ${a.countries.includes(c2) ? "on" : ""}" aria-pressed="${a.countries.includes(c2)}" data-act="toggleCountry" data-v="${c2}">${esc(countryName(c2))}</button>`).join("")}</div></div>
+      <div class="field"><span class="field-label">${esc(tr("نوع الشركات", "Type of companies"))}</span>${chipInput("audience.companyTypes", tr("اكتب واضغط Enter — مثال: وكالة تسويق أداء", "Type and press Enter — e.g. performance marketing agency"))}</div>
+      <div class="field"><span class="field-label">${esc(tr("حجم الشركة (عدد الموظفين)", "Company size (employees)"))}</span><div class="toggles">${sizes.map(([mn, mx]) => { const on = String(a.sizeMin) === mn && String(a.sizeMax) === mx; return `<button type="button" class="tg ${on ? "on" : ""}" aria-pressed="${on}" data-act="pickSize" data-min="${mn}" data-max="${mx}">${mx ? `${mn}–${mx}` : `${mn}+`}</button>`; }).join("")}<button type="button" class="tg ${!a.sizeMin && !a.sizeMax ? "on" : ""}" data-act="pickSize" data-min="" data-max="">${esc(tr("أي حجم", "Any size"))}</button></div></div>
+      <div class="row2"><div class="field"><span class="field-label">${esc(tr("القطاع", "Sector"))}</span>${chipInput("audience.sectors", tr("مثال: التسويق", "e.g. Marketing"))}</div><div class="field"><span class="field-label">${esc(tr("المدن (اختياري)", "Cities (optional)"))}</span>${chipInput("audience.cities", tr("مثال: دبي", "e.g. Dubai"))}</div></div>
+      <div class="field"><span class="field-label">${esc(tr("من نخاطب داخل الشركة؟", "Who do we talk to?"))}</span>${chipInput("audience.titles", tr("المسمى الوظيفي", "Job title"), ar ? ["المؤسس", "المدير العام", "مدير التسويق", "Founder", "CEO"] : ["Founder", "CEO", "Managing Director", "Head of Marketing"])}</div>
+      <div class="field"><span class="field-label">${esc(tr("خصائص مطلوبة (اختياري)", "Required traits (optional)"))}</span>${chipInput("audience.traits", tr("مثال: تدير إعلانات لعدة عملاء", "e.g. manages ads for several clients"))}<span class="field-hint">${esc(tr("كل خاصية يتحقق منها المحرك بالبحث، ولا تُعتمد إلا بمصدر.", "The engine verifies each trait by research and only accepts it with a source."))}</span></div>
+      <details class="adv"><summary>${esc(tr("خيارات متقدمة", "Advanced options"))}</summary>
+        <div class="field"><span class="field-label">${esc(tr("إشارات نمو", "Growth signals"))}</span>${chipInput("audience.advanced.growthSignals", tr("مثال: توظيف جديد", "e.g. new hiring"))}</div>
+        <div class="field"><span class="field-label">${esc(tr("تقنيات يستخدمونها", "Technologies they use"))}</span>${chipInput("audience.advanced.technologies", "Meta Ads, Google Ads…")}</div>
+        ${field("w-cf", tr("فلاتر مخصصة", "Custom filters"), areaIn("audience.advanced.customFilters", 2, tr("أي شرط آخر بلغتك", "Any other condition, in plain words")))}
+      </details>
+      <div class="preview-box"><span class="tiny muted">${esc(tr("معاينة", "Preview"))}</span><p>${esc(audienceSentence())}</p></div>`;
+  }
+  if (i === 2) {
+    const p = preset(d.outcome.preset);
+    const ctaSugg = p ? [p.conversion.cta[d.offer.language]] : [];
+    return `<div class="step-head"><h2>${esc(tr("ماذا سنعرض عليهم؟", "What will we offer them?"))}</h2><p>${esc(tr("العرض هو ما يجعل الشخص يرد. اكتبه ببساطة كما تشرحه لعميل.", "The offer is what makes people reply. Write it the way you'd explain it to a customer."))}</p></div>
+      <div class="split"><div class="fields">
+        ${field("w-on", tr("العرض", "Offer"), textIn("offer.name", { placeholder: tr("مثال: تجربة مجانية لـ DataSpeaks", "e.g. Free trial of DataSpeaks") }))}
+        ${field("w-ov", tr("القيمة الأساسية", "Core value"), textIn("offer.valueProposition", { placeholder: tr("ما الذي يكسبه العميل؟ في جملة واحدة", "What does the customer gain? One sentence") }))}
+        ${field("w-cta", tr("الدعوة لاتخاذ إجراء", "Call to action"), textIn("offer.callToAction", { placeholder: ctaSugg[0] || "" }) + (ctaSugg.length && !d.offer.callToAction ? `<div class="suggest"><button type="button" data-act="setv" data-path="offer.callToAction" data-v="${esc(ctaSugg[0])}">+ ${esc(ctaSugg[0])}</button></div>` : ""))}
+        ${field("w-link", tr("الرابط (اختياري)", "Link (optional)"), textIn("offer.link", { placeholder: "https://", cls: "ltr" }), tr("رابط التجربة أو الحجز الذي يرسله المحرك لمن يبدي اهتماماً.", "The trial or booking link the engine sends to interested people."))}
+        <div class="field"><span class="field-label">${esc(tr("لغة الرسائل", "Message language"))}</span>${segIn("offer.language", [["ar", "العربية"], ["en", "English"]])}</div>
+        ${field("w-msg", tr("الرسالة الرئيسية", "Main message"), areaIn("offer.mainMessage", 3, tr("الفكرة التي تريد إيصالها في أول رسالة", "The idea your first message should land")))}
+      </div><div class="preview-col"><span class="tiny muted">${esc(tr("معاينة الرسالة الأولى", "First message preview"))}</span>${messagePreview()}</div></div>`;
+  }
+  if (i === 3) {
+    const q = d.qualification; const total = totalPoints(); const th = Number(q.threshold) || 0;
+    const sugg = qualificationSuggestions();
+    return `<div class="step-head"><h2>${esc(tr("كيف نعرف أن الفرصة مناسبة؟", "How do we know it's a good fit?"))}</h2><p>${esc(tr("يقيّم المحرك كل عميل محتمل بمجموعة إشارات. أعطِ كل إشارة نقاطاً حسب أهميتها.", "The engine scores each prospect on a set of signals. Give each signal points by importance."))}</p></div>
+      <div class="crit-list">${q.criteria.map((c, k) => `<div class="crit">
+          <input aria-label="${esc(tr("المعيار", "Criterion"))}" data-bind="qualification.criteria.${k}.label" id="w-crit-${k}" value="${esc(c.label)}" placeholder="${esc(tr("مثال: وكالة تسويق أداء", "e.g. Performance agency"))}">
+          <span class="pts">+<input aria-label="${esc(tr("النقاط", "Points"))}" type="number" min="0" max="100" data-bind="qualification.criteria.${k}.points" id="w-pts-${k}" value="${esc(c.points)}" class="num-in"></span>
+          <button type="button" class="btn ghost small" data-act="critDel" data-i="${k}" aria-label="${esc(tr("حذف المعيار", "Remove criterion"))}">×</button>
+        </div>`).join("") || `<div class="empty small">${esc(tr("لا معايير بعد — أضف أول معيار أو اختر من الاقتراحات.", "No criteria yet — add one or pick a suggestion."))}</div>`}</div>
+      <div class="actions"><button type="button" class="btn" data-act="critAdd">${esc(tr("+ إضافة معيار", "+ Add criterion"))}</button></div>
+      ${sugg.length ? `<div class="suggest"><span class="tiny muted">${esc(tr("اقتراحات من وصف جمهورك:", "Suggestions from your audience:"))}</span>${sugg.map((s, k) => `<button type="button" data-act="critSuggest" data-i="${k}">+ ${esc(s.label)} <span class="num">+${s.points}</span></button>`).join("")}</div>` : ""}
+      <div class="threshold">
+        <div><span class="field-label">${esc(tr("درجة التأهيل المطلوبة", "Required fit score"))}</span><p class="small muted">${esc(tr("المحرك يتواصل فقط مع من يصل لهذه الدرجة أو أعلى.", "The engine only reaches out to prospects at or above this score."))}</p></div>
+        <div class="th-val"><input type="number" min="1" max="${total}" data-bind="qualification.threshold" id="w-th" value="${esc(q.threshold)}" class="num-in" aria-label="${esc(tr("الدرجة المطلوبة", "Required score"))}"><span class="num">/ ${total}</span></div>
+        ${total ? `<input type="range" min="0" max="${total}" value="${th}" data-bind="qualification.threshold" aria-label="${esc(tr("الدرجة المطلوبة", "Required score"))}">` : ""}
+        ${total && !q.threshold ? `<button type="button" class="btn ghost small" data-act="setv" data-path="qualification.threshold" data-v="${Math.round(total * 0.7)}">${esc(tr(`استخدم ${Math.round(total * 0.7)} (حوالي 70%)`, `Use ${Math.round(total * 0.7)} (about 70%)`))}</button>` : ""}
+      </div>
+      <details class="adv"><summary>${esc(tr("إعدادات متقدمة", "Advanced settings"))}</summary>
+        <p class="small muted">${esc(tr("كيف يتحقق المحرك من كل معيار. «بحث بمصدر» يعني أن المعيار لا يُحتسب إلا إذا وجد المحرك مصدراً يثبته.", "How the engine checks each criterion. \"Sourced research\" means it only counts when the engine finds a source proving it."))}</p>
+        ${q.criteria.map((c, k) => `<div class="crit-adv"><span>${esc(c.label || "—")}</span><select data-bind="qualification.criteria.${k}.check" aria-label="${esc(tr("طريقة التحقق", "How it's checked"))}">${[["research", tr("بحث بمصدر", "Sourced research")], ["size", tr("حجم الشركة", "Company size")], ["role", tr("المسمى الوظيفي", "Job title")], ["location", tr("الموقع", "Location")]].map(([v, l]) => `<option value="${v}" ${(c.check || "research") === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select><label class="inline"><input type="checkbox" data-bind-bool="qualification.criteria.${k}.timing" ${c.timing ? "checked" : ""}> ${esc(tr("إشارة توقيت (لماذا الآن)", "Timing signal (why now)"))}</label></div>`).join("")}
+        <label class="inline"><input type="checkbox" data-bind-bool="qualification.requirePositiveReply" ${q.requirePositiveReply ? "checked" : ""}> ${esc(tr("اشترط رداً إيجابياً قبل إرسال رابط الخطوة التالية", "Require a positive reply before sending the next-step link"))}</label>
+      </details>`;
+  }
+  if (i === 4) {
+    const ch = d.channels;
+    const hours = Array.from({ length: 24 }, (_, h) => h);
+    const card = (key, name, desc) => `<button type="button" class="chcard ${ch[key] ? "on" : ""}" aria-pressed="${ch[key]}" data-act="toggleChannel" data-v="${key}"><span class="check">${ch[key] ? "✓" : ""}</span><b>${esc(name)}</b><span>${esc(desc)}</span></button>`;
+    return `<div class="step-head"><h2>${esc(tr("كيف سنتواصل؟", "How will we reach out?"))}</h2><p>${esc(tr("اختر القنوات وإيقاع التواصل. البدء بلمستين متباعدتين يحمي سمعتك ويكفي في الغالب.", "Pick channels and pacing. Two well-spaced touches protect your reputation and are usually enough."))}</p></div>
+      <div class="ch-grid">${card("email", tr("البريد الإلكتروني", "Email"), tr("رسالة شخصية لكل شخص", "A personal message to each person"))}${card("linkedin", "LinkedIn", tr("رسالة مباشرة لمن نجده هناك", "A direct message where we find them"))}
+        <div class="chcard off" aria-disabled="true"><b>WhatsApp</b><span>${esc(tr("قريباً — يتطلب موافقة مسبقة", "Coming soon — requires prior consent"))}</span></div></div>
+      <div class="row2"><div class="field"><span class="field-label">${esc(tr("عدد الرسائل لكل شخص", "Messages per person"))}</span>${segIn("channels.touches", [["1", tr("رسالة واحدة", "One")], ["2", tr("رسالة + متابعة", "One + follow-up")]])}</div>
+      ${field("w-wait", tr("الانتظار قبل المتابعة (أيام)", "Wait before follow-up (days)"), textIn("channels.waitDays", { type: "number", min: 1, max: 30, cls: "num-in" }))}</div>
+      <div class="row2"><div class="field"><span class="field-label">${esc(tr("لغة التواصل", "Language"))}</span>${segIn("channels.language", [["ar", "العربية"], ["en", "English"]])}</div>
+      <div class="field"><span class="field-label">${esc(tr("وقت الإرسال", "Sending hours"))}</span><div class="hours"><select data-bind="channels.sendWindow.startHour" aria-label="${esc(tr("من", "From"))}">${hours.map((h) => `<option value="${h}" ${Number(ch.sendWindow.startHour) === h ? "selected" : ""}>${h}:00</option>`).join("")}</select><span>${esc(tr("إلى", "to"))}</span><select data-bind="channels.sendWindow.endHour" aria-label="${esc(tr("إلى", "To"))}">${hours.map((h) => `<option value="${h}" ${Number(ch.sendWindow.endHour) === h ? "selected" : ""}>${h}:00</option>`).join("")}</select></div><span class="field-hint">${esc(tr("بتوقيت السوق المستهدف. لا يُرسل شيء خارج هذه الساعات.", "In the target market's time zone. Nothing is sent outside these hours."))}</span></div></div>
+      <div class="preview-box"><span class="tiny muted">${esc(tr("التسلسل", "Sequence"))}</span><p>${esc(tr(`اليوم 1: رسالة أولى عبر ${ch.email ? "البريد" : "LinkedIn"}`, `Day 1: first message via ${ch.email ? "email" : "LinkedIn"}`))}${Number(ch.touches) === 2 ? esc(tr(` ← اليوم ${1 + Number(ch.waitDays || 3)}: متابعة عبر أنسب قناة متاحة`, ` → Day ${1 + Number(ch.waitDays || 3)}: follow-up on the best available channel`)) : ""}${esc(tr(". يتوقف التسلسل فور وصول رد.", ". The sequence stops as soon as someone replies."))}</p></div>`;
+  }
+  if (i === 5) {
+    const lv = d.automation.level;
+    const levels = [
+      ["human_approval", tr("موافقة بشرية", "Human approval"), tr("المحرك يقترح، وأنت توافق قبل التنفيذ.", "The engine proposes; you approve before anything runs."), tr("موصى به للبداية", "Recommended to start")],
+      ["assisted", tr("أتمتة مساعَدة", "Assisted"), tr("المحرك ينفّذ الإجراءات منخفضة المخاطر، ويرفع القرارات المهمة لك.", "The engine runs low-risk actions and brings important decisions to you."), ""],
+      ["autonomous", tr("تشغيل مستقل", "Autonomous"), tr("المحرك يعمل تلقائياً ضمن القواعد والحدود التي تحددها.", "The engine runs on its own within the rules and limits you set."), ""],
+    ];
+    const what = {
+      human_approval: [[tr("البحث والتقييم", "Research & scoring"), tr("تلقائي", "Automatic")], [tr("كل رسالة", "Every message"), tr("بموافقتك", "Needs your approval")], [tr("الرد على الأسئلة", "Answering replies"), tr("بموافقتك", "Needs your approval")], [tr("تغيير إعدادات الحملة", "Campaign changes"), tr("بموافقتك", "Needs your approval")]],
+      assisted: [[tr("البحث والتقييم", "Research & scoring"), tr("تلقائي", "Automatic")], [tr("الرسائل عالية الثقة", "High-confidence messages"), tr("تلقائي", "Automatic")], [tr("الرسائل منخفضة الثقة", "Low-confidence messages"), tr("بموافقتك", "Needs your approval")], [tr("تغيير إعدادات الحملة", "Campaign changes"), tr("بموافقتك", "Needs your approval")]],
+      autonomous: [[tr("البحث والتقييم", "Research & scoring"), tr("تلقائي", "Automatic")], [tr("الرسائل والمتابعة", "Messages & follow-ups"), tr("تلقائي ضمن الحدود", "Automatic within limits")], [tr("الحالات غير الواضحة", "Unclear cases"), tr("تُحال إليك", "Escalated to you")], [tr("التحسينات", "Optimizations"), tr("تلقائي مع سجل", "Automatic, logged")]],
+    }[lv];
+    return `<div class="step-head"><h2>${esc(tr("من يتحكم في قرارات المحرك؟", "Who controls the engine's decisions?"))}</h2><p>${esc(tr("اختر مستوى التشغيل. يمكنك تغييره لاحقاً في أي وقت من صفحة الأتمتة.", "Choose how much the engine does on its own. You can change this any time later from the Automation page."))}</p></div>
+      <div class="lv-grid" role="radiogroup">${levels.map(([k, n, desc, badge]) => `<button type="button" role="radio" class="lvcard ${lv === k ? "on" : ""}" aria-checked="${lv === k}" data-act="setv" data-path="automation.level" data-v="${k}"><b>${esc(n)}</b>${badge ? `<span class="chip accent">${esc(badge)}</span>` : ""}<span>${esc(desc)}</span></button>`).join("")}</div>
+      <div class="preview-box"><span class="tiny muted">${esc(tr("ماذا يعني هذا عملياً", "What this means in practice"))}</span><div class="kv">${what.map(([a2, b]) => `<span>${esc(a2)}</span><b>${esc(b)}</b>`).join("")}</div></div>
+      <p class="small muted">${esc(tr("في كل المستويات: لا تواصل مع من طلب الإيقاف، ولا إرسال خارج الساعات المحددة، وكل إجراء مسجّل في سجل التدقيق.", "At every level: no contact with anyone who opted out, no sending outside your hours, and every action is logged."))}</p>`;
+  }
+  if (i === 6) {
+    const built = tryBuild();
+    const issues = STEPS.slice(0, 6).map((_, k) => [k, stepIssues(k)]).filter(([, x]) => x.length);
+    const cl = clients().find((c) => c.id === d.clientId);
+    const p = preset(d.outcome.preset);
+    const sec = (k, title, content) => `<div class="rv"><div class="rv-head"><h3>${esc(title)}</h3><a href="#new-campaign.${k + 1}">${esc(tr("تعديل", "Edit"))}</a></div><div class="rv-body">${content}</div></div>`;
+    const levelName = { human_approval: tr("موافقة بشرية", "Human approval"), assisted: tr("أتمتة مساعَدة", "Assisted"), autonomous: tr("تشغيل مستقل", "Autonomous") }[d.automation.level];
+    return `<div class="step-head"><h2>${esc(tr("راجع حملتك", "Review your campaign"))}</h2><p>${esc(tr("تأكد أن كل شيء صحيح. يمكنك تعديل أي قسم قبل التشغيل.", "Make sure everything looks right. You can edit any section before launch."))}</p></div>
+      ${issues.length ? `<div class="note warn-note"><b>${esc(tr("بقيت أشياء قليلة:", "A few things are left:"))}</b><ul>${issues.map(([k, x]) => `<li><a href="#new-campaign.${k + 1}">${esc(tr(STEPS[k][1], STEPS[k][2]))}</a>: ${esc(x.join(SEP()))}</li>`).join("")}</ul></div>` : ""}
+      <div class="review">
+        ${sec(0, tr("العميل والحملة", "Client & campaign"), `<div class="kv"><span>${esc(tr("العميل", "Client"))}</span><b>${esc(cl?.name)}</b><span>${esc(tr("الحملة", "Campaign"))}</span><b>${esc(d.campaignName || "—")}</b><span>${esc(tr("النتيجة", "Outcome"))}</span><b>${esc(p ? (p.custom ? d.outcome.customLabel : p.plural[S.lang]) : "—")}</b><span>${esc(tr("الهدف", "Goal"))}</span><b class="num">${esc(d.outcome.goal || "—")}</b></div>`)}
+        ${sec(1, tr("السوق والجمهور", "Market & audience"), `<p>${esc(audienceSentence())}</p>`)}
+        ${sec(2, tr("العرض", "Offer"), `<div class="kv"><span>${esc(tr("العرض", "Offer"))}</span><b>${esc(d.offer.name || "—")}</b><span>${esc(tr("الدعوة", "Call to action"))}</span><b>${esc(d.offer.callToAction || "—")}</b><span>${esc(tr("اللغة", "Language"))}</span><b>${d.offer.language === "ar" ? "العربية" : "English"}</b></div>`)}
+        ${sec(3, tr("قواعد التأهيل", "Qualification rules"), `<p>${esc(d.qualification.criteria.map((c) => `${c.label} (+${c.points})`).join(SEP()) || "—")}</p><p class="small"><b>${esc(tr("الدرجة المطلوبة", "Required score"))}:</b> <span class="num">${esc(d.qualification.threshold || "—")} / ${totalPoints()}</span></p>`)}
+        ${sec(4, tr("القنوات", "Channels"), `<p>${esc([d.channels.email && tr("البريد", "Email"), d.channels.linkedin && "LinkedIn"].filter(Boolean).join(" + "))} · ${esc(Number(d.channels.touches) === 2 ? tr(`رسالتان بفاصل ${d.channels.waitDays} أيام`, `2 messages, ${d.channels.waitDays} days apart`) : tr("رسالة واحدة", "1 message"))} · <span class="num">${d.channels.sendWindow.startHour}:00–${d.channels.sendWindow.endHour}:00</span></p>`)}
+        ${sec(5, tr("مستوى التشغيل", "Control level"), `<p>${esc(levelName)}</p>`)}
+      </div>
+      ${built.cfg ? `<p class="small ok-line">✓ ${esc(tr("الإعدادات صالحة — تم التحقق منها بنفس قواعد المحرك.", "Configuration is valid — checked against the engine's own rules."))}</p>
+        <details class="adv"><summary>${esc(tr("عرض الإعدادات التقنية (للمطورين)", "Show the technical configuration (for developers)"))}</summary><pre class="code ltr">${esc(JSON.stringify(built.cfg, null, 2))}</pre></details>` : !issues.length ? `<p class="form-error">${esc(built.error.join(" · "))}</p>` : ""}
+      <div class="launch-box"><div><h3>${esc(tr("جاهز لتشغيل الحملة؟", "Ready to launch?"))}</h3><p class="small muted">${esc(tr("سيبدأ المحرك باكتشاف الشركات المناسبة والبحث عنها. لن يُرسل أي شيء قبل موافقتك.", "The engine will start finding and researching matching companies. Nothing is sent before you approve."))}</p></div>
+        <button type="button" class="btn primary lg" data-act="launch" ${issues.length || !built.cfg ? "disabled" : ""}>${esc(tr("تشغيل الحملة", "Launch campaign"))}</button></div>`;
+  }
+  return "";
+}
+
+function pageWizard() {
+  if (S.sub === "done") return pageLaunched();
+  if (!clients().length) { setTimeout(() => openClientModal("campaign"), 0); return pageWelcome(); }
+  if (!WS.draft) { WS.draft = newDraft(clients().find((c) => c.id === S.clientId)?.id || clients()[0].id); saveWS(); }
+  if (!clients().some((c) => c.id === WS.draft.clientId)) WS.draft.clientId = clients()[0].id;
+  const i = Math.max(0, Math.min(6, (Number(S.sub) || 1) - 1));
+  const issues = stepIssues(i);
+  const nextLabel = i < 6 ? tr(`التالي: ${STEPS[i + 1][1]}`, `Next: ${STEPS[i + 1][2]}`) : "";
+  const helpers = [
+    [tr("لماذا نسأل؟", "Why we ask"), [tr("النتيجة هي ما يُقاس عليه المحرك ويظهر في تقاريرك.", "The outcome is what the engine is measured on and what your reports show."), tr("بعدها: نحدد من نستهدف.", "Next: who to reach.")]],
+    [tr("ماذا سيحدث؟", "What happens next"), [tr("المحرك يبحث عن شركات تطابق هذا الوصف من مصادر بيانات.", "The engine finds companies matching this description from data sources."), tr("كل معلومة يعتمدها تكون مع مصدرها.", "Every fact it uses comes with its source.")]],
+    [tr("نصيحة", "Tip"), [tr("رسالة قصيرة وواضحة تحصل على ردود أكثر.", "Short, clear messages get more replies."), tr("المحرك يخصّص كل رسالة، وأنت توافق قبل الإرسال.", "The engine personalizes each message; you approve before sending.")]],
+    [tr("كيف يعمل التقييم؟", "How scoring works"), [tr("كل عميل محتمل يحصل على مجموع نقاط المعايير التي تنطبق عليه.", "Each prospect gets the total points of the criteria that apply."), tr("المعيار لا يُحتسب إلا بدليل من مصدر.", "A criterion only counts with evidence from a source.")]],
+    [tr("لماذا هذا مهم؟", "Why it matters"), [tr("التواصل المحدود والمتباعد يحمي سمعة نطاقك وحسابك.", "Limited, spaced outreach protects your domain and account reputation."), tr("أي شخص يطلب الإيقاف لا يُتواصل معه مجدداً.", "Anyone who opts out is never contacted again.")]],
+    [tr("يمكنك التغيير لاحقاً", "You can change this later"), [tr("ابدأ بالموافقة البشرية، ثم انتقل للأتمتة عندما تثق بالنتائج.", "Start with human approval and move to automation once you trust the results."), tr("كل قرار يُسجَّل ويمكن مراجعته.", "Every decision is logged and reviewable.")]],
+    [tr("بعد التشغيل", "After launch"), [tr("ستجد الحملة في «الحملات» وتقدمها في «نظرة عامة».", "You'll find it under Campaigns, with progress on the Overview."), tr("الرسائل التي تحتاج موافقتك تظهر في «الموافقات».", "Messages needing your approval appear in Approvals.")]],
+  ][i];
+  return `<section class="wizard">
+    <div class="wiz-top"><div><span class="crumbs">${esc(tr("إنشاء حملة", "Create campaign"))} · ${esc(tr(`الخطوة ${i + 1} من 7`, `Step ${i + 1} of 7`))}</span></div><button type="button" class="btn ghost" data-act="wizExit">${esc(tr("حفظ والخروج", "Save & exit"))}</button></div>
+    <ol class="stepper" aria-label="${esc(tr("خطوات الإعداد", "Setup steps"))}">${STEPS.map(([, a2, e], k) => { const done = k < i && !stepIssues(k).length; return `<li class="${k === i ? "cur" : done ? "done" : ""}"><a href="#new-campaign.${k + 1}" ${k === i ? 'aria-current="step"' : ""}><span class="dot">${done ? "✓" : k + 1}</span><span class="lbl">${esc(S.lang === "ar" ? a2 : e)}</span></a></li>`; }).join("")}</ol>
+    <div class="wiz-body"><div class="wiz-main panel">${wizardStep(i)}</div>${helpCard(helpers[0], helpers[1])}</div>
+    ${i < 6 ? `<div class="wiz-foot"><div class="small muted">${issues.length ? esc(tr("مطلوب للمتابعة: ", "Needed to continue: ") + issues.join(SEP())) : esc(tr("✓ هذه الخطوة مكتملة", "✓ This step is complete"))}</div><div class="actions">${i > 0 ? `<a class="btn" href="#new-campaign.${i}">${esc(tr("رجوع", "Back"))}</a>` : ""}<button type="button" class="btn primary" data-act="wizNext" data-i="${i}" ${issues.length ? "aria-disabled=\"true\"" : ""}>${esc(nextLabel)}</button></div></div>` : `<div class="wiz-foot"><a class="btn" href="#new-campaign.6">${esc(tr("رجوع", "Back"))}</a></div>`}
+  </section>`;
+}
+
+function launchCampaign() {
+  const built = tryBuild("active"); if (!built.cfg) return;
+  const d = D();
+  const uc = { clientId: d.clientId, cfg: built.cfg, summary: built.summary, prospects: [], audit: [], launchedAt: nowIso() };
+  WS.campaigns.push(uc);
+  logUser(built.cfg.campaign.id, "campaign.created", { outcome: built.cfg.outcome.key, goal: built.cfg.outcome.target?.count });
+  logUser(built.cfg.campaign.id, "campaign.launched", { autonomy: built.cfg.autonomy.level });
+  S.clientId = d.clientId; S.campaignId = built.cfg.campaign.id; S.launched = built.cfg.campaign.id; WS.draft = null;
+  saveWS(); persist(); S.modal = null;
+  location.hash = "#new-campaign.done";
+}
+function pageLaunched() {
+  const c = C(); if (!c) return pageWelcome();
+  const steps = [
+    [tr("الاكتشاف", "Discovery"), tr("يبحث المحرك عن شركات تطابق جمهورك.", "The engine looks for companies matching your audience."), true],
+    [tr("البحث", "Research"), tr("يجمع معلومات موثقة بمصادرها عن كل شركة.", "It gathers sourced facts on each company."), false],
+    [tr("التقييم", "Scoring"), tr("يحسب درجة الملاءمة حسب معاييرك.", "It scores fit using your criteria."), false],
+    [tr("الرسائل", "Messages"), tr("يكتب رسالة لكل شخص مناسب ويرسلها لك للموافقة.", "It drafts a message for each good fit and sends it to you for approval."), false],
+    [tr("النتائج", "Results"), tr(`تُحتسب ${outcomePlural(c)} وتظهر في التقارير.`, `${outcomePlural(c)} are counted and reported.`), false],
+  ];
+  return `<section class="welcome">
+    <div class="welcome-card success">
+      <div class="success-mark" aria-hidden="true">✓</div>
+      <h1>${esc(tr("تم إنشاء الحملة بنجاح", "Campaign created"))}</h1>
+      <p>${esc(tr("سيبدأ المحرك الآن بمرحلة الاكتشاف والبحث.", "The engine now starts discovery and research."))}</p>
+      <div class="ctx-card" style="text-align:start"><div><span>${esc(t("client"))}</span><b>${esc(clientName(c.clientId))}</b></div><div><span>${esc(t("campaign"))}</span><b>${esc(L(c.config.name))}</b></div><div><span>${esc(t("outcome"))}</span><b>${esc(outcomePlural(c))}</b></div><div><span>${esc(t("goal"))}</span><b class="num">${c.config.outcome.target}</b></div></div>
+      <ol class="flow">${steps.map(([n, desc, on]) => `<li class="${on ? "on" : ""}"><b>${esc(n)}</b><span>${esc(desc)}</span></li>`).join("")}</ol>
+      <div class="actions center"><a class="btn primary lg" href="#overview">${esc(tr("عرض الحملة", "View campaign"))}</a></div>
+      <p class="tiny muted">${esc(tr("نموذج أولي: غير متصل بمصادر بيانات أو قنوات حقيقية، لذلك لن يُكتشف أو يُرسل أي شيء فعلياً.", "Prototype: not connected to real data sources or channels, so nothing is actually discovered or sent."))}</p>
+    </div></section>`;
+}
+
+/* =========================================================== launched-but-empty campaign */
+function launchedPanel() {
+  const c = C(); const cfg = c.config; const n = c.prospects.length;
+  const checklist = [
+    [tr("أُنشئت الحملة وشُغّلت", "Campaign created and launched"), true],
+    [tr("اكتشاف أول الشركات المناسبة", "First matching companies discovered"), n > 0],
+    [tr("البحث عنها بمصادر موثقة", "Researched with sources"), c.prospects.some((p) => p.researchStatus === "complete")],
+    [tr("أول رسالة بانتظار موافقتك", "First message waiting for your approval"), false],
+    [tr(`أول ${outcomeLabel(c)}`, `First ${outcomeLabel(c).toLowerCase()}`), false],
+  ];
+  return `<section class="grid g-hero">
+    <article class="panel">
+      <div class="panel-head"><h2>${esc(t("goal"))}: ${esc(outcomePlural())}</h2><span class="chip good">${esc(tr("قيد التشغيل", "Running"))}</span></div>
+      <div class="goal-figure"><span class="big num">0</span><span class="of">${esc(t("of"))} ${cfg.outcome.target} ${esc(unit(c, cfg.outcome.target))}</span></div>
+      <div class="progress"><i style="width:0%"></i></div>
+      <p class="small" style="color:var(--ink-2)">${esc(tr("الحملة في بدايتها. أول ما سيظهر: الشركات المكتشفة، ثم الرسائل التي تحتاج موافقتك.", "The campaign has just started. First you'll see discovered companies, then messages that need your approval."))}</p>
+      <ul class="checklist">${checklist.map(([l, done]) => `<li class="${done ? "done" : ""}"><span>${done ? "✓" : ""}</span>${esc(l)}</li>`).join("")}</ul>
+    </article>
+    <article class="panel">
+      <h2>${esc(tr("ماذا أفعل الآن؟", "What should I do now?"))}</h2>
+      <p class="small muted">${esc(tr("لا شيء مطلوب منك الآن. سنخبرك في «الموافقات» عندما يحتاج المحرك قرارك.", "Nothing is needed from you right now. We'll tell you in Approvals when the engine needs a decision."))}</p>
+      <div class="list">
+        <button type="button" class="item linkish" data-act="newProspect"><b>${esc(tr("أضف عميلاً محتملاً تعرفه", "Add a prospect you already know"))}</b><span class="small muted">${esc(tr("سيبحث عنه المحرك ويقيّمه مثل أي شركة يكتشفها.", "The engine researches and scores it like any company it finds."))}</span></button>
+        <a class="item linkish" href="#settings"><b>${esc(tr("راجع إعدادات الحملة", "Review the campaign settings"))}</b><span class="small muted">${esc(tr("الجمهور والعرض وقواعد التأهيل.", "Audience, offer and qualification rules."))}</span></a>
+        ${WS.mode !== "demo" ? `<button type="button" class="item linkish" data-act="tryDemo"><b>${esc(tr("شاهد حملة تجريبية تعمل", "See a demo campaign in action"))}</b><span class="small muted">${esc(tr("بيانات وهمية لترى كيف تبدو الحملة بعد شهر.", "Fictional data showing a campaign after a month."))}</span></button>` : ""}
+      </div>
+      <p class="tiny muted">${esc(tr("نموذج أولي: غير متصل بمصادر بيانات حقيقية، لذا لن تظهر نتائج تلقائياً.", "Prototype: not connected to real data sources, so results won't appear on their own."))}</p>
+    </article>
+  </section>`;
+}
+function emptyState() {
+  const c = C(); const r = S.route;
+  if (c.config.status === "draft" && !c.isUser) return `<div class="empty">${esc(t("draftCampaign"))}</div>`;
+  const E = {
+    prospects: [tr("لا يوجد عملاء محتملون بعد", "No prospects yet"), tr("بعد التشغيل يكتشف المحرك شركات تطابق جمهورك ويضيفها هنا مع سبب الملاءمة.", "Once running, the engine adds matching companies here with why they fit.")],
+    research: [tr("لا بحث بعد", "No research yet"), tr("كل شركة يكتشفها المحرك تُدرس هنا، وكل معلومة تظهر مع مصدرها.", "Every company the engine finds is researched here, each fact with its source.")],
+    contacts: [tr("لا جهات اتصال بعد", "No contacts yet"), tr("الأشخاص الذين يمكن الوصول إليهم وعبر أي قناة.", "The people we can reach, and on which channel.")],
+    outreach: [tr("لا رسائل بعد", "No messages yet"), tr("سيكتب المحرك رسالة لكل شخص مناسب، وتظهر هنا لتوافق عليها قبل الإرسال.", "The engine drafts a message for each good fit; they appear here for your approval before sending.")],
+    replies: [tr("لا ردود بعد", "No replies yet"), tr("كل رد يُصنَّف تلقائياً، والردود غير الواضحة تُحال إليك.", "Every reply is classified; unclear ones come to you.")],
+    appointments: [tr("لا مواعيد بعد", "Nothing booked yet"), tr("المواعيد المحجوزة تظهر هنا مع ملخص تحضير لكل موعد.", "Booked appointments appear here with a brief for each.")],
+    outcomes: [tr("لا نتائج بعد", "No results yet"), tr("كل نتيجة تتحقق تُحتسب هنا مع مصدرها.", "Each result is counted here with where it came from.")],
+    analytics: [tr("لا بيانات كافية بعد", "Not enough data yet"), tr("تظهر التحليلات بعد أول رسائل وردود.", "Analytics appear after the first messages and replies.")],
+    reports: [tr("لا تقرير بعد", "No report yet"), tr("يُبنى التقرير تلقائياً بعد أول أسبوع من التشغيل.", "The report builds itself after the first week.")],
+    audit: [tr("السجل فارغ", "The log is empty"), tr("كل ما يفعله المحرك أو أي شخص يُسجَّل هنا.", "Everything the engine or a person does is logged here.")],
+    recommendations: [tr("لا توصيات بعد", "No recommendations yet"), tr("يقترح المحرك تحسينات عندما تتوفر نتائج كافية.", "The engine suggests improvements once there are enough results.")],
+  };
+  const [h, p] = E[r] || [tr("لا شيء هنا بعد", "Nothing here yet"), ""];
+  return `<div class="empty-state"><h2>${esc(h)}</h2><p>${esc(p)}</p>${["prospects", "research", "contacts"].includes(r) ? `<button type="button" class="btn primary" data-act="newProspect">${esc(tr("+ إضافة عميل محتمل", "+ Add a prospect"))}</button>` : ""}</div>`;
+}
+
+/* =========================================================== approval center */
+function approvalItems(scopeAll) {
+  const list = scopeAll ? campaigns() : [C()].filter(Boolean);
+  const items = [];
+  for (const c of list) {
+    const P = new Map(c.prospects.map((p) => [p.id, p]));
+    const openP = new Set(c.exceptions.filter((e) => e.status === "open" && !S.decided[e.id]).map((e) => e.prospectId));
+    for (const a of c.outreach.filter((a) => a.status === "pending_approval")) items.push({ kind: "message", id: a.id, c, a, p: P.get(a.prospectId), flagged: openP.has(a.prospectId) });
+    for (const r of c.recommendations.filter((r) => r.status === "open")) items.push({ kind: "change", id: r.id, c, r });
+    for (const e of c.exceptions.filter((e) => e.status === "open")) items.push({ kind: e.kind === "unqualified_outcome" ? "outcome" : "decision", id: e.id, c, e, p: P.get(e.prospectId) });
+  }
+  return items;
+}
+const safeToBulk = (it) => it.kind === "message" && it.a.confidence >= 0.85 && !(it.a.unresolved || []).length && !it.flagged;
+function approvalCard(it) {
+  const ar = S.lang === "ar"; const done = S.decided[it.id];
+  const sources = (it.p?.signals || []).slice(0, 2);
+  const srcHtml = sources.length ? sources.map((s) => `${esc(keyLabel(s.key))}: ${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.source)}</a>` : esc(s.source)}`).join(" · ") : esc(tr("لا يوجد — يعتمد على إعدادات الحملة", "None — based on campaign settings"));
+  const prospectName = it.p ? `${it.p.contact}${it.p.company ? ` · ${it.p.company}` : ""}` : "";
+  let what = "", why = "", proposal = "", conf = null, kindLabel = "";
+  if (it.kind === "message") {
+    const typeTxt = { send_message: tr("إرسال رسالة أولى", "Send a first message"), follow_up: tr("إرسال متابعة", "Send a follow-up"), respond: tr("الرد على رسالة", "Reply to a message"), conversion_step: tr("إرسال رابط الخطوة التالية", "Send the next-step link") }[it.a.type];
+    kindLabel = tr("رسالة", "Message");
+    what = `${typeTxt} ${tr("إلى", "to")} ${prospectName} ${tr("عبر", "via")} ${L(it.a.channel)}`;
+    const wf = it.p ? whyFitOf(it.c, it.p).slice(0, 2).join(SEP()) : "";
+    why = it.a.type === "conversion_step" ? tr("ردّ بإيجابية وتأهّل، والخطوة التالية هي النتيجة.", "They replied positively and qualified; the next step is the outcome.")
+      : it.a.type === "respond" ? tr("سأل سؤالاً روتينياً يمكن الإجابة عليه.", "They asked a routine question.")
+      : `${tr("درجة الملاءمة", "Fit score")} ${it.p?.score ?? "—"}/${it.p?.scoreMax ?? "—"}${wf ? ` — ${wf}` : ""}`;
+    conf = it.a.confidence;
+    const body = S.edits?.[it.id] ?? it.a.body;
+    proposal = S.editing === it.id
+      ? `<textarea class="edit-area ltr" id="edit-${esc(it.id)}" rows="5">${esc(body)}</textarea><div class="actions"><button type="button" class="btn primary" data-act="saveEdit" data-id="${esc(it.id)}">${esc(tr("حفظ التعديل", "Save edit"))}</button><button type="button" class="btn" data-act="cancelEdit">${esc(tr("إلغاء", "Cancel"))}</button></div>`
+      : `<div class="msg ${/[؀-ۿ]/.test(body) ? "" : "ltr"}">${it.a.subject ? `<span class="subj">${esc(it.a.subject)}</span>` : ""}${esc(body)}</div>${S.edits?.[it.id] ? `<span class="tiny muted">${esc(tr("عُدّلت من قبلك", "Edited by you"))}</span>` : ""}`;
+  } else if (it.kind === "change") {
+    kindLabel = tr("تغيير مقترح", "Proposed change");
+    what = it.r.change?.op === "disable_variant" ? tr("إيقاف نسخة رسالة ضعيفة الأداء", "Retire an underperforming message version") : tr("رفع حد الملاءمة للتواصل", "Raise the outreach fit threshold");
+    why = recSummary(it.r); conf = 0.8;
+    proposal = `<p class="small">${esc(tr("يطبَّق على الرسائل القادمة فقط، ويمكن التراجع عنه.", "Applies to future messages only and can be undone."))}</p>`;
+  } else {
+    kindLabel = it.kind === "outcome" ? tr("نتيجة تحتاج مراجعة", "Result to review") : tr("قرار يحتاج تدخلاً", "Decision needed");
+    what = it.e.kind === "low_confidence" ? tr(`تحديد معنى رد ${prospectName}`, `Decide what ${prospectName}'s reply means`) : it.e.kind === "action_failed" ? tr("إجراء فشل بعد إعادة المحاولة", "An action failed after retries") : tr(`مراجعة حالة ${prospectName}`, `Review ${prospectName}`);
+    why = it.e.kind === "low_confidence" ? tr("لم يستطع المحرك تصنيف الرد بثقة كافية، فأوقف التواصل مؤقتاً.", "The engine couldn't classify the reply confidently, so it paused outreach.") : L(it.e.reason);
+    proposal = `<p class="small">${esc(tr("راجع المحادثة ثم قرّر: استئناف التواصل أو إيقافه.", "Check the conversation, then resume or stop outreach."))}</p>`;
+  }
+  const scopeTag = S.apScope === "all" ? `<span class="chip outline">${esc(clientName(it.c.clientId))} · ${esc(L(it.c.config.name))}</span>` : "";
+  return `<article class="ap-card ${done ? "done" : ""} k-${it.kind}">
+    <div class="item-top"><span class="chip ${it.kind === "message" ? "accent" : it.kind === "decision" ? "warn" : ""}">${esc(kindLabel)}</span>${scopeTag}</div>
+    <h3>${esc(what)}</h3>
+    <dl class="ap-kv">
+      <dt>${esc(tr("لماذا؟", "Why?"))}</dt><dd>${esc(why)}</dd>
+      ${conf != null ? `<dt>${esc(t("confidence"))}</dt><dd>${confHtml(conf)}${conf < 0.85 && it.kind === "message" ? ` <span class="small" style="color:var(--warn-ink)">${esc(tr("أقل من حد الأتمتة", "below the automation threshold"))}</span>` : ""}</dd>` : ""}
+      <dt>${esc(tr("مصدر المعلومات", "Source"))}</dt><dd class="small">${srcHtml}</dd>
+      <dt>${esc(tr("الإجراء المقترح", "Proposed action"))}</dt><dd>${proposal}</dd>
+    </dl>
+    ${done ? `<div class="small" style="color:var(--${["approve", "resolve"].includes(done) ? "good" : "warn"}-ink)">${done === "approve" ? "✓ " + esc(t("approvedToast")) : done === "resolve" ? "✓ " + esc(t("resolvedToast")) : "✕ " + esc(t("rejectedToast"))}</div>`
+      : S.editing === it.id ? "" : `<div class="actions">
+        <button class="btn primary" type="button" data-act="decide" data-id="${esc(it.id)}" data-d="${it.kind === "decision" || it.kind === "outcome" ? "resolve" : "approve"}">${esc(it.kind === "decision" || it.kind === "outcome" ? tr("استئناف", "Resume") : tr("موافقة", "Approve"))}</button>
+        <button class="btn" type="button" data-act="decide" data-id="${esc(it.id)}" data-d="reject">${esc(it.kind === "decision" || it.kind === "outcome" ? tr("إيقاف", "Stop") : tr("رفض", "Reject"))}</button>
+        ${it.kind === "message" ? `<button class="btn" type="button" data-act="editMsg" data-id="${esc(it.id)}">${esc(tr("تعديل", "Edit"))}</button>` : ""}
+        ${it.p ? `<button class="btn ghost" type="button" data-act="apDetails" data-id="${esc(it.p.id)}" data-c="${esc(it.c.config.id)}" data-cl="${esc(it.c.clientId)}">${esc(tr("تفاصيل", "Details"))}</button>` : ""}
+      </div>`}
+  </article>`;
+}
+function whyFitOf(c, p) { return (p.breakdown || []).filter((b) => b.category === "fit").sort((a, b) => b.weight - a.weight).map((b) => L(b.label)); }
+function pageApprovals() {
+  const all = approvalItems(S.apScope === "all");
+  const kinds = [["", tr("الكل", "All")], ["message", tr("رسائل", "Messages")], ["change", tr("تغييرات مقترحة", "Proposed changes")], ["decision", tr("قرارات بشرية", "Human decisions")], ["outcome", tr("نتائج للمراجعة", "Results to review")]];
+  const k = kinds.some(([x]) => x === S.sub) ? S.sub : "";
+  const list = all.filter((it) => !k || it.kind === k);
+  const open = all.filter((it) => !S.decided[it.id]);
+  const bulk = open.filter(safeToBulk);
+  const c = C();
+  const level = c ? t("level_" + c.config.autonomy.level) : "";
+  return `${c ? pageHead(tr("الموافقات", "Approvals"), tr(`المحرك يعمل تلقائياً. هذه القرارات تنتظرك لأن مستوى التشغيل الحالي هو «${level}».`, `The engine runs on its own. These decisions wait for you because the control level is "${level}".`)) : ""}
+    <div class="ap-bar">
+      <div class="tabs" role="tablist">${kinds.map(([x, l]) => { const n = all.filter((it) => !x || it.kind === x).filter((it) => !S.decided[it.id]).length; return `<a href="#approvals${x ? "." + x : ""}" class="${k === x ? "on" : ""}" role="tab" aria-selected="${k === x}">${esc(l)}<span class="n">${n}</span></a>`; }).join("")}</div>
+      <div class="actions">
+        <div class="seg" role="group" aria-label="${esc(tr("النطاق", "Scope"))}"><button type="button" data-act="apScope" data-v="one" aria-pressed="${S.apScope !== "all"}">${esc(tr("هذه الحملة", "This campaign"))}</button><button type="button" data-act="apScope" data-v="all" aria-pressed="${S.apScope === "all"}">${esc(tr("كل الحملات", "All campaigns"))}</button></div>
+        <button type="button" class="btn" data-act="bulkApprove" ${bulk.length ? "" : "disabled"} title="${esc(tr("يشمل فقط الرسائل عالية الثقة بلا ملاحظات", "Only high-confidence messages with no flags"))}">${esc(tr(`موافقة على الآمن (${bulk.length})`, `Approve safe items (${bulk.length})`))}</button>
+      </div>
+    </div>
+    ${open.length ? `<p class="small muted">${esc(tr(`${open.length} قرار ينتظرك. «موافقة على الآمن» تشمل فقط الرسائل عالية الثقة بلا ملاحظات؛ الباقي يحتاج نظرتك.`, `${open.length} decisions are waiting. "Approve safe items" only covers high-confidence messages with no flags; the rest need your judgement.`))}</p>` : ""}
+    <section class="ap-list">${list.map(approvalCard).join("") || `<div class="empty-state"><h2>${esc(tr("لا شيء ينتظرك", "Nothing is waiting for you"))}</h2><p>${esc(tr("المحرك يعمل. سيظهر هنا أي قرار يحتاج موافقتك.", "The engine is running. Any decision that needs you will appear here."))}</p></div>`}</section>`;
+}
+
 /* =========================================================== nav */
 const ICON = {
   overview: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z", campaigns: "M4 6h16M4 12h16M4 18h10", prospects: "M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21c0-4 4-6 8-6s8 2 8 6",
   research: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm10 17-5-5", contacts: "M4 5h16v14H4zM4 7l8 6 8-6", outreach: "M3 11l18-8-8 18-2-8-8-2z", replies: "M4 5h16v11H8l-4 4V5z",
   appointments: "M5 5h14v15H5zM8 3v4M16 3v4M5 10h14", outcomes: "M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7z", analytics: "M4 20V10M10 20V4M16 20v-7M22 20H2",
   reports: "M6 3h9l5 5v13H6zM14 3v6h6M9 13h8M9 17h6", integrations: "M8 7V3M16 7V3M6 7h12v5a6 6 0 0 1-12 0V7zM12 18v3", automation: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2",
-  audit: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", settings: "M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4", attention: "M12 3l10 18H2zM12 10v5M12 18v.5", recommendations: "M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z",
+  audit: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", approvals: "M9 12l2 2 4-4M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z", settings: "M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4", attention: "M12 3l10 18H2zM12 10v5M12 18v.5", recommendations: "M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z",
 };
 const icon = (k) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[k] || ICON.overview}"/></svg>`;
 
 function counts() {
-  const c = C(); const x = X();
+  const c = C(); if (!c) return { pendingOut: 0, pendingRec: 0, openExc: 0, attention: 0, replyAttn: 0 };
   const pendingOut = c.outreach.filter((a) => a.status === "pending_approval" && !S.decided[a.id]).length;
   const pendingRec = c.recommendations.filter((r) => r.status === "open" && !S.decided[r.id]).length;
   const openExc = c.exceptions.filter((e) => e.status === "open" && !S.decided[e.id]).length;
@@ -477,7 +1208,7 @@ function navOperator() {
   const c = C(); const n = counts(); const ap = c.config.appointments;
   return [
     { sec: "secEngine", items: [
-      ["overview"], ["campaigns"],
+      ["overview"], ["approvals", n.attention], ["campaigns"],
       ["prospects", null, [["", "all"], ["high-fit", "highFit"], ["needs-research", "needsResearch"], ["needs-contact", "needsContact"], ["scoring", "scoring"]]],
       ["research"], ["contacts"],
       ["outreach", n.pendingOut, [["drafts", "drafts"], ["approval", "needsApproval"], ["sent", "sent"], ["follow-ups", "followUps"]]],
@@ -490,10 +1221,26 @@ function navOperator() {
 }
 function navClient() {
   const c = C(); const n = counts(); const ap = c.config.appointments;
-  return [{ sec: "secClient", items: [["overview"], ["attention", n.attention], ["outcomes"], ...(ap ? [["appointments", null, null, null, L(ap.label)]] : []), ["recommendations", n.pendingRec], ["reports"]] }];
+  return [{ sec: "secClient", items: [["overview"], ["approvals", n.attention], ["outcomes"], ...(ap ? [["appointments", null, null, null, L(ap.label)]] : []), ["recommendations", n.pendingRec], ["reports"]] }];
 }
 
+function workspaceFoot() {
+  return WS.mode === "demo"
+    ? `<div class="side-foot"><span class="demo-flag">● ${esc(t("demo"))}</span><span>${esc(tr("سجلات وهمية · لا يُرسل أي تواصل حقيقي", "Fictional records · no real outreach"))}</span><button type="button" data-act="exitDemo">${esc(tr("إخفاء البيانات التجريبية", "Hide demo data"))}</button></div>`
+    : `<div class="side-foot"><span>${esc(tr("مساحة عملك", "Your workspace"))} · ${esc(tr("نموذج أولي", "prototype"))}</span><button type="button" data-act="tryDemo">${esc(tr("عرض البيانات التجريبية", "Show demo data"))}</button>${WS.clients.length ? `<button type="button" data-act="resetWS">${esc(tr("إعادة ضبط مساحة العمل", "Reset workspace"))}</button>` : ""}</div>`;
+}
+function renderSideOnboarding() {
+  const hasClient = clients().length > 0; const inWizard = S.route === "new-campaign" && S.sub !== "done";
+  const steps = [[tr("أضف عميلاً", "Add a client"), hasClient], [tr("أنشئ حملة", "Create a campaign"), false], [tr("راجع وشغّل", "Review & launch"), false]];
+  const cur = steps.findIndex(([, d]) => !d);
+  document.getElementById("side").innerHTML = `<div class="brand"><b>${esc(t("product"))}</b><span>${esc(t("tagline"))}</span></div>
+    <nav class="nav nav-group"><div class="nav-title">${esc(tr("البداية", "Getting started"))}</div><a href="#overview" class="${!inWizard ? "on" : ""}">${icon("overview")}<span>${esc(tr("البداية", "Start"))}</span></a>${WS.draft ? `<a href="#new-campaign.1" class="${inWizard ? "on" : ""}">${icon("campaigns")}<span>${esc(tr("إعداد الحملة", "Campaign setup"))}</span></a>` : ""}</nav>
+    <ol class="onb-steps">${steps.map(([l, d], i) => `<li class="${d ? "done" : i === cur ? "cur" : ""}"><span>${d ? "✓" : i + 1}</span>${esc(l)}</li>`).join("")}</ol>
+    <div style="padding-inline:8px"><button type="button" class="btn primary" data-act="newCampaign">${esc(tr("+ إنشاء حملة", "+ Create a campaign"))}</button></div>
+    ${workspaceFoot()}`;
+}
 function renderSide() {
+  if (!C()) return renderSideOnboarding();
   const groups = S.view === "client" ? navClient() : navOperator();
   let h = `<div class="brand"><b>${esc(t("product"))}</b><span>${esc(t("tagline"))}</span></div>`;
   for (const g of groups) {
@@ -507,28 +1254,32 @@ function renderSide() {
     }
     h += `</nav>`;
   }
-  h += `<div class="side-foot"><span class="demo-flag">● ${esc(t("demo"))}</span><span>${esc(S.lang === "ar" ? "محاكاة على المحرك الفعلي · سجلات وهمية" : "Simulated on the real engine · fictional records")}</span></div>`;
+  h += workspaceFoot();
   document.getElementById("side").innerHTML = h;
 }
 
 function renderCtx() {
-  const c = C(); const cfg = c.config;
-  const clientOpts = DATA.clients.map((cl) => `<option value="${esc(cl.id)}" ${cl.id === S.clientId ? "selected" : ""}>${esc(cl.name)}</option>`).join("");
-  const campOpts = clientCampaigns(S.clientId).map((x) => `<option value="${esc(x.config.id)}" ${x.config.id === cfg.id ? "selected" : ""}>${esc(L(x.config.name))}${x.config.status !== "active" ? ` (${esc(t("status_" + x.config.status))})` : ""}</option>`).join("");
+  const c = C(); const cfg = c?.config; const cl = clients();
+  const clientOpts = cl.map((x) => `<option value="${esc(x.id)}" ${x.id === S.clientId ? "selected" : ""}>${esc(clientLabel(x))}</option>`).join("") + `<option value="__new">${esc(tr("＋ عميل جديد…", "＋ New client…"))}</option>`;
+  const campOpts = clientCampaigns(S.clientId).map((x) => `<option value="${esc(x.config.id)}" ${x.config.id === cfg?.id ? "selected" : ""}>${esc(L(x.config.name))}${x.config.status !== "active" ? ` (${esc(t("status_" + x.config.status))})` : ""}</option>`).join("") + `<option value="__new">${esc(tr("＋ حملة جديدة…", "＋ New campaign…"))}</option>`;
+  const arrow = `<span class="arrow">${S.lang === "ar" ? "←" : "→"}</span>`;
   document.getElementById("ctx").innerHTML = `
     <button class="menu-btn" type="button" data-act="menu" aria-label="${esc(t("menu"))}">☰</button>
-    <div class="picker"><label for="pickClient">${esc(t("client"))}</label><select id="pickClient">${clientOpts}</select></div>
-    <span class="arrow">${S.lang === "ar" ? "←" : "→"}</span>
-    <div class="picker"><label for="pickCampaign">${esc(t("campaign"))}</label><select id="pickCampaign">${campOpts}</select></div>
-    <span class="arrow">${S.lang === "ar" ? "←" : "→"}</span>
-    <span class="outcome-pill" title="${esc(t("outcome"))}">${icon("outcomes")}${esc(outcomePlural())}</span>
+    ${cl.length ? `<div class="picker"><label for="pickClient">${esc(t("client"))}</label><select id="pickClient">${clientOpts}</select></div>${arrow}
+    ${c ? `<div class="picker"><label for="pickCampaign">${esc(t("campaign"))}</label><select id="pickCampaign">${campOpts}</select></div>${arrow}<span class="outcome-pill" title="${esc(t("outcome"))}">${icon("outcomes")}${esc(outcomePlural())}</span>` : `<span class="muted small" style="align-self:end;padding-bottom:6px">${esc(tr("لا توجد حملة بعد", "No campaign yet"))}</span>`}`
+      : `<b style="font-family:var(--font-display)">${esc(tr("مرحباً بك", "Welcome"))}</b>`}
     <div class="ctx-tools">
-      <div class="seg" role="group" aria-label="View"><button type="button" data-act="view" data-v="client" aria-pressed="${S.view === "client"}">${esc(t("viewClient"))}</button><button type="button" data-act="view" data-v="operator" aria-pressed="${S.view === "operator"}">${esc(t("viewOperator"))}</button></div>
+      <div class="create-wrap"><button class="btn primary create-btn" type="button" data-act="createMenu" aria-haspopup="menu" aria-expanded="${S.menu}">＋ ${esc(tr("إنشاء", "Create"))}</button>${S.menu ? createMenu() : ""}</div>
+      ${c ? `<div class="seg" role="group" aria-label="View"><button type="button" data-act="view" data-v="client" aria-pressed="${S.view === "client"}">${esc(t("viewClient"))}</button><button type="button" data-act="view" data-v="operator" aria-pressed="${S.view === "operator"}">${esc(t("viewOperator"))}</button></div>` : ""}
       <div class="seg" role="group" aria-label="Language"><button type="button" data-act="lang" data-v="ar" aria-pressed="${S.lang === "ar"}">ع</button><button type="button" data-act="lang" data-v="en" aria-pressed="${S.lang === "en"}">EN</button></div>
     </div>`;
-  document.getElementById("pickClient").onchange = (e) => { S.clientId = e.target.value; S.campaignId = null; S.filters = {}; persist(); render(); };
-  document.getElementById("pickCampaign").onchange = (e) => { S.campaignId = e.target.value; S.filters = {}; persist(); render(); };
-  document.getElementById("demoBanner").textContent = t("demoBanner");
+  const pc = document.getElementById("pickClient");
+  if (pc) pc.onchange = (e) => { if (e.target.value === "__new") { e.target.value = S.clientId; openClientModal("campaign"); return; } S.clientId = e.target.value; S.campaignId = null; S.filters = {}; persist(); if (!C()) location.hash = "#overview"; render(); };
+  const pk = document.getElementById("pickCampaign");
+  if (pk) pk.onchange = (e) => { if (e.target.value === "__new") { e.target.value = S.campaignId; startCampaign(); return; } S.campaignId = e.target.value; S.filters = {}; persist(); render(); };
+  const banner = document.getElementById("demoBanner");
+  banner.textContent = WS.mode === "demo" && c && !c.isUser ? t("demoBanner") : tr("نموذج أولي — لا يتم إرسال أي تواصل حقيقي.", "Prototype — no real outreach is sent.");
+  banner.className = "demo-banner" + (WS.mode === "demo" && c && !c.isUser ? "" : " banner-fresh");
 }
 
 /* =========================================================== charts */
@@ -623,8 +1374,8 @@ const confHtml = (c, thr = 0.85) => c == null ? "" : `<span class="conf ${c < th
 const intentChip = (key) => { const i = X().intents.get(key); if (!i) return ""; const cls = i.sentiment === "positive" ? "good" : i.sentiment === "negative" ? "crit" : ""; return `<span class="chip ${cls}">${esc(L(i.label))}</span>`; };
 const pageHead = (title, desc, extra = "") => `<div class="page-head"><div style="display:grid;gap:4px"><div class="crumbs">${esc(clientName(S.clientId))} · ${esc(L(C().config.name))} · ${esc(outcomePlural())}</div><h1>${esc(title)}</h1>${desc ? `<p>${esc(desc)}</p>` : ""}</div>${extra}</div>`;
 const tabs = (route, items) => `<div class="tabs" role="tablist">${items.map(([sub, label, n]) => `<a href="#${route}${sub ? "." + sub : ""}" class="${S.sub === sub ? "on" : ""}" role="tab" aria-selected="${S.sub === sub}">${esc(label)}${n != null ? `<span class="n">${fmtNum(n)}</span>` : ""}</a>`).join("")}</div>`;
-const isDraft = () => C().config.status !== "active" && !C().prospects.length;
-const draftNotice = () => `<div class="empty">${esc(t("draftCampaign"))}</div>`;
+const isDraft = () => !C().prospects.length || (!C().daily.length && ["overview", "outcomes", "analytics", "reports"].includes(S.route));
+const draftNotice = () => (S.route === "overview" && C().isUser ? launchedPanel() : emptyState());
 const prospectLink = (id, text) => `<a href="#" data-act="prospect" data-id="${esc(id)}">${esc(text)}</a>`;
 const who = (p) => p ? (p.company ? `${p.company}` : p.contact) : "—";
 
@@ -677,7 +1428,7 @@ function pageOverview() {
     <div><span>${esc(t("outcome"))}</span><b>${esc(outcomePlural())}</b></div>
     <div><span>${esc(t("goal"))}</span><b><span class="num">${target ?? "—"}</span> ${esc(unit(C(), target))}</b></div>
     <div><span>${esc(t("progress"))}</span><b class="num">${achieved} / ${target ?? "—"} · ${r.outcome.progressPct ?? 0}%</b></div>
-    <div><span>${esc(t("period"))}</span><b>${esc(since)} — ${esc(fmtDate(DATA.asOf + "T12:00:00Z", { day: "numeric", month: "long" }))}</b></div>
+    <div><span>${esc(t("period"))}</span><b>${esc(since)} — ${esc(c.isUser ? tr("الآن", "now") : fmtDate(DATA.asOf + "T12:00:00Z", { day: "numeric", month: "long" }))}</b></div>
     <div><span>${esc(t("automation"))}</span><b>${esc(t("level_" + cfg.autonomy.level))}</b></div>
   </div></section>
   ${isDraft() ? draftNotice() : `
@@ -789,9 +1540,9 @@ function pageRecommendations() {
 }
 
 function pageCampaigns() {
-  const rows = DATA.clients.map((cl) => {
+  const rows = clients().map((cl) => {
     const cs = clientCampaigns(cl.id);
-    return `<section class="panel"><div class="panel-head"><h2>${esc(cl.name)}</h2><span class="small muted">${esc(cl.industry || "")}</span></div>
+    return `<section class="panel"><div class="panel-head"><h2>${esc(clientLabel(cl))}</h2><span class="small muted">${esc(cl.industry || "")}</span></div>
     <div class="grid g3">${cs.map((x) => {
       const cfg = x.config; const pctv = x.report.outcome.progressPct || 0;
       return `<a href="#overview" data-act="pick" data-client="${esc(cl.id)}" data-campaign="${esc(cfg.id)}" style="text-decoration:none;color:inherit" class="item ${cfg.id === C().config.id ? "s-approval" : ""}">
@@ -799,10 +1550,10 @@ function pageCampaigns() {
         <div class="meta"><span>${esc(t("outcome"))}: ${esc(PLURAL[S.lang][cfg.outcome.label] ?? cfg.outcome.label)}</span><span>${esc(t("level_" + cfg.autonomy.level))}</span></div>
         <div class="goal-figure"><span class="num" style="font-size:1.6rem;font-weight:700">${x.report.outcome.achieved}</span><span class="of small">/ ${cfg.outcome.target ?? "—"}</span></div>
         <div class="progress"><i style="width:${Math.min(100, pctv)}%"></i></div>
-        <p class="small muted">${esc(cfg.description || "")}</p></a>`;
+        <p class="small muted">${esc((cfg.description || "").split(" · ").map((x) => x.split(", ").map(L).join(SEP())).join(" · "))}</p></a>`;
     }).join("")}</div></section>`;
   }).join("");
-  return `${pageHead(t("campaigns"), S.lang === "ar" ? "كل عميل يشغّل حملة أو أكثر، ولكل حملة نتيجة واحدة. حملة جديدة = ملف إعدادات جديد، دون تغيير في المحرك." : "Each client runs one or more campaigns; each campaign has one outcome. A new campaign is a new configuration file — no engine changes.")}${rows}
+  return `${pageHead(t("campaigns"), S.lang === "ar" ? "كل عميل يشغّل حملة أو أكثر، ولكل حملة نتيجة واحدة. الحملة الجديدة تُنشأ بالإعداد خطوة بخطوة، دون أي تغيير في المحرك." : "Each client runs one or more campaigns; each campaign has one outcome. New campaigns are created step by step through setup — no engine changes.", `<button class="btn primary" type="button" data-act="newCampaign">${esc(tr("+ حملة جديدة", "+ New campaign"))}</button>`)}${rows}
   <div class="note">${esc(S.lang === "ar" ? "الهيكل: العميل ← الحملة ← النتيجة ← الشريحة المستهدفة ← الحسابات ← جهات الاتصال ← البحث ← التقييم ← التخصيص ← التواصل ← الردود ← التأهيل ← النتيجة ← التعلّم" : "Structure: Client → Campaign → Outcome → ICP → Accounts → Contacts → Research → Scoring → Personalization → Outreach → Replies → Qualification → Outcome → Learning")}</div>`;
 }
 
@@ -1039,7 +1790,7 @@ function pageAnalytics() {
     ${rows.length ? `<div class="hbars">${rows.map((r) => `<div class="hbar"><span>${esc(valOf(b, r.value))}</span><div class="track" title="${esc(`${r.outcomes}/${r.contacted}`)}"><i style="width:${(r.outcomeRate / Math.max(...rows.map((x) => x.outcomeRate), 0.0001)) * 100}%"></i></div><span class="num tiny">${pct(r.outcomeRate)} <span class="muted">${r.outcomes}/${r.contacted}</span></span></div>`).join("")}</div>
     ${best && best.outcomes ? `<p class="small"><b>${esc(S.lang === "ar" ? "الخلاصة:" : "Answer:")}</b> ${esc(valOf(b, best.value))} — ${pct(best.outcomeRate)} ${esc(S.lang === "ar" ? `(${best.outcomes} من ${best.contacted})` : `(${best.outcomes} of ${best.contacted})`)}${best.contacted < 15 ? ` <span class="muted">${esc(S.lang === "ar" ? "· عينة صغيرة" : "· small sample")}</span>` : ""}</p>` : ""}` : `<div class="empty">${esc(t("noItems"))}</div>`}</article>`;
   };
-  const camps = DATA.campaigns.filter((x) => x.prospects.length);
+  const camps = campaigns().filter((x) => x.prospects.length && x.daily.length);
   return `${pageHead(t("analytics"), S.lang === "ar" ? "كل رسم يجيب عن سؤال عمل واحد. المقياس: نسبة من تم التواصل معهم وحققوا النتيجة." : "Every chart answers one business question. Metric: share of contacted prospects that reached the outcome.")}
   <section class="grid g2">${dims.map(card).join("")}</section>
   <section class="panel"><h2>${esc(S.lang === "ar" ? "مقارنة الحملات" : "Campaign comparison")}</h2><div class="table-wrap"><table><thead><tr><th>${esc(t("client"))}</th><th>${esc(t("campaign"))}</th><th>${esc(t("outcome"))}</th><th>${esc(t("contacted"))}</th><th>${esc(t("positiveN"))}</th><th>${esc(S.lang === "ar" ? "النتائج" : "Outcomes")}</th><th>${esc(t("conversionRate"))}</th></tr></thead><tbody>
@@ -1134,7 +1885,7 @@ function pageAudit() {
   const totals = {}; for (const [ev, n] of Object.entries(c.auditCounts)) { const k = catOf(ev); totals[k] = (totals[k] || 0) + n; }
   const list = c.audit.filter((e) => !cat || catOf(e.event) === cat);
   return `${pageHead(t("audit"), ar ? "كل ما يفعله المحرك أو الأشخاص مسجّل. هذا السجل هو أساس الثقة عندما يعمل المحرك باستقلالية." : "Everything the engine or a person does is recorded. This log is what makes autonomous operation trustworthy.")}
-  ${isDraft() ? draftNotice() : `<section class="kpis">${Object.keys(AUDIT_CAT).map((k) => `<a href="#" data-act="auditcat" data-cat="${k}" class="kpi ${cat === k ? "hl" : ""}" style="text-decoration:none;color:inherit"><b class="num">${fmtNum(totals[k] || 0)}</b><span>${esc(AUDIT_CAT_LABEL[S.lang][k])}</span></a>`).join("")}</section>
+  ${!C().audit.length ? draftNotice() : `<section class="kpis">${Object.keys(AUDIT_CAT).map((k) => `<a href="#" data-act="auditcat" data-cat="${k}" class="kpi ${cat === k ? "hl" : ""}" style="text-decoration:none;color:inherit"><b class="num">${fmtNum(totals[k] || 0)}</b><span>${esc(AUDIT_CAT_LABEL[S.lang][k])}</span></a>`).join("")}</section>
   <section class="panel"><div class="panel-head"><h2>${esc(ar ? "أحدث الأحداث" : "Latest events")}${cat ? ` · ${esc(AUDIT_CAT_LABEL[S.lang][cat])}` : ""}</h2>${cat ? `<a href="#" data-act="auditcat" data-cat="">${esc(t("all"))}</a>` : ""}</div>
   <div class="timeline">${list.slice(0, 120).map((e) => `<div class="tl"><span class="when num">${esc(fmtDT(e.at))}</span><span class="dot ${e.actor === "user" ? "h" : e.actor === "system" ? "s" : ""}"></span><div class="what"><span class="chip outline tiny">${esc(t("actor_" + e.actor))}</span> ${e.prospectId ? `<a href="#" data-act="prospect" data-id="${esc(e.prospectId)}">${esc(auditText(e))}</a>` : esc(auditText(e))}</div></div>`).join("") || `<div class="empty">${esc(t("noItems"))}</div>`}</div>
   <p class="small muted">${esc(ar ? `يعرض آخر ${Math.min(120, list.length)} حدثاً من ${fmtNum(Object.values(c.auditCounts).reduce((a, b) => a + b, 0))} في سجل هذه الحملة.` : `Showing the latest ${Math.min(120, list.length)} of ${fmtNum(Object.values(c.auditCounts).reduce((a, b) => a + b, 0))} events in this campaign's log.`)}</p></section>`}`;
@@ -1179,51 +1930,139 @@ function drawer(id) {
 }
 
 /* =========================================================== router */
-const PAGES = { overview: pageOverview, campaigns: pageCampaigns, prospects: pageProspects, research: pageResearch, contacts: pageContacts, outreach: pageOutreach, replies: pageReplies, appointments: pageAppointments, outcomes: pageOutcomes, analytics: pageAnalytics, reports: pageReports, integrations: pageIntegrations, automation: pageAutomation, audit: pageAudit, settings: pageSettings, attention: pageAttention, recommendations: pageRecommendations };
-const CLIENT_PAGES = new Set(["overview", "attention", "outcomes", "appointments", "recommendations", "reports"]);
+const PAGES = { overview: pageOverview, approvals: pageApprovals, attention: pageApprovals, "new-campaign": pageWizard, campaigns: pageCampaigns, prospects: pageProspects, research: pageResearch, contacts: pageContacts, outreach: pageOutreach, replies: pageReplies, appointments: pageAppointments, outcomes: pageOutcomes, analytics: pageAnalytics, reports: pageReports, integrations: pageIntegrations, automation: pageAutomation, audit: pageAudit, settings: pageSettings, recommendations: pageRecommendations };
+const CLIENT_PAGES = new Set(["overview", "approvals", "attention", "outcomes", "appointments", "recommendations", "reports", "new-campaign"]);
 function parseHash() {
   const h = (location.hash || "#overview").slice(1); const [route, ...rest] = h.split(".");
   S.route = PAGES[route] ? route : "overview"; S.sub = rest.join(".");
+  if (S.route === "attention") S.route = "approvals";
   if (S.view === "client" && !CLIENT_PAGES.has(S.route)) { S.route = "overview"; S.sub = ""; }
-  if (S.route === "appointments" && !C().config.appointments) { S.route = "overview"; S.sub = ""; }
+  if (S.route === "appointments" && !C()?.config.appointments) { S.route = "overview"; S.sub = ""; }
+}
+function renderPage() {
+  const page = document.getElementById("page");
+  const c = C();
+  page.innerHTML = !c && S.route !== "new-campaign" ? pageWelcome() : PAGES[S.route]();
+  if (c && c.daily.length) {
+    const days = c.daily.map((d) => d.day); let acc = 0; const cum = c.daily.map((d) => (acc += d.outcomes));
+    page.querySelectorAll('[data-chart="trend"]').forEach((el) => lineChart(el, cum, c.config.outcome.target, days));
+    page.querySelectorAll('[data-chart="sent"]').forEach((el) => barChart(el, c.daily.map((d) => d.sent), days, t("sentPerDay")));
+  }
 }
 function render() {
   document.documentElement.lang = S.lang; document.documentElement.dir = S.lang === "ar" ? "rtl" : "ltr";
-  document.title = `${clientName(S.clientId)} · ${L(C().config.name)} — ${t("product")}`;
+  if (!clients().some((c) => c.id === S.clientId)) { S.clientId = clients()[0]?.id ?? null; S.campaignId = null; }
   parseHash();
-  renderSide(); renderCtx();
-  const page = document.getElementById("page");
-  page.innerHTML = PAGES[S.route]();
-  const c = C(); const days = c.daily.map((d) => d.day); let acc = 0; const cum = c.daily.map((d) => (acc += d.outcomes));
-  page.querySelectorAll('[data-chart="trend"]').forEach((el) => lineChart(el, cum, c.config.outcome.target, days));
-  page.querySelectorAll('[data-chart="sent"]').forEach((el) => barChart(el, c.daily.map((d) => d.sent), days, t("sentPerDay")));
-  document.getElementById("overlay").innerHTML = S.drawer ? drawer(S.drawer) : "";
+  const c = C();
+  document.title = c ? `${clientName(S.clientId)} · ${L(c.config.name)} — ${t("product")}` : t("product");
+  renderSide(); renderCtx(); renderPage();
+  document.getElementById("overlay").innerHTML = (S.drawer && c ? drawer(S.drawer) : "") + modalHtml();
   document.getElementById("app").classList.remove("nav-open");
 }
-function toast(msg) { const el = document.getElementById("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (el.hidden = true), 2600); }
+/** Re-render only the page (used while typing in setup forms) and keep focus/caret. */
+function refreshPage() {
+  const a = document.activeElement; const id = a?.id; let pos = null;
+  try { pos = a?.selectionStart; } catch {}
+  renderPage(); renderSide();
+  if (id) { const el = document.getElementById(id); if (el) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch {} } }
+}
+function toast(msg) { const el = document.getElementById("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (el.hidden = true), 2800); }
+function confirmBox(title, text, yes, onYes, note) { S.modal = { type: "confirm", title, text, yes, onYes, note }; render(); }
+function startCampaign() {
+  S.menu = false;
+  if (!clients().length) { openClientModal("campaign"); return; }
+  if (!WS.draft || WS.draft.clientId !== S.clientId && clients().some((c) => c.id === S.clientId)) {
+    if (WS.draft && WS.draft.campaignName) { location.hash = "#new-campaign.1"; render(); return; }
+    WS.draft = newDraft(S.clientId || clients()[0].id);
+    const cl = clients().find((c) => c.id === WS.draft.clientId); if (cl?.market) WS.draft.audience.countries = [cl.market];
+    saveWS();
+  }
+  location.hash = "#new-campaign.1"; render();
+}
 
-window.addEventListener("hashchange", () => { S.limit = 50; S.drawer = null; render(); document.getElementById("page").focus({ preventScroll: true }); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => { S.limit = 50; S.drawer = null; S.menu = false; render(); document.getElementById("page").focus({ preventScroll: true }); window.scrollTo(0, 0); });
 document.addEventListener("click", (ev) => {
+  if (S.menu && !ev.target.closest(".create-wrap")) { S.menu = false; renderCtx(); }
   const el = ev.target.closest("[data-act]"); if (!el) return;
-  const act = el.dataset.act;
-  if (["prospect", "close", "auditcat", "pick"].includes(act) || el.tagName === "A") { if (act !== "pick") ev.preventDefault(); }
-  if (act === "menu") return document.getElementById("app").classList.toggle("nav-open");
-  if (act === "view") { S.view = el.dataset.v; persist(); if (S.view === "client" && !CLIENT_PAGES.has(S.route)) location.hash = "#overview"; render(); return; }
-  if (act === "lang") { S.lang = el.dataset.v; persist(); render(); return; }
-  if (act === "prospect") { S.drawer = el.dataset.id; render(); return; }
-  if (act === "close") { S.drawer = null; render(); return; }
-  if (act === "more") { S.limit += 50; render(); return; }
-  if (act === "auditcat") { S.auditCat = el.dataset.cat; render(); return; }
-  if (act === "pick") { S.clientId = el.dataset.client; S.campaignId = el.dataset.campaign; persist(); render(); return; }
-  if (act === "decide") { S.decided[el.dataset.id] = el.dataset.d; toast(el.dataset.d === "approve" ? t("approvedToast") : el.dataset.d === "resolve" ? t("resolvedToast") : t("rejectedToast")); render(); return; }
-  if (act === "toast") { toast(el.dataset.msg); return; }
+  const act = el.dataset.act; const d = WS.draft;
+  if (["prospect", "close", "auditcat", "closeModal"].includes(act) || (el.tagName === "A" && act !== "pick")) ev.preventDefault();
+  switch (act) {
+    case "menu": document.getElementById("app").classList.toggle("nav-open"); return;
+    case "view": S.view = el.dataset.v; persist(); if (S.view === "client" && !CLIENT_PAGES.has(S.route)) location.hash = "#overview"; render(); return;
+    case "lang": S.lang = el.dataset.v; persist(); render(); return;
+    case "prospect": S.drawer = el.dataset.id; render(); return;
+    case "close": S.drawer = null; render(); return;
+    case "more": S.limit += 50; render(); return;
+    case "auditcat": S.auditCat = el.dataset.cat; render(); return;
+    case "pick": S.clientId = el.dataset.client; S.campaignId = el.dataset.campaign; persist(); render(); return;
+    case "decide": S.decided[el.dataset.id] = el.dataset.d; toast(el.dataset.d === "approve" ? t("approvedToast") : el.dataset.d === "resolve" ? t("resolvedToast") : t("rejectedToast")); render(); return;
+    case "toast": toast(el.dataset.msg); return;
+    case "createMenu": S.menu = !S.menu; renderCtx(); return;
+    case "newClient": S.menu = false; openClientModal("campaign"); return;
+    case "newClientStay": openClientModal("stay"); return;
+    case "newCampaign": startCampaign(); return;
+    case "newProspect": case "newContact": S.menu = false; if (!C()) { toast(tr("أنشئ حملة أولاً", "Create a campaign first")); return; } S.modal = { type: act === "newContact" ? "contact" : "prospect", data: { company: "", contact: "", title: "", email: "", linkedin: "", city: "" } }; render(); setTimeout(() => document.getElementById(act === "newContact" ? "mPerson" : "mCo")?.focus(), 0); return;
+    case "closeModal": S.modal = null; render(); return;
+    case "saveClient": saveClient(); return;
+    case "saveProspect": saveProspect(); return;
+    case "confirmYes": { const f = S.modal?.onYes; S.modal = null; f?.(); render(); return; }
+    case "tryDemo": WS.mode = "demo"; saveWS(); S.clientId = DATA.clients[0].id; S.campaignId = null; persist(); toast(tr("تُعرض الآن بيانات تجريبية — لا يُرسل أي تواصل حقيقي", "Showing demo data — no real outreach is sent")); location.hash = "#overview"; render(); return;
+    case "exitDemo": WS.mode = "fresh"; saveWS(); S.clientId = null; S.campaignId = null; location.hash = "#overview"; render(); return;
+    case "resetWS": confirmBox(tr("إعادة ضبط مساحة العمل؟", "Reset the workspace?"), tr("سيُحذف كل عميل وحملة أنشأتها في هذا المتصفح. لا يمكن التراجع.", "Every client and campaign you created in this browser will be removed. This can't be undone."), tr("إعادة الضبط", "Reset"), () => { WS = { mode: "fresh", clients: [], campaigns: [], draft: null }; userObjs.clear(); cache.clear(); saveWS(); S.clientId = null; S.campaignId = null; location.hash = "#overview"; }); return;
+    case "pickOutcome": d.outcome.preset = el.dataset.v; saveWS(); refreshPage(); setTimeout(() => document.getElementById("w-outcome-goal")?.focus(), 0); return;
+    case "toggleCountry": { const a = d.audience.countries; const v = el.dataset.v; d.audience.countries = a.includes(v) ? a.filter((x) => x !== v) : [...a, v]; saveWS(); refreshPage(); return; }
+    case "pickSize": d.audience.sizeMin = el.dataset.min; d.audience.sizeMax = el.dataset.max; saveWS(); refreshPage(); return;
+    case "chipAdd": { const arr = getPath(d, el.dataset.path) || []; if (!arr.includes(el.dataset.v)) setPath(d, el.dataset.path, [...arr, el.dataset.v]); saveWS(); refreshPage(); return; }
+    case "chipDel": { const arr = getPath(d, el.dataset.path) || []; setPath(d, el.dataset.path, arr.filter((_, k) => k !== Number(el.dataset.i))); saveWS(); refreshPage(); return; }
+    case "critAdd": d.qualification.criteria.push({ label: "", points: 10, check: "research" }); saveWS(); refreshPage(); setTimeout(() => document.getElementById(`w-crit-${d.qualification.criteria.length - 1}`)?.focus(), 0); return;
+    case "critDel": d.qualification.criteria.splice(Number(el.dataset.i), 1); saveWS(); refreshPage(); return;
+    case "critSuggest": { const sg = qualificationSuggestions()[Number(el.dataset.i)]; if (sg) d.qualification.criteria.push({ ...sg }); saveWS(); refreshPage(); return; }
+    case "setv": setPath(d, el.dataset.path, el.dataset.v); saveWS(); refreshPage(); return;
+    case "toggleChannel": d.channels[el.dataset.v] = !d.channels[el.dataset.v]; saveWS(); refreshPage(); return;
+    case "wizNext": { const i = Number(el.dataset.i); const iss = stepIssues(i); if (iss.length) { toast(tr("أكمل أولاً: ", "First complete: ") + iss[0]); return; } location.hash = `#new-campaign.${i + 2}`; return; }
+    case "wizExit": saveWS(); toast(tr("حُفظت المسودة — يمكنك المتابعة لاحقاً من «+ إنشاء»", "Draft saved — continue later from “+ Create”")); location.hash = "#overview"; return;
+    case "launch": confirmBox(tr("تشغيل الحملة؟", "Launch the campaign?"), tr("سيبدأ المحرك باكتشاف الشركات المناسبة والبحث عنها. لن يُرسل أي شيء قبل موافقتك.", "The engine will start finding and researching matching companies. Nothing is sent before you approve."), tr("تشغيل الحملة", "Launch campaign"), launchCampaign, tr("نموذج أولي: غير متصل بمصادر أو قنوات حقيقية.", "Prototype: not connected to real sources or channels.")); return;
+    case "apScope": S.apScope = el.dataset.v; render(); return;
+    case "bulkApprove": { const safe = approvalItems(S.apScope === "all").filter((it) => !S.decided[it.id] && safeToBulk(it)); confirmBox(tr(`الموافقة على ${safe.length} رسالة؟`, `Approve ${safe.length} messages?`), tr("تشمل فقط الرسائل عالية الثقة التي لا تحمل أي ملاحظة. الرسائل الأخرى تبقى بانتظار نظرتك.", "This only includes high-confidence messages with no flags. Everything else stays for your review."), tr("موافقة", "Approve"), () => { for (const it of safe) S.decided[it.id] = "approve"; toast(tr(`تمت الموافقة على ${safe.length} (معاينة — لم يُرسل شيء)`, `Approved ${safe.length} (preview — nothing sent)`)); }); return; }
+    case "editMsg": S.editing = el.dataset.id; render(); setTimeout(() => document.getElementById(`edit-${el.dataset.id}`)?.focus(), 0); return;
+    case "saveEdit": { const ta = document.getElementById(`edit-${el.dataset.id}`); S.edits[el.dataset.id] = ta.value; S.editing = null; toast(tr("حُفظ التعديل (معاينة)", "Edit saved (preview)")); render(); return; }
+    case "cancelEdit": S.editing = null; render(); return;
+    case "apDetails": S.clientId = el.dataset.cl; S.campaignId = el.dataset.c; S.drawer = el.dataset.id; render(); return;
+  }
 });
-document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && S.drawer) { S.drawer = null; render(); } });
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") { if (S.modal) { S.modal = null; render(); return; } if (S.menu) { S.menu = false; renderCtx(); return; } if (S.drawer) { S.drawer = null; render(); return; } }
+  const chip = ev.target.closest?.("[data-chips]");
+  if (chip && (ev.key === "Enter" || ev.key === "," || ev.key === "،")) {
+    ev.preventDefault();
+    const v = chip.value.trim(); if (!v) return;
+    const path = chip.dataset.chips; const arr = getPath(WS.draft, path) || [];
+    if (!arr.includes(v)) setPath(WS.draft, path, [...arr, v]);
+    saveWS(); refreshPage(); document.getElementById(chip.id)?.focus();
+  }
+  if (chip && ev.key === "Backspace" && !chip.value) { const arr = getPath(WS.draft, chip.dataset.chips) || []; if (arr.length) { setPath(WS.draft, chip.dataset.chips, arr.slice(0, -1)); saveWS(); refreshPage(); } }
+});
 document.addEventListener("input", (ev) => {
+  const m = ev.target.closest("[data-m]");
+  if (m && S.modal) { S.modal.data[m.dataset.m] = m.value; return; }
+  const b = ev.target.closest("[data-bind]");
+  if (b && WS.draft) {
+    setPath(WS.draft, b.dataset.bind, b.value); saveWS();
+    if (b.type === "range") { const n = document.getElementById("w-th"); if (n) n.value = b.value; return; } // keep dragging smooth
+    if (b.tagName !== "SELECT") refreshPage();
+    return;
+  }
   const el = ev.target.closest("[data-filter]"); if (!el) return;
   S.filters[el.dataset.filter] = el.value; S.limit = 50;
   const pos = el.selectionStart; const key = el.dataset.filter; render();
   const again = document.querySelector(`[data-filter="${key}"]`); if (again && again.tagName === "INPUT") { again.focus(); try { again.setSelectionRange(pos, pos); } catch {} }
+});
+document.addEventListener("change", (ev) => {
+  const b = ev.target.closest("[data-bind]");
+  if (b && WS.draft && b.type === "range") { refreshPage(); return; }
+  if (b && WS.draft && b.tagName === "SELECT") { setPath(WS.draft, b.dataset.bind, b.value); saveWS(); refreshPage(); return; }
+  const bb = ev.target.closest("[data-bind-bool]");
+  if (bb && WS.draft) { setPath(WS.draft, bb.dataset.bindBool, bb.checked); saveWS(); refreshPage(); }
 });
 render();
 </script>

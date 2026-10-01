@@ -1,0 +1,13 @@
+{
+  "$comment": "Reply intent catalog used by the campaign builder. Keywords drive the default keyword classifier; an LLM classifier can replace it. `appointmentsOnly` intents are added only for outcomes with appointments.",
+  "intents": [
+    { "key": "meeting_request", "appointmentsOnly": true, "label": { "en": "Wants a meeting", "ar": "يطلب اجتماعاً" }, "sentiment": "positive", "keywords": ["meeting", "call", "schedule", "available", "اجتماع", "موعد", "مكالمة"], "stopSequence": true, "respondWith": "appointment_ack" },
+    { "key": "interested", "label": { "en": "Interested", "ar": "مهتم" }, "sentiment": "positive", "keywords": ["interested", "tell me more", "sounds good", "let's try", "yes", "مهتم", "أرسل التفاصيل", "نعم"], "stopSequence": true },
+    { "key": "question", "label": { "en": "Question", "ar": "سؤال" }, "sentiment": "positive", "keywords": ["how", "price", "pricing", "cost", "?", "كم", "السعر", "كيف", "؟"], "stopSequence": true, "respondWith": "answer_question" },
+    { "key": "not_now", "label": { "en": "Not now", "ar": "ليس الآن" }, "sentiment": "neutral", "keywords": ["not now", "later", "next quarter", "ليس الآن", "لاحقاً"], "stopSequence": true },
+    { "key": "referral", "label": { "en": "Referred elsewhere", "ar": "أحالنا لغيره" }, "sentiment": "neutral", "keywords": ["contact my colleague", "reach out to", "تواصل مع زميلي"] },
+    { "key": "not_interested", "label": { "en": "Not interested", "ar": "غير مهتم" }, "sentiment": "negative", "keywords": ["not interested", "no thanks", "غير مهتم", "لا شكراً"], "milestone": "lost", "stopSequence": true },
+    { "key": "unsubscribe", "label": { "en": "Opt-out", "ar": "طلب الإيقاف" }, "sentiment": "negative", "keywords": ["unsubscribe", "remove me", "إلغاء الاشتراك", "أوقف الرسائل"], "milestone": "lost", "stopSequence": true, "suppress": true },
+    { "key": "other", "label": { "en": "Other", "ar": "أخرى" }, "sentiment": "neutral", "keywords": [] }
+  ]
+}

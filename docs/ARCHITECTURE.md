@@ -198,7 +198,29 @@ tier) from touches, positive replies and outcomes. It:
   raise the minimum score when a tier never converts — applied through a
   governed `optimize` action (approval-gated below full autonomy).
 
+## Setup flow (no-code campaign creation)
+
+The friendly setup flow (Add client → Outcome → Audience → Offer →
+Qualification → Channels → Control → Review → Launch) produces a
+`CampaignDraft` — plain answers, no rule syntax. `buildCampaignConfig()`
+(`src/config/builder.ts`) turns it into a full campaign config with smart
+defaults and validates it with the same schema the engine loads YAML with:
+
+- **Outcome types are data**: `presets/outcomes.json` (paid subscribers,
+  qualified meetings, qualified leads, opportunities, custom). Each preset
+  defines the confirming event, funnel stages, optional appointments and the
+  default next-step message. Adding an outcome type = adding a preset.
+- **Reply intents are data**: `presets/replies.json` (bilingual keywords).
+- **Qualification criteria** become weighted scoring signals. A criterion is
+  checked by sourced research (default — it only counts with a cited source),
+  company size, job title or location.
+- The prototype bundles the builder, schema validation and
+  `summarizeCampaign()` for the browser (`src/browser.ts`), so a campaign
+  created in the UI is a real, engine-valid config.
+
 ## Adding a new client or industry
+
+Either use the setup flow (above), or:
 
 1. Copy `campaigns/templates/real-estate-qualified-leads.yaml` (or another config).
 2. Set client, campaign, outcome, ICP, fields, funnel, templates, channels, constraints.
