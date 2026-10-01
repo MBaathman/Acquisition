@@ -1,5 +1,7 @@
 import type {
   ChannelSender,
+  ContactFinder,
+  ResearchFinding,
   Clock,
   DiscoveredProspect,
   OutboundMessage,
@@ -37,13 +39,29 @@ export class StaticProspectSource implements ProspectSource {
   }
 }
 
-/** Answers research questions from values already present on the account/contact attributes. */
+/**
+ * Answers research questions from fixture data already on the account/contact.
+ * Each attribute's source is read from `attributes._sources[key]`; values
+ * without one are returned unsourced, which the engine discards.
+ */
 export class AttributeResearchProvider implements ResearchProvider {
   async research({ account, contact, questions }: Parameters<ResearchProvider["research"]>[0]) {
     const known = { ...(account?.attributes ?? {}), ...contact.attributes };
-    const answers = Object.fromEntries(questions.filter((q) => known[q.key] !== undefined).map((q) => [q.key, known[q.key]]));
-    const confidence = questions.length ? Object.keys(answers).length / questions.length : 1;
-    return { answers, confidence, sources: ["attributes"] };
+    const sources = { ...((account?.attributes._sources as SourceMap) ?? {}), ...((contact.attributes._sources as SourceMap) ?? {}) };
+    const findings: ResearchFinding[] = questions
+      .filter((q) => known[q.key] !== undefined)
+      .map((q) => ({ key: q.key, value: known[q.key], source: sources[q.key]?.source, url: sources[q.key]?.url, confidence: sources[q.key]?.confidence }));
+    return { findings };
+  }
+}
+
+type SourceMap = Record<string, { source: string; url?: string; confidence?: number }>;
+
+/** Returns handles stored on the fixture under `attributes._findable`. */
+export class FixtureContactFinder implements ContactFinder {
+  async find({ contact }: Parameters<ContactFinder["find"]>[0]) {
+    const f = contact.attributes._findable as { handles: Record<string, string>; source: string } | undefined;
+    return f ?? { handles: {} };
   }
 }
 

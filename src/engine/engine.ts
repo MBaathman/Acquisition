@@ -1,10 +1,11 @@
-import type { ActionType } from "../config/actions.js";
+import { TOUCH_ACTIONS, type ActionType, type AutonomyLevel } from "../config/actions.js";
 import { evaluate, getPath } from "../config/evaluate.js";
 import type { CampaignConfig } from "../config/schema.js";
 import type { Adapters, Clock } from "../adapters/ports.js";
 import type {
   Account,
   Action,
+  Appointment,
   Actor,
   Attributes,
   CampaignState,
@@ -14,6 +15,7 @@ import type {
   OutcomeRecord,
   Prospect,
   Recommendation,
+  ResearchSignal,
   TouchRef,
 } from "../domain/types.js";
 import { createMemoryStore, type Store } from "../store/store.js";
@@ -26,6 +28,9 @@ import { qualify, scoreProspect } from "../agents/scoring.js";
 import { renderVariant } from "../agents/personalization.js";
 import { computeStats, proposeOptimizations, selectChannel, selectVariant } from "../agents/learning.js";
 import { buildClientReport } from "../reporting/client-report.js";
+import { buildAnalytics } from "../reporting/analytics.js";
+import { buildBrief } from "../agents/brief.js";
+import { reachableChannels } from "../agents/learning.js";
 
 const DAY = 86_400_000;
 const ACTIVE_STATUSES = new Set(["active", "paused"]);
@@ -74,8 +79,10 @@ export class AcquisitionEngine {
     this.gateway.handle("discover", (a, cfg) => this.runDiscovery(a, cfg));
     this.gateway.handle("research", (a, cfg) => this.runResearch(a, cfg));
     this.gateway.handle("score", (a, cfg) => this.runScoring(a, cfg));
+    this.gateway.handle("enrich_contact", (a, cfg) => this.runContactFinding(a, cfg));
     this.gateway.handle("qualify", (a, cfg) => this.runQualification(a, cfg));
     this.gateway.handle("send_message", (a, cfg) => this.deliver(a, cfg));
+    this.gateway.handle("follow_up", (a, cfg) => this.deliver(a, cfg));
     this.gateway.handle("respond", (a, cfg) => this.deliver(a, cfg));
     this.gateway.handle("conversion_step", (a, cfg) => this.deliver(a, cfg));
     this.gateway.handle("optimize", (a) => this.applyOptimization(a));
@@ -166,12 +173,34 @@ export class AcquisitionEngine {
     const base = { clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actor: AGENT_ACTOR };
 
     if (!p.research) {
-      await this.gateway.propose({ ...base, type: "research", idempotencyKey: `research:${p.id}`, confidence: 1, rationale: "new prospect" });
+      const action = await this.gateway.propose({ ...base, type: "research", idempotencyKey: `research:${p.id}`, confidence: 1, rationale: "new prospect" });
+      if (["approved", "scheduled", "executing", "pending_approval"].includes(action.status) && p.researchStatus === "needs_research") {
+        const fresh = (await this.store.prospects.get(p.id))!;
+        if (!fresh.research) {
+          fresh.researchStatus = "researching";
+          await this.saveProspect(fresh);
+        }
+      }
       return;
     }
     if (p.score === undefined) {
       await this.gateway.propose({ ...base, type: "score", idempotencyKey: `score:${p.id}`, confidence: 1, rationale: "research complete" });
       return;
+    }
+    if (p.milestones.fit && !p.milestones.contacted && p.contactStatus !== "found") {
+      const contact = (await this.store.contacts.get(p.contactId))!;
+      if (reachableChannels(cfg, contact).length) {
+        p.contactStatus = "found";
+        await this.saveProspect(p);
+      } else if (p.contactStatus === "needs_contact" && cfg.contacts.finder) {
+        await this.gateway.propose({ ...base, type: "enrich_contact", idempotencyKey: `enrich:${p.id}`, confidence: 1, rationale: "fit prospect without a reachable handle" });
+        return;
+      } else if (p.contactStatus !== "finding") {
+        p.status = "parked";
+        p.attributes.parkedReason = "no_contact";
+        await this.saveProspect(p);
+        return;
+      } else return;
     }
     if (!p.qualification) {
       await this.gateway.propose({ ...base, type: "qualify", idempotencyKey: `qualify:${p.id}:initial`, confidence: 1, rationale: "initial qualification" });
@@ -190,6 +219,10 @@ export class AcquisitionEngine {
         payload: { ...composed.payload, kind: "conversion" }, confidence: composed.confidence,
         rationale: `qualified (${p.qualification.met.join(", ")}); moving to ${cfg.outcome.label}`,
       });
+      if (lastInbound && !lastInbound.nextAction?.actionId && lastInbound.nextAction?.kind !== "escalate") {
+        lastInbound.nextAction = { kind: "conversion_step", summary: `send ${conversion.template}`, actionId: action.id };
+        await this.store.messages.put(lastInbound);
+      }
       if (!["rejected", "blocked"].includes(action.status)) return;
     }
 
@@ -210,7 +243,14 @@ export class AcquisitionEngine {
     const steps = cfg.outreach.sequence;
     let idx = p.sequence.nextStepIndex;
     const ctx = await this.context(cfg, p);
-    while (idx < steps.length && steps[idx]!.when && !evaluate(steps[idx]!.when!, ctx)) idx++;
+    const contact = (await this.store.contacts.get(p.contactId))!;
+    const reachable = reachableChannels(cfg, contact);
+    const skippable = (st: (typeof steps)[number]) =>
+      (st.when && !evaluate(st.when, ctx)) || (st.channel !== "auto" && !reachable.includes(st.channel));
+    while (idx < steps.length && skippable(steps[idx]!)) {
+      await this.audit.record({ clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actor: AGENT_ACTOR, event: "sequence.step_skipped", detail: { step: steps[idx]!.key, reason: steps[idx]!.channel !== "auto" && !reachable.includes(steps[idx]!.channel) ? "channel_unreachable" : "condition_not_met" } });
+      idx++;
+    }
     if (idx !== p.sequence.nextStepIndex) {
       p.sequence.nextStepIndex = idx;
       await this.saveProspect(p);
@@ -239,11 +279,27 @@ export class AcquisitionEngine {
     const composed = await this.compose(cfg, p, step.template, step.channel);
     await this.gateway.propose({
       clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actor: AGENT_ACTOR,
-      type: "send_message", idempotencyKey: `send:${p.id}:${step.key}`,
+      type: p.milestones.contacted ? "follow_up" : "send_message", idempotencyKey: `send:${p.id}:${step.key}`,
       payload: { ...composed.payload, kind: "sequence", stepKey: step.key },
       confidence: composed.confidence,
       rationale: `sequence step '${step.key}' (tier ${p.tier}, score ${p.score})`,
     });
+  }
+
+  /**
+   * Draft of the prospect's next sequence touch, composed now but not proposed
+   * (it is proposed through the gateway when it falls due).
+   */
+  async previewNextTouch(prospectId: string) {
+    const p = await this.store.prospects.get(prospectId);
+    if (!p || p.status !== "active" || p.sequence.stopped || !p.sequence.startedAt) return undefined;
+    const cfg = this.campaign(p.campaignId);
+    const step = cfg.outreach.sequence[p.sequence.nextStepIndex];
+    if (!step || p.touches >= cfg.constraints.maxTouchesPerProspect) return undefined;
+    const due = new Date(new Date(p.sequence.startedAt).getTime() + step.dayOffset * DAY);
+    if (due <= this.clock.now()) return undefined;
+    const composed = await this.compose(cfg, p, step.template, step.channel);
+    return { prospectId: p.id, stepKey: step.key, dueAt: due.toISOString(), confidence: composed.confidence, ...composed.payload };
   }
 
   /** Personalize a template for a prospect, selecting channel and variant from learned stats. */
@@ -321,6 +377,7 @@ export class AcquisitionEngine {
       const prospect: Prospect = {
         id: newId("pro"), clientId, campaignId: cfg.campaign.id, contactId: contact.id, accountId: account?.id,
         status: "active", stage: cfg.funnel.stages[0]!.key, milestones: {},
+        researchStatus: "needs_research", contactStatus: reachableChannels(cfg, contact).length ? "found" : "needs_contact",
         sequence: { nextStepIndex: 0, stopped: false }, touches: 0, attributes: {}, createdAt: now, updatedAt: now,
       };
       reachMilestone(prospect, cfg, "discovered", now);
@@ -331,6 +388,11 @@ export class AcquisitionEngine {
     return { added, skipped };
   }
 
+  /**
+   * Research keeps only findings that cite a source. Unsourced answers are
+   * discarded (never used for scoring or copy) and the prospect is flagged
+   * for review when required answers are missing or confidence is low.
+   */
   private async runResearch(action: Action, cfg: CampaignConfig) {
     const p = await this.requireProspect(action);
     const contact = (await this.store.contacts.get(p.contactId))!;
@@ -338,23 +400,71 @@ export class AcquisitionEngine {
     const questions = cfg.research.questions;
     const provider = this.adapters.research[cfg.research.provider];
     if (questions.length && !provider) throw new Error(`no research provider registered as '${cfg.research.provider}'`);
-    const result = questions.length && provider
+    const { findings } = questions.length && provider
       ? await provider.research({ campaign: cfg, account, contact, questions })
-      : { answers: {}, confidence: 1, sources: [] };
+      : { findings: [] };
     const now = this.clock.now().toISOString();
-    p.research = { ...result, at: now };
+    const asked = new Set(questions.map((q) => q.key));
+    const signals: ResearchSignal[] = [];
+    const rejected: string[] = [];
+    for (const f of findings) {
+      if (!asked.has(f.key) || f.value === undefined || f.value === null || f.value === "") continue;
+      if (!f.source) {
+        rejected.push(f.key);
+        continue;
+      }
+      signals.push({ key: f.key, value: f.value, source: f.source, url: f.url, confidence: f.confidence ?? 0.8, at: now });
+    }
+    const answers = Object.fromEntries(signals.map((sig) => [sig.key, sig.value]));
+    const required = questions.filter((q) => q.required);
+    const missing = required.filter((q) => answers[q.key] === undefined).map((q) => q.key);
+    // Confidence reflects required coverage; optional questions add signal but never penalise.
+    const coverage = required.length ? (required.length - missing.length) / required.length : 1;
+    const meanConfidence = signals.length ? signals.reduce((sum, sig) => sum + sig.confidence, 0) / signals.length : questions.length ? 0 : 1;
+    const confidence = Math.round(coverage * meanConfidence * 100) / 100;
+
+    p.research = { answers, signals, missing, rejected, confidence, at: now };
+    p.researchStatus = missing.length || rejected.length || confidence < cfg.research.minConfidence ? "needs_review" : "complete";
     for (const q of questions) {
-      if (q.mapsTo && result.answers[q.key] !== undefined) p.attributes[q.mapsTo] = result.answers[q.key];
+      if (q.mapsTo && answers[q.key] !== undefined) p.attributes[q.mapsTo] = answers[q.key];
     }
     reachMilestone(p, cfg, "researched", now);
     await this.saveProspect(p);
-    return { answered: Object.keys(result.answers).length, confidence: result.confidence };
+    await this.audit.record({
+      clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actionId: action.id, actor: AGENT_ACTOR, event: "research.completed",
+      detail: { status: p.researchStatus, signals: signals.length, missing, rejectedUnsourced: rejected, confidence },
+    });
+    return { signals: signals.length, missing: missing.length, rejected: rejected.length, confidence };
+  }
+
+  private async runContactFinding(action: Action, cfg: CampaignConfig) {
+    const p = await this.requireProspect(action);
+    const finder = cfg.contacts.finder ? this.adapters.contactFinders?.[cfg.contacts.finder] : undefined;
+    if (!finder) throw new Error(`no contact finder registered as '${cfg.contacts.finder}'`);
+    const contact = (await this.store.contacts.get(p.contactId))!;
+    const account = p.accountId ? await this.store.accounts.get(p.accountId) : undefined;
+    const found = await finder.find({ campaign: cfg, account, contact });
+    if (found.source && Object.keys(found.handles).length) {
+      contact.handles = { ...contact.handles, ...found.handles };
+      contact.externalIds = { ...contact.externalIds, handleSource: found.source };
+      await this.store.contacts.put(contact);
+    }
+    p.contactStatus = reachableChannels(cfg, contact).length ? "found" : "not_found";
+    await this.saveProspect(p);
+    await this.audit.record({ clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actionId: action.id, actor: AGENT_ACTOR, event: "contact.lookup", detail: { status: p.contactStatus, source: found.source } });
+    return { status: p.contactStatus };
   }
 
   private async runScoring(action: Action, cfg: CampaignConfig) {
     const p = await this.requireProspect(action);
     const result = scoreProspect(cfg, await this.context(cfg, p));
-    Object.assign(p, { score: result.score, tier: result.tier, persona: result.persona, scoreBreakdown: result.breakdown });
+    const previous = p.score;
+    Object.assign(p, { score: result.score, scoreMax: result.max, tier: result.tier, persona: result.persona, scoreBreakdown: result.breakdown });
+    const state = await this.state(p.campaignId);
+    if (result.fit && !result.excluded && result.score >= (state.minScoreOverride ?? cfg.outreach.minScore)) {
+      reachMilestone(p, cfg, "fit", this.clock.now().toISOString());
+    }
+    await this.audit.record({ clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actionId: action.id, actor: AGENT_ACTOR, event: "score.changed", detail: { from: previous ?? null, to: result.score, max: result.max, tier: result.tier, signals: result.breakdown.map((b) => b.key) } });
     if (!result.fit || result.excluded) {
       p.status = "lost";
       p.attributes.lostReason = result.excluded ? "icp_exclusion" : "icp_no_fit";
@@ -368,7 +478,11 @@ export class AcquisitionEngine {
     const p = await this.requireProspect(action);
     const result = qualify(cfg, await this.context(cfg, p));
     const now = this.clock.now().toISOString();
+    const was = p.qualification?.qualified;
     p.qualification = { ...result, at: now };
+    if (was !== result.qualified) {
+      await this.audit.record({ clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actionId: action.id, actor: AGENT_ACTOR, event: "qualification.changed", detail: { qualified: result.qualified, met: result.met, missing: result.missing } });
+    }
     if (result.qualified) reachMilestone(p, cfg, "qualified", now);
     await this.saveProspect(p);
     return result;
@@ -441,8 +555,9 @@ export class AcquisitionEngine {
 
     p.lastIntent = intent.key;
     Object.assign(p.attributes, cls.extracted ?? {});
-    reachMilestone(p, cfg, intent.milestone ?? "engaged", now);
-    if (intent.milestone !== "lost" && !p.milestones.engaged) reachMilestone(p, cfg, "engaged", now);
+    reachMilestone(p, cfg, "replied", now);
+    if (intent.sentiment === "positive") reachMilestone(p, cfg, "engaged", now);
+    if (intent.milestone) reachMilestone(p, cfg, intent.milestone, now);
     if (intent.milestone === "lost") p.status = "lost";
     if (intent.stopSequence) p.sequence.stopped = true;
     if (intent.suppress) {
@@ -466,12 +581,25 @@ export class AcquisitionEngine {
     for (const r of reasons) {
       await this.gateway.raiseException({ clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, kind: r.kind, severity: r.severity, reason: r.reason });
     }
+    const setNext = async (next: NonNullable<Message["nextAction"]>) => {
+      msg.nextAction = next;
+      await this.store.messages.put(msg);
+    };
     if (reasons.some((r) => r.pause) && p.status === "active") {
       p.status = "paused";
       await this.saveProspect(p);
+      await setNext({ kind: "escalate", summary: reasons.map((r) => r.reason).join("; ") });
       return;
     }
-    if (p.status !== "active") return;
+    if (p.status !== "active") {
+      await setNext({ kind: "stop", summary: intent.suppress ? "contact opted out and is suppressed" : "prospect closed" });
+      return;
+    }
+    await setNext(
+      reasons.length
+        ? { kind: "escalate", summary: reasons.map((r) => r.reason).join("; ") }
+        : { kind: "wait", summary: intent.stopSequence ? "sequence stopped; re-qualifying" : "re-qualifying" },
+    );
 
     await this.gateway.propose({
       clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actor: AGENT_ACTOR, type: "qualify",
@@ -479,11 +607,12 @@ export class AcquisitionEngine {
     });
     if (intent.respondWith) {
       const composed = await this.compose(cfg, p, intent.respondWith, msg.channel, { reply: { text: msg.body, intent: intent.key } });
-      await this.gateway.propose({
+      const response = await this.gateway.propose({
         clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actor: AGENT_ACTOR, type: "respond",
         idempotencyKey: `respond:${msg.id}`, payload: { ...composed.payload, kind: "response", inReplyTo: msg.id },
         confidence: Math.min(composed.confidence, cls.confidence), rationale: `routine reply to '${intent.key}'`,
       });
+      if (msg.nextAction?.kind !== "escalate") await setNext({ kind: "respond", summary: `answer with ${intent.respondWith}`, actionId: response.id });
     }
   }
 
@@ -514,6 +643,7 @@ export class AcquisitionEngine {
     await this.audit.record({ clientId: event.clientId, campaignId: event.campaignId, prospectId: p?.id, actor: SYSTEM_ACTOR, event: "event.recorded", detail: { type: event.type } });
 
     const ctx = p ? await this.context(cfg, p, { event }) : { event };
+    if (p) await this.applyEventToJourney(cfg, p, event, ctx);
     if (!evaluate(cfg.outcome.achievedWhen, ctx)) return { event };
     if (p && (await this.store.outcomes.findOne((o) => o.prospectId === p.id && o.campaignId === cfg.campaign.id && o.counted))) {
       return { event };
@@ -561,6 +691,43 @@ export class AcquisitionEngine {
     return { event, outcome };
   }
 
+  /** Appointment lifecycle and event-driven funnel stages (bookings, trials, viewings...). */
+  private async applyEventToJourney(cfg: CampaignConfig, p: Prospect, event: EventRecord, ctx: Attributes) {
+    const now = event.at;
+    const appt = cfg.appointments;
+    if (appt?.enabled) {
+      const statusFor: Record<string, Appointment["status"]> = { [appt.events.booked]: "scheduled", [appt.events.held]: "held" };
+      if (appt.events.cancelled) statusFor[appt.events.cancelled] = "cancelled";
+      if (appt.events.noShow) statusFor[appt.events.noShow] = "no_show";
+      const status = statusFor[event.type];
+      if (status) {
+        const existing = (await this.store.appointments.find((a) => a.prospectId === p.id && a.campaignId === cfg.campaign.id))
+          .sort((a, b) => b.bookedAt.localeCompare(a.bookedAt))[0];
+        const startsAt = getPath(ctx, appt.startsAtField);
+        const messages = await this.store.messages.find((m) => m.prospectId === p.id);
+        const reuse = existing && (existing.status === "scheduled" || status !== "scheduled");
+        const record: Appointment = reuse
+          ? { ...existing, status, updatedAt: now, startsAt: typeof startsAt === "string" ? startsAt : existing.startsAt, brief: buildBrief(cfg, p, messages) }
+          : {
+              id: newId("apt"), clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, status,
+              startsAt: typeof startsAt === "string" ? startsAt : undefined, bookedAt: now, updatedAt: now,
+              qualifiedAtBooking: Boolean(p.qualification?.qualified), brief: buildBrief(cfg, p, messages),
+            };
+        await this.store.appointments.put(record);
+        await this.audit.record({ clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actor: SYSTEM_ACTOR, event: `appointment.${status}`, detail: { appointmentId: record.id, startsAt: record.startsAt } });
+      }
+    }
+    const stages = cfg.funnel.stages;
+    const current = stages.findIndex((st) => st.key === p.stage);
+    const target = stages.reduce((best, st, i) => (st.onEvent && evaluate(st.onEvent, ctx) && i > best ? i : best), -1);
+    if (target > current && p.status !== "lost") {
+      const from = p.stage;
+      p.stage = stages[target]!.key;
+      await this.saveProspect(p);
+      await this.audit.record({ clientId: p.clientId, campaignId: p.campaignId, prospectId: p.id, actor: SYSTEM_ACTOR, event: "stage.changed", detail: { from, to: p.stage, event: event.type } });
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Learning & optimization
   // -------------------------------------------------------------------------
@@ -572,7 +739,7 @@ export class AcquisitionEngine {
       this.store.messages.find((m) => m.campaignId === id),
       this.store.outcomes.find((o) => o.campaignId === id),
       this.store.prospects.find((p) => p.campaignId === id),
-      this.store.actions.find((a) => a.campaignId === id && a.type === "send_message" && IN_FLIGHT.has(a.status)),
+      this.store.actions.find((a) => a.campaignId === id && TOUCH_ACTIONS.includes(a.type) && IN_FLIGHT.has(a.status)),
     ]);
     return computeStats({ cfg, messages, outcomes, prospects, inFlight: includeInFlight ? inFlight.map((a) => a.payload) : [] });
   }
@@ -664,8 +831,33 @@ export class AcquisitionEngine {
     if (status === "active") await this.scheduleTick(cfg, this.clock.now());
   }
 
+  /**
+   * Change how autonomously a campaign runs. Only client admins may do this;
+   * every change is audited. This is the switch between human approval,
+   * assisted automation and autonomous execution — no code changes involved.
+   */
+  async setAutonomy(
+    campaignId: string,
+    change: { level?: AutonomyLevel; actions?: CampaignConfig["autonomy"]["actions"] },
+    user: Actor,
+  ) {
+    const cfg = this.campaign(campaignId);
+    if (user.type !== "user" || user.clientId !== cfg.client.id || !user.roles?.includes("admin")) {
+      await this.audit.record({ clientId: cfg.client.id, campaignId, actor: user, event: "automation.change_denied", detail: change });
+      throw new Error("only a client admin can change automation");
+    }
+    const before = { level: cfg.autonomy.level, actions: structuredClone(cfg.autonomy.actions) };
+    if (change.level) cfg.autonomy.level = change.level;
+    if (change.actions) cfg.autonomy.actions = { ...cfg.autonomy.actions, ...change.actions };
+    await this.audit.record({ clientId: cfg.client.id, campaignId, actor: user, event: "automation.changed", detail: { before, after: { level: cfg.autonomy.level, actions: cfg.autonomy.actions } } });
+  }
+
   report(campaignId: string) {
     return buildClientReport({ cfg: this.campaign(campaignId), store: this.store, now: this.clock.now() });
+  }
+
+  analytics(campaignId: string) {
+    return buildAnalytics({ cfg: this.campaign(campaignId), store: this.store });
   }
 
   // -------------------------------------------------------------------------
@@ -681,7 +873,7 @@ export class AcquisitionEngine {
     const p = await this.store.prospects.get(action.prospectId);
     if (!p) return;
     const type: ActionType = action.type;
-    if (type === "send_message" && action.status !== "failed") {
+    if (TOUCH_ACTIONS.includes(type) && action.status !== "failed") {
       // A rejected or blocked touch is skipped so the sequence keeps moving.
       const stepIdx = this.campaign(p.campaignId).outreach.sequence.findIndex((s) => s.key === action.payload.stepKey);
       if (stepIdx === p.sequence.nextStepIndex) {

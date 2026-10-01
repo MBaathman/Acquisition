@@ -50,6 +50,19 @@ export type ProspectStatus =
   | "converted"
   | "lost";
 
+/** A researched fact. Every signal carries its source; unsourced claims are never stored. */
+export interface ResearchSignal {
+  key: string;
+  value: unknown;
+  source: string; // human-readable source name
+  url?: string;
+  confidence: number;
+  at: string;
+}
+
+export type ResearchStatus = "needs_research" | "researching" | "complete" | "needs_review";
+export type ContactStatus = "found" | "needs_contact" | "finding" | "not_found";
+
 /** A contact's enrollment in one campaign — the unit the engine works on. */
 export interface Prospect extends Tenanted {
   campaignId: Id;
@@ -61,8 +74,21 @@ export interface Prospect extends Tenanted {
   persona?: string;
   score?: number;
   tier?: string;
-  scoreBreakdown?: { key: string; weight: number }[];
-  research?: { answers: Attributes; confidence: number; sources: string[]; at: string };
+  scoreBreakdown?: { key: string; label: string; weight: number; category: "fit" | "timing" }[];
+  /** Maximum attainable score for this campaign's model (100 when normalized). */
+  scoreMax?: number;
+  researchStatus: ResearchStatus;
+  research?: {
+    answers: Attributes;
+    signals: ResearchSignal[];
+    /** Required questions without a sourced answer. */
+    missing: string[];
+    /** Answers the provider returned without a source — discarded, kept only for review. */
+    rejected: string[];
+    confidence: number;
+    at: string;
+  };
+  contactStatus: ContactStatus;
   qualification?: { qualified: boolean; met: string[]; missing: string[]; at: string };
   sequence: { startedAt?: string; nextStepIndex: number; stopped: boolean };
   touches: number;
@@ -86,8 +112,31 @@ export interface Message extends Tenanted {
   body: string;
   intent?: string;
   intentConfidence?: number;
+  /** What the engine proposes after this reply (inbound only). */
+  nextAction?: { kind: "respond" | "conversion_step" | "escalate" | "stop" | "wait"; summary: string; actionId?: string };
   externalId?: string;
   at: string;
+}
+
+export type AppointmentStatus = "scheduled" | "held" | "cancelled" | "no_show";
+
+/** A scheduled session on the way to the outcome (a call, a viewing, a demo...). */
+export interface Appointment extends Tenanted {
+  campaignId: Id;
+  prospectId: Id;
+  status: AppointmentStatus;
+  startsAt?: string;
+  bookedAt: string;
+  updatedAt: string;
+  qualifiedAtBooking: boolean;
+  /** Prepared for whoever attends: why fit, sourced signals, qualification reasons. */
+  brief: {
+    whyFit: { label: string; weight: number }[];
+    whyNow: { label: string; weight: number }[];
+    signals: ResearchSignal[];
+    qualification: { met: string[]; missing: string[] };
+    conversation: { at: string; direction: "inbound" | "outbound"; body: string }[];
+  };
 }
 
 export interface OutcomeRecord extends Tenanted {

@@ -16,3 +16,5 @@ export * from "./agents/personalization.js";
 export * from "./agents/learning.js";
 export * from "./reporting/client-report.js";
 export * from "./engine/engine.js";
+export * from "./reporting/analytics.js";
+export * from "./agents/brief.js";

@@ -1,4 +1,4 @@
-import { ACTION_TYPES } from "../config/actions.js";
+import { ACTION_TYPES, TOUCH_ACTIONS } from "../config/actions.js";
 import type { CampaignConfig } from "../config/schema.js";
 import type { Action, Contact, Prospect } from "../domain/types.js";
 import type { Store } from "../store/store.js";
@@ -61,11 +61,12 @@ export async function checkPolicies(input: {
   if (!reach.ok) return reach;
 
   if (prospect.status === "paused") return { ok: false, kind: "block", reason: "prospect paused pending human review" };
-  if (["lost", "converted"].includes(prospect.status) && action.type === "send_message") {
+  const isTouch = TOUCH_ACTIONS.includes(action.type);
+  if (["lost", "converted"].includes(prospect.status) && isTouch) {
     return { ok: false, kind: "block", reason: `prospect is ${prospect.status}` };
   }
 
-  if (action.type === "send_message") {
+  if (isTouch) {
     const seq = checkSequenceConstraints(prospect, cfg, now);
     if (!seq.ok) return seq;
   }

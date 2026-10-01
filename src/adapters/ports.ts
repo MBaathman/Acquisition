@@ -37,13 +37,30 @@ export interface ProspectSource {
   }): Promise<{ prospects: DiscoveredProspect[]; cursor?: string }>;
 }
 
+export interface ResearchFinding {
+  key: string;
+  value: unknown;
+  /** Required for the finding to be used. Findings without a source are discarded. */
+  source?: string;
+  url?: string;
+  confidence?: number;
+}
+
 export interface ResearchProvider {
   research(input: {
     campaign: CampaignConfig;
     account?: Account;
     contact: Contact;
     questions: CampaignConfig["research"]["questions"];
-  }): Promise<{ answers: Attributes; confidence: number; sources: string[] }>;
+  }): Promise<{ findings: ResearchFinding[] }>;
+}
+
+/** Finds a reachable handle (email, LinkedIn...) for a contact. Handles must come with a source. */
+export interface ContactFinder {
+  find(input: { campaign: CampaignConfig; account?: Account; contact: Contact }): Promise<{
+    handles: Record<string, string>;
+    source?: string;
+  }>;
 }
 
 export interface OutboundMessage {
@@ -86,6 +103,7 @@ export interface Adapters {
   clock: Clock;
   sources: Record<string, ProspectSource>;
   research: Record<string, ResearchProvider>;
+  contactFinders?: Record<string, ContactFinder>;
   channels: Record<string, ChannelSender>;
   classifier: ReplyClassifier;
   composer?: Composer;

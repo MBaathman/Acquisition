@@ -1,5 +1,5 @@
-# Tatimmah — outcome: Qualified Meetings
-# NOTE: ICP, offer and copy below are starting assumptions to be refined with the client.
+# Tatimmah — Saudi Enterprise Outreach — outcome: Qualified Meetings
+# NOTE: ICP, offer and copy are starting assumptions to be refined with the client.
 version: 1
 
 client:
@@ -9,9 +9,11 @@ client:
   timezone: Asia/Riyadh
 
 campaign:
-  id: tatimmah-qualified-meetings
-  name: Tatimmah — Qualified Meetings (MVP)
+  id: tatimmah-saudi-enterprise
+  name: Saudi Enterprise Outreach
+  description: Decision makers at established Saudi companies with an active operational initiative.
   status: active
+  period: { start: "2026-09-01" }
 
 outcome:
   key: qualified_meeting
@@ -20,11 +22,17 @@ outcome:
   description: A held discovery meeting with a prospect that meets the qualification criteria.
   achievedWhen:
     all:
-      - { field: event.type, op: in, value: [meeting.held] }
+      - { field: event.type, op: eq, value: meeting.held }
   requiresQualification: true
   value: { amount: 500, currency: SAR }
   target: { count: 20 }
   conversionStep: { template: booking_link }
+
+appointments:
+  label: Meetings
+  singular: Meeting
+  events: { booked: meeting.booked, held: meeting.held, cancelled: meeting.cancelled, noShow: meeting.no_show }
+  startsAtField: event.payload.startsAt
 
 fields:
   - { key: budget_band, label: Budget band, entity: prospect, type: enum, options: [low, mid, high] }
@@ -32,7 +40,7 @@ fields:
   - { key: sector, label: Sector, entity: account, type: string }
 
 icp:
-  description: Established companies in KSA with a decision maker for the service being offered.
+  description: Established companies in KSA (50+ staff) with a decision maker for operational services.
   targetType: account
   personas:
     - key: executive
@@ -60,20 +68,23 @@ offer:
 discovery:
   source: apollo
   query: { locations: [Saudi Arabia], employee_ranges: ["51,200", "201,1000", "1001,5000"], seniorities: [c_suite, director, head] }
-  targetActivePool: 150
-  batchSize: 30
+  targetActivePool: 60
+  batchSize: 10
 
 research:
   questions:
+    - { key: sector, prompt: Primary sector of the company, mapsTo: sector, required: true }
     - { key: recent_initiative, prompt: Any recent expansion, hiring wave or transformation initiative?, mapsTo: recent_initiative }
-    - { key: sector, prompt: Primary sector of the company, mapsTo: sector }
+
+contacts:
+  finder: demo_finder
 
 scoring:
   signals:
-    - { key: exec, label: Executive persona, weight: 35, when: { field: contact.title, op: containsAny, value: [ceo, coo, general manager, managing director] } }
-    - { key: head, label: Department head, weight: 20, when: { field: contact.title, op: containsAny, value: [head, director] } }
+    - { key: exec, label: Executive persona, weight: 35, when: { field: prospect.persona, op: eq, value: executive } }
+    - { key: head, label: Department head, weight: 20, when: { field: prospect.persona, op: eq, value: department_head } }
     - { key: size, label: 200+ employees, weight: 20, when: { field: account.employees, op: gte, value: 200 } }
-    - { key: initiative, label: Active initiative, weight: 25, when: { field: attributes.recent_initiative, op: exists } }
+    - { key: initiative, label: Active initiative, weight: 25, category: timing, when: { field: research.recent_initiative, op: exists } }
 
 qualification:
   framework: BANT
@@ -86,12 +97,14 @@ qualification:
 
 funnel:
   stages:
-    - { key: identified, label: Identified, milestone: discovered }
+    - { key: discovered, label: Discovered, milestone: discovered }
     - { key: researched, label: Researched, milestone: researched }
-    - { key: in_sequence, label: In Outreach, milestone: contacted }
-    - { key: conversation, label: In Conversation, milestone: engaged }
-    - { key: qualified, label: Qualified, milestone: qualified }
-    - { key: meeting_held, label: Meeting Held, milestone: outcome }
+    - { key: high_fit, label: High fit, milestone: fit }
+    - { key: contacted, label: Contacted, milestone: contacted }
+    - { key: positive, label: Positive reply, milestone: engaged }
+    - { key: meeting_booked, label: Meeting booked, onEvent: { field: event.type, op: eq, value: meeting.booked } }
+    - { key: meeting_held, label: Meeting held, onEvent: { field: event.type, op: eq, value: meeting.held } }
+    - { key: qualified_meeting, label: Qualified meeting, milestone: outcome }
     - { key: disqualified, label: Disqualified, milestone: lost }
 
 personalization:
@@ -99,8 +112,8 @@ personalization:
   language: en
   snippets:
     - key: opener
-      when: { field: attributes.recent_initiative, op: exists }
-      text: I saw {{account.name}} is {{attributes.recent_initiative}}.
+      when: { field: research.recent_initiative, op: exists }
+      text: I saw {{account.name}} is {{research.recent_initiative}}.
     - key: opener
       when: { always: true }
       text: I've been following {{account.name}}'s growth in {{account.city | "the Kingdom"}}.
@@ -120,7 +133,7 @@ personalization:
             Companies like {{account.name}} use us to deliver measurable results within 90 days. Would {{offer.callToAction}} be useful?
     follow_up:
       body: |
-        Dear {{contact.firstName | "Sir/Madam"}}, a gentle follow-up on my note. Happy to share how we've helped similar companies in {{attributes.sector | "your sector"}}.
+        Dear {{contact.firstName | "Sir/Madam"}}, a gentle follow-up on my note. Happy to share how we've helped similar companies in {{research.sector | "your sector"}}.
     booking_link:
       subject: Scheduling our call
       body: |
@@ -133,17 +146,15 @@ outreach:
   channels:
     - { key: email, handle: email }
     - { key: linkedin, handle: linkedin }
-    - { key: whatsapp, handle: phone, consentRequired: true }
   sequence:
     - { key: t1_intro, channel: auto, dayOffset: 0, template: intro }
     - { key: t2_follow_up, channel: email, dayOffset: 4, template: follow_up }
-    - { key: t3_linkedin, channel: linkedin, dayOffset: 8, template: follow_up, when: { field: contact.handles.linkedin, op: exists } }
   minScore: 35
 
 replies:
   intents:
-    - { key: meeting_request, label: Wants a meeting, sentiment: positive, keywords: [meeting, call, schedule, "available", "اجتماع", "موعد"], milestone: engaged, stopSequence: true, respondWith: meeting_ack }
-    - { key: interested, label: Interested, sentiment: positive, keywords: [interested, "tell me more", "more details", "مهتم"], milestone: engaged, stopSequence: true }
+    - { key: meeting_request, label: Wants a meeting, sentiment: positive, keywords: [meeting, call, schedule, "available", "اجتماع", "موعد"], stopSequence: true, respondWith: meeting_ack }
+    - { key: interested, label: Interested, sentiment: positive, keywords: [interested, "tell me more", "more details", "مهتم"], stopSequence: true }
     - { key: referral, label: Referred elsewhere, sentiment: neutral, keywords: ["contact my colleague", "reach out to", cc] }
     - { key: not_interested, label: Not interested, sentiment: negative, keywords: ["not interested", "no thank", "غير مهتم"], milestone: lost, stopSequence: true }
     - { key: unsubscribe, label: Opt-out, sentiment: negative, keywords: [unsubscribe, "remove me"], milestone: lost, stopSequence: true, suppress: true }
@@ -155,11 +166,10 @@ autonomy:
 
 constraints:
   quietHours: { startHour: 20, endHour: 8 }
-  maxTouchesPerProspect: 4
+  maxTouchesPerProspect: 2
   minHoursBetweenTouches: 72
   rateLimits:
-    - { action: send_message, perDay: 40 }
-    - { action: send_message, channel: whatsapp, perDay: 10 }
+    - { action: [send_message, follow_up], perDay: 40 }
 
 escalation:
   rules:
@@ -172,5 +182,12 @@ escalation:
       severity: medium
       reason: Positive reply from an executive — human to review before booking.
       pauseProspect: false
+
+analytics:
+  dimensions:
+    - { key: sector, label: Sector, field: research.sector }
+    - { key: geography, label: City, field: account.city }
+    - { key: persona, label: Persona, field: prospect.persona }
+    - { key: tier, label: Fit tier, field: prospect.tier }
 
 optimization: { enabled: true, minSampleSize: 25 }

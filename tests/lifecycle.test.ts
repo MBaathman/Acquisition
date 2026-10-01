@@ -29,11 +29,11 @@ describe("end-to-end: paid subscriber campaign under human approval", () => {
     await run();
     expect(outbox.sent).toHaveLength(2);
 
-    await engine.receiveReply({ campaignId: id, from: "sara1@company1.sa", channel: "email", text: "Yes, interested — happy to try a trial" });
+    await engine.receiveReply({ campaignId: id, from: "sara1@company1.example", channel: "email", text: "Yes, interested — happy to try a trial" });
     await run();
     const p1 = (await engine.store.prospects.find((p) => p.lastIntent === "interested"))[0]!;
     expect(p1.qualification?.qualified).toBe(true);
-    expect(p1.stage).toBe("trial_ready");
+    expect(p1.stage).toBe("replied");
     expect(p1.sequence.stopped).toBe(true);
 
     const conversion = await pending(engine, id, "conversion_step");
@@ -42,7 +42,9 @@ describe("end-to-end: paid subscriber campaign under human approval", () => {
     await run();
     expect(outbox.sent.at(-1)!.body).toContain("trial link");
 
-    const { outcome } = await engine.recordEvent({ campaignId: id, type: "subscription.paid", handle: "sara1@company1.sa", payload: { amount: 149 } });
+    await engine.recordEvent({ campaignId: id, type: "trial.started", handle: "sara1@company1.example" });
+    expect((await engine.store.prospects.get(p1.id))!.stage).toBe("trial"); // event-driven stage
+    const { outcome } = await engine.recordEvent({ campaignId: id, type: "subscription.paid", handle: "sara1@company1.example", payload: { amount: 149 } });
     expect(outcome?.counted).toBe(true);
     expect(outcome?.value).toEqual({ amount: 149, currency: "USD", recurrence: "monthly" });
     expect(outcome?.attribution.firstTouch?.stepKey).toBe("s1_intro");
@@ -64,11 +66,11 @@ describe("end-to-end: paid subscriber campaign under human approval", () => {
 
 describe("qualified meeting campaign", () => {
   it("does not count a meeting with an unqualified prospect and raises an exception", async () => {
-    const { engine, run } = setup([b2bProspect(1, { title: "Analyst" })]);
+    const { engine, run } = setup([b2bProspect(1, { title: "Analyst" }, "sa_enterprise")]);
     const cfg = await loadWith(TATIMMAH);
     await engine.registerCampaign(cfg);
     await run();
-    const { outcome } = await engine.recordEvent({ campaignId: cfg.campaign.id, type: "meeting.held", handle: "sara1@company1.sa" });
+    const { outcome } = await engine.recordEvent({ campaignId: cfg.campaign.id, type: "meeting.held", handle: "sara1@company1.example" });
     expect(outcome?.counted).toBe(false);
     const report = await engine.report(cfg.campaign.id);
     expect(report.outcome).toMatchObject({ achieved: 0, uncounted: 1 });
@@ -76,7 +78,7 @@ describe("qualified meeting campaign", () => {
   });
 
   it("answers a meeting request, then sends the booking link once qualified, and credits the held meeting", async () => {
-    const { engine, outbox, run } = setup([b2bProspect(1, { title: "CEO" })]);
+    const { engine, outbox, run } = setup([b2bProspect(1, { title: "CEO" }, "sa_enterprise")]);
     const cfg = await loadWith(TATIMMAH, (c) => {
       c.autonomy.level = "autonomous";
       c.escalation.rules = [];
@@ -85,13 +87,13 @@ describe("qualified meeting campaign", () => {
     await run();
     expect(outbox.sent).toHaveLength(1); // intro, channel picked automatically
 
-    await engine.receiveReply({ campaignId: cfg.campaign.id, from: "sara1@company1.sa", channel: "email", text: "Happy to schedule a call next week" });
+    await engine.receiveReply({ campaignId: cfg.campaign.id, from: "sara1@company1.example", channel: "email", text: "Happy to schedule a call next week" });
     await run();
     const bodies = outbox.sent.map((m) => m.body);
     expect(bodies.some((b) => b.includes("booking link shortly"))).toBe(true);
     expect(bodies.some((b) => b.includes("tatimmah.example/book"))).toBe(true);
 
-    const { outcome } = await engine.recordEvent({ campaignId: cfg.campaign.id, type: "meeting.held", handle: "sara1@company1.sa" });
+    const { outcome } = await engine.recordEvent({ campaignId: cfg.campaign.id, type: "meeting.held", handle: "sara1@company1.example" });
     expect(outcome?.counted).toBe(true);
     expect((await engine.report(cfg.campaign.id)).outcome.achieved).toBe(1);
   });
@@ -127,8 +129,9 @@ describe("new industry by configuration only", () => {
 
     expect(outbox.sent).toHaveLength(1);
     expect(outbox.sent[0]).toMatchObject({ channel: "whatsapp", to: "+966500000001" });
-    const blocked = await engine.store.actions.find((a) => a.status === "blocked" && a.type === "send_message");
-    expect(blocked[0]?.lastError).toMatch(/consent/);
+    // No consented channel and no contact finder configured → parked, never messaged.
+    const noura = (await engine.store.prospects.find((p) => p.status === "parked"))[0]!;
+    expect(noura.attributes.parkedReason).toBe("no_contact");
 
     await engine.receiveReply({ campaignId: cfg.campaign.id, from: "+966500000001", channel: "whatsapp", text: "مهتم، أرسل التفاصيل" });
     await run();

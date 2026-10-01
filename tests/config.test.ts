@@ -8,7 +8,9 @@ import { CAMPAIGNS, DATASPEAKS } from "./helpers.js";
 describe("campaign configs", () => {
   it("validates every shipped campaign, each with a different outcome", async () => {
     const configs = await loadCampaignDir(CAMPAIGNS);
-    expect(configs.map((c) => c.outcome.key).sort()).toEqual(["paid_subscriber", "qualified_lead", "qualified_meeting"]);
+    expect(new Set(configs.map((c) => c.outcome.key))).toEqual(new Set(["paid_subscriber", "qualified_lead", "qualified_meeting"]));
+    // One client can run several campaigns.
+    expect(configs.filter((c) => c.client.id === "dataspeaks").map((c) => c.campaign.name).sort()).toEqual(["KSA Agency Acquisition", "UAE Agency Acquisition"]);
   });
 
   it("rejects configs with dangling references", async () => {

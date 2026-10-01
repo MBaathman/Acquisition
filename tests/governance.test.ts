@@ -53,7 +53,7 @@ describe("constraints", () => {
     const { engine, outbox, run, advance } = setup(many(5));
     const cfg = await loadWith(DATASPEAKS, (c) => {
       c.autonomy.level = "autonomous";
-      c.constraints.rateLimits = [{ action: "send_message", channel: "email", perHour: 2 }];
+      c.constraints.rateLimits = [{ action: ["send_message", "follow_up"], channel: "email", perHour: 2 }];
     });
     await engine.registerCampaign(cfg);
     await run();
@@ -67,14 +67,14 @@ describe("constraints", () => {
 
   it("quiet hours defer sends until the window opens", async () => {
     const { engine, outbox, run, clock } = setup([b2bProspect(1)]);
-    clock.set(new Date("2026-10-04T20:00:00Z")); // 23:00 Riyadh
+    clock.set(new Date("2026-10-04T20:00:00Z")); // 00:00 Dubai
     const cfg = await loadWith(DATASPEAKS, (c) => (c.autonomy.level = "autonomous"));
     await engine.registerCampaign(cfg);
     await run();
     expect(outbox.sent).toHaveLength(0);
     const [scheduled] = await engine.store.actions.find((a) => a.status === "scheduled");
-    expect(scheduled!.runAfter).toBe("2026-10-05T05:00:00.000Z"); // 08:00 Riyadh
-    clock.set(new Date("2026-10-05T05:00:00Z"));
+    expect(scheduled!.runAfter).toBe("2026-10-05T04:00:00.000Z"); // 08:00 Dubai
+    clock.set(new Date("2026-10-05T04:00:00Z"));
     await run();
     expect(outbox.sent).toHaveLength(1);
   });
@@ -85,9 +85,9 @@ describe("constraints", () => {
     await engine.registerCampaign(cfg);
     await run();
     expect(outbox.sent.map((m) => m.channel)).toEqual(["email"]);
-    await advance(2 * DAY);
-    expect(outbox.sent.map((m) => m.channel)).toEqual(["email", "linkedin"]);
-    await engine.receiveReply({ campaignId: cfg.campaign.id, from: "sara1@company1.sa", channel: "email", text: "not now, maybe next quarter" });
+    await advance(3 * DAY);
+    expect(outbox.sent.map((m) => m.channel)).toEqual(["email", "linkedin"]); // auto picks the untried channel
+    await engine.receiveReply({ campaignId: cfg.campaign.id, from: "sara1@company1.example", channel: "email", text: "not now, maybe next quarter" });
     await run();
     await advance(20 * DAY);
     expect(outbox.sent).toHaveLength(2);
@@ -98,7 +98,7 @@ describe("constraints", () => {
     const cfg = await loadWith(DATASPEAKS, (c) => (c.autonomy.level = "autonomous"));
     await engine.registerCampaign(cfg);
     await run();
-    await engine.receiveReply({ campaignId: cfg.campaign.id, from: "sara1@company1.sa", channel: "email", text: "Please unsubscribe me" });
+    await engine.receiveReply({ campaignId: cfg.campaign.id, from: "sara1@company1.example", channel: "email", text: "Please unsubscribe me" });
     await run();
     await advance(30 * DAY);
     expect(outbox.sent).toHaveLength(1);
@@ -149,7 +149,7 @@ describe("retries, failures and escalation", () => {
     const cfg = await loadWith(DATASPEAKS, (c) => (c.autonomy.level = "autonomous"));
     await engine.registerCampaign(cfg);
     await run();
-    await engine.receiveReply({ campaignId: cfg.campaign.id, from: "sara1@company1.sa", channel: "email", text: "Interested, but we need an enterprise contract and a discount" });
+    await engine.receiveReply({ campaignId: cfg.campaign.id, from: "sara1@company1.example", channel: "email", text: "Interested, but we need an enterprise contract and a discount" });
     await run();
     const [p] = await engine.store.prospects.find(() => true);
     expect(p!.status).toBe("paused");
@@ -182,9 +182,9 @@ describe("permissions and tenant isolation", () => {
     const [first] = await pending(engine, cfg.campaign.id, "send_message");
     await engine.reject(first!.id, approver("dataspeaks"), "not yet");
     await run();
-    await advance(2 * DAY);
-    const next = await pending(engine, cfg.campaign.id, "send_message");
-    expect(next.map((a) => a.payload.stepKey)).toEqual(["s2_linkedin"]);
+    await advance(3 * DAY);
+    const next = await pending(engine, cfg.campaign.id);
+    expect(next.map((a) => [a.type, a.payload.stepKey])).toEqual([["send_message", "s2_follow_up"]]); // still the first touch actually sent
   });
 });
 

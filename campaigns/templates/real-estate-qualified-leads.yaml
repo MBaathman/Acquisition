@@ -13,6 +13,7 @@ campaign:
   id: example-realty-qualified-leads
   name: Off-plan investors — Qualified Leads
   status: draft
+  description: Template — investors and buyers for an off-plan launch.
 
 outcome:
   key: qualified_lead
@@ -25,6 +26,11 @@ outcome:
   requiresQualification: true
   target: { count: 100 }
   conversionStep: { template: viewing_invite }
+
+appointments:
+  label: Viewings
+  singular: Viewing
+  events: { booked: viewing.booked, held: viewing.held, cancelled: viewing.cancelled, noShow: viewing.no_show }
 
 fields:
   - { key: buyer_type, label: Buyer type, entity: contact, type: enum, options: [investor, end_user, business_owner] }
@@ -70,6 +76,12 @@ discovery:
   batchSize: 50
   dedupeAcrossCampaigns: false
 
+analytics:
+  dimensions:
+    - { key: geography, label: Target area, field: attributes.target_area }
+    - { key: buyer_type, label: Buyer type, field: attributes.buyer_type }
+    - { key: persona, label: Persona, field: prospect.persona }
+
 scoring:
   signals:
     - { key: investor, label: Investor, weight: 30, when: { field: attributes.buyer_type, op: eq, value: investor } }
@@ -80,11 +92,12 @@ scoring:
 qualification:
   framework: budget-area-timeline
   criteria:
+    - { key: engaged, label: Responded with interest, required: true, when: { field: engagement.lastIntent, op: eq, value: interested } }
     - { key: budget, label: Budget confirmed, required: true, when: { field: attributes.budget, op: gte, value: 800000 } }
     - { key: area, label: Target area known, required: true, when: { field: attributes.target_area, op: exists } }
     - { key: timeline, label: Within 12 months, required: true, when: { field: attributes.timeline, op: in, value: [0-3m, 3-6m, 6-12m] } }
     - { key: property_type, label: Property type known, when: { field: attributes.property_type, op: exists } }
-  minCriteriaMet: 3
+  minCriteriaMet: 4
 
 funnel:
   stages:
@@ -92,6 +105,7 @@ funnel:
     - { key: contacted, label: Contacted, milestone: contacted }
     - { key: responding, label: Responding, milestone: engaged }
     - { key: qualified, label: Qualified, milestone: qualified }
+    - { key: viewing_booked, label: Viewing booked, onEvent: { field: event.type, op: eq, value: viewing.booked } }
     - { key: lead_verified, label: Verified Lead, milestone: outcome }
     - { key: not_a_fit, label: Not a fit, milestone: lost }
 
@@ -129,4 +143,4 @@ constraints:
   quietHours: { startHour: 21, endHour: 9 }
   maxTouchesPerProspect: 3
   rateLimits:
-    - { action: send_message, channel: whatsapp, perDay: 50 }
+    - { action: [send_message, follow_up], channel: whatsapp, perDay: 50 }

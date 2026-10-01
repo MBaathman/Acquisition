@@ -27,16 +27,33 @@ function outcomeEventType(rule: Rule): string {
   return "";
 }
 
-const sample = Array.from({ length: 6 }, (_, i) => ({
-  account: {
-    name: `Sample Co ${i + 1}`, domain: `sample${i + 1}.sa`, country: "SA", city: "Riyadh", employees: 80 + i * 60,
-    attributes: { current_tool: i % 2 ? "Excel" : "Power BI", recent_initiative: "expanding operations", sector: "retail" },
-  },
-  contact: {
-    firstName: `Contact${i + 1}`, title: i % 3 === 0 ? "CEO" : "Head of Data",
-    handles: { email: `contact${i + 1}@sample${i + 1}.sa`, linkedin: `linkedin.com/in/c${i + 1}` },
-  },
-}));
+// Fictional sample prospects: half fit a UAE-agency ICP, half a KSA-enterprise ICP.
+// Every research fact cites a (fictional) source; the engine discards unsourced ones.
+const sourced = (domain: string) => ({
+  agency_type: { source: "Company website — services", url: `https://${domain}/services` },
+  client_count: { source: "Company website — case studies", url: `https://${domain}/work` },
+  ad_platforms: { source: "Ad platform partner directories" },
+  reporting_requirement: { source: "Job post — Reporting Analyst" },
+  sector: { source: "Company registry" },
+  recent_initiative: { source: "Press release", url: `https://${domain}/news` },
+});
+const sample = Array.from({ length: 12 }, (_, i) => {
+  const uae = i % 2 === 0;
+  const domain = `sample${i + 1}.demo`;
+  return {
+    account: {
+      name: `Sample Co ${i + 1}`, domain, country: uae ? "AE" : "SA", city: uae ? "Dubai" : "Riyadh", employees: uae ? 20 + i : 150 + i * 40,
+      attributes: {
+        agency_type: "performance", client_count: 6 + i, ad_platforms: ["meta", "google"], reporting_requirement: "monthly client reports",
+        sector: "retail", recent_initiative: "expanding operations", _sources: sourced(domain),
+      },
+    },
+    contact: {
+      firstName: `Contact${i + 1}`, title: i % 3 === 0 ? "CEO" : uae ? "Founder" : "Head of Operations",
+      handles: { email: `contact${i + 1}@${domain}`, linkedin: `linkedin.com/in/c${i + 1}` },
+    },
+  };
+});
 
 const clock = new ManualClock(new Date("2026-10-04T07:00:00Z"));
 const outbox = new OutboxSender();

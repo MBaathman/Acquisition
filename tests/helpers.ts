@@ -2,6 +2,7 @@ import { join } from "node:path";
 import {
   AcquisitionEngine,
   AttributeResearchProvider,
+  FixtureContactFinder,
   KeywordReplyClassifier,
   ManualClock,
   OutboxSender,
@@ -15,8 +16,8 @@ import {
 } from "../src/index.js";
 
 export const CAMPAIGNS = join(import.meta.dirname, "..", "campaigns");
-export const DATASPEAKS = join(CAMPAIGNS, "dataspeaks/paid-subscribers.yaml");
-export const TATIMMAH = join(CAMPAIGNS, "tatimmah/qualified-meetings.yaml");
+export const DATASPEAKS = join(CAMPAIGNS, "dataspeaks/uae-agency-acquisition.yaml");
+export const TATIMMAH = join(CAMPAIGNS, "tatimmah/saudi-enterprise-outreach.yaml");
 export const REAL_ESTATE = join(CAMPAIGNS, "templates/real-estate-qualified-leads.yaml");
 
 /** 10:00 in Riyadh — outside every configured quiet-hours window. */
@@ -30,23 +31,52 @@ export async function loadWith(path: string, patch: (c: CampaignConfig) => void 
   return cfg;
 }
 
-export function b2bProspect(i: number, overrides: Partial<DiscoveredProspect["contact"]> = {}): DiscoveredProspect {
+const src = (source: string, url?: string) => ({ source, url, confidence: 0.9 });
+
+/**
+ * A fixture prospect whose research facts all cite a source. `market` picks
+ * firmographics that fit the DataSpeaks (UAE agency) or Tatimmah (KSA
+ * enterprise) campaign.
+ */
+export function b2bProspect(
+  i: number,
+  overrides: Partial<DiscoveredProspect["contact"]> = {},
+  market: "ae_agency" | "sa_enterprise" = "ae_agency",
+): DiscoveredProspect {
+  const agency = market === "ae_agency";
   return {
     account: {
       name: `Company ${i}`,
-      domain: `company${i}.sa`,
-      industry: "retail",
-      country: "SA",
-      city: "Riyadh",
-      employees: 300,
-      attributes: { current_tool: "Excel", data_pain: "hiring analysts", recent_initiative: "expanding to Jeddah", sector: "retail" },
+      domain: `company${i}.example`,
+      industry: agency ? "marketing" : "retail",
+      country: agency ? "AE" : "SA",
+      city: agency ? "Dubai" : "Riyadh",
+      employees: agency ? 30 : 300,
+      attributes: {
+        agency_type: "performance",
+        client_count: 12,
+        ad_platforms: ["meta", "google", "tiktok"],
+        reporting_requirement: "monthly client reports",
+        growth_signal: "hiring two media buyers",
+        sector: "retail",
+        recent_initiative: "expanding to Jeddah",
+        _sources: {
+          agency_type: src("Company website — services page", `https://company${i}.example/services`),
+          client_count: src("Company website — case studies", `https://company${i}.example/work`),
+          ad_platforms: src("Meta & Google partner directories"),
+          reporting_requirement: src("Job post — Reporting Analyst"),
+          growth_signal: src("LinkedIn jobs page"),
+          sector: src("Company registry"),
+          recent_initiative: src("Press release", `https://company${i}.example/news`),
+        },
+      },
     },
     contact: {
       firstName: `Sara${i}`,
       lastName: "Test",
-      title: "Head of Data",
-      country: "SA",
-      handles: { email: `sara${i}@company${i}.sa`, linkedin: `linkedin.com/in/sara${i}` },
+      title: agency ? "Founder" : "Head of Data",
+      country: agency ? "AE" : "SA",
+      handles: { email: `sara${i}@company${i}.example`, linkedin: `linkedin.com/in/sara${i}` },
       ...overrides,
     },
   };
@@ -60,6 +90,7 @@ export function setup(prospects: DiscoveredProspect[], opts: { channels?: Record
     clock,
     sources: { apollo: source, crm_import: source },
     research: { default: new AttributeResearchProvider() },
+    contactFinders: { demo_finder: new FixtureContactFinder() },
     channels: opts.channels ?? { email: outbox, linkedin: outbox, whatsapp: outbox },
     classifier: new KeywordReplyClassifier(),
   });
@@ -76,6 +107,7 @@ export function setup(prospects: DiscoveredProspect[], opts: { channels?: Record
 }
 
 export const approver = (clientId: string): Actor => ({ type: "user", id: `u-${clientId}`, clientId, roles: ["approver"] });
+export const admin = (clientId: string): Actor => ({ type: "user", id: `a-${clientId}`, clientId, roles: ["admin"] });
 
 export async function pending(engine: AcquisitionEngine, campaignId: string, type?: string) {
   return engine.store.actions.find((a) => a.campaignId === campaignId && a.status === "pending_approval" && (!type || a.type === type));

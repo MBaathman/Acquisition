@@ -1,0 +1,207 @@
+# DataSpeaks — UAE Agency Acquisition — outcome: Paid Subscribers
+# NOTE: offer and copy are starting assumptions to be refined with the client.
+version: 1
+
+client:
+  id: dataspeaks
+  name: DataSpeaks
+  industry: Marketing reporting SaaS
+  timezone: Asia/Dubai
+
+campaign:
+  id: dataspeaks-uae-agencies
+  name: UAE Agency Acquisition
+  description: Performance marketing agencies in the UAE that report to multiple clients across ad platforms.
+  status: active
+  period: { start: "2026-09-01" }
+
+outcome:
+  key: paid_subscriber
+  label: Paid Subscriber
+  unit: subscriber
+  description: An agency that starts a paid DataSpeaks subscription.
+  achievedWhen:
+    all:
+      - { field: event.type, op: eq, value: subscription.paid }
+      - { field: event.payload.amount, op: gt, value: 0 }
+  requiresQualification: false
+  value: { amount: 99, currency: USD, recurrence: monthly, fromField: event.payload.amount }
+  target: { count: 50 }
+  conversionStep: { template: trial_invite }
+
+fields:
+  - { key: agency_type, label: Agency type, entity: account, type: enum, options: [performance, creative, full_service, media] }
+  - { key: client_count, label: Active clients, entity: account, type: number }
+  - { key: ad_platforms, label: Ad platforms managed, entity: account, type: multi_enum, options: [meta, google, tiktok, snapchat, linkedin] }
+
+icp:
+  description: UAE performance agencies (5–50 staff) managing paid media for several clients and reporting to them regularly.
+  targetType: account
+  personas:
+    - key: decision_maker
+      label: Founder / Managing Director
+      match: { field: contact.title, op: containsAny, value: [founder, ceo, managing director, owner, partner] }
+    - key: performance_lead
+      label: Head of Performance / Paid Media
+      match: { field: contact.title, op: containsAny, value: [performance, paid media, media buying, growth] }
+  fit:
+    all:
+      - { field: account.country, op: eq, value: AE }
+  exclusions:
+    any:
+      - { field: research.agency_type, op: in, value: [creative] }
+
+market:
+  geographies: [AE-DU, AE-AZ, AE-SH]
+  languages: [en, ar]
+  segments: [performance agencies]
+
+offer:
+  name: DataSpeaks for agencies
+  valueProposition: Automated client reporting across Meta, Google, TikTok and Snapchat — one dashboard per client, no spreadsheets.
+  proofPoints: [Connects ad accounts in minutes, White-label client reports]
+  callToAction: Start a free trial
+  pricing: From $99 / month
+
+discovery:
+  source: apollo
+  query: { industries: [marketing & advertising], keywords: [performance marketing, paid media], locations: [United Arab Emirates], employee_ranges: ["1,10", "11,50", "51,200"] }
+  targetActivePool: 60
+  batchSize: 10
+
+research:
+  provider: default
+  minConfidence: 0.7
+  questions:
+    - { key: agency_type, prompt: Is this a performance / paid-media agency?, required: true }
+    - { key: client_count, prompt: How many active clients does the agency show (case studies, client logos)?, required: true }
+    - { key: ad_platforms, prompt: Which ad platforms does the agency manage (Meta, Google, TikTok, Snapchat)?, required: true }
+    - { key: reporting_requirement, prompt: Is there evidence the agency produces recurring client reports? }
+    - { key: growth_signal, prompt: Any recent growth signal (hiring, new office, new clients)? }
+
+contacts:
+  finder: demo_finder
+
+# Campaign-specific scoring model (points, max 95). Rules read sourced research only.
+scoring:
+  scale: points
+  signals:
+    - { key: performance_agency, label: Performance agency, weight: 20, when: { field: research.agency_type, op: eq, value: performance } }
+    - { key: clients_3plus, label: 3+ clients, weight: 15, when: { field: research.client_count, op: gte, value: 3 } }
+    - { key: meta, label: Runs Meta ads, weight: 10, when: { field: research.ad_platforms, op: contains, value: meta } }
+    - { key: google, label: Runs Google ads, weight: 10, when: { field: research.ad_platforms, op: contains, value: google } }
+    - { key: tiktok_snapchat, label: Runs TikTok / Snapchat ads, weight: 5, when: { field: research.ad_platforms, op: containsAny, value: [tiktok, snapchat] } }
+    - { key: reporting, label: Recurring client reporting, weight: 15, when: { field: research.reporting_requirement, op: exists } }
+    - { key: size, label: 5–50 employees, weight: 10, when: { field: account.employees, op: between, value: [5, 50] } }
+    - { key: decision_maker, label: Decision maker, weight: 5, when: { field: prospect.persona, op: eq, value: decision_maker } }
+    - { key: growth, label: Growth signal, weight: 5, category: timing, when: { field: research.growth_signal, op: exists } }
+  tiers:
+    - { key: a, label: High fit, min: 70 }
+    - { key: b, label: Medium fit, min: 45 }
+    - { key: c, label: Low fit, min: 0 }
+
+qualification:
+  framework: self-serve-fit
+  criteria:
+    - { key: positive_reply, label: Replied positively, required: true, when: { field: engagement.lastIntent, op: in, value: [interested, question] } }
+    - { key: fit_tier, label: High or medium fit, when: { field: prospect.tier, op: in, value: [a, b] } }
+  minCriteriaMet: 2
+
+funnel:
+  stages:
+    - { key: discovered, label: Discovered, milestone: discovered }
+    - { key: researched, label: Researched, milestone: researched }
+    - { key: high_fit, label: High fit, milestone: fit }
+    - { key: contacted, label: Contacted, milestone: contacted }
+    - { key: replied, label: Replied, milestone: replied }
+    - { key: trial, label: Trial started, onEvent: { field: event.type, op: eq, value: trial.started } }
+    - { key: subscribed, label: Paid subscriber, milestone: outcome }
+    - { key: closed_lost, label: Closed lost, milestone: lost }
+
+personalization:
+  tone: friendly, concise
+  language: en
+  snippets:
+    - key: hook
+      when: { field: research.client_count, op: gte, value: 8 }
+      text: "With {{research.client_count}} clients, report day probably eats a few days every month."
+    - key: hook
+      when: { always: true }
+      text: Most agencies we talk to still build client reports by hand from each ad platform.
+  templates:
+    intro:
+      variants:
+        - key: pain_led
+          subject: "Client reporting at {{account.name}}"
+          body: |
+            Hi {{contact.firstName | "there"}},
+            {{snippet.hook}} {{offer.valueProposition}}
+            Worth a look? {{offer.callToAction}} — {{offer.pricing}}.
+        - key: question_led
+          subject: "Quick question, {{contact.firstName | \"there\"}}"
+          body: |
+            Hi {{contact.firstName | "there"}}, how does {{account.name}} put together client reports across Meta and Google today?
+            {{offer.valueProposition}} {{offer.callToAction}}?
+    follow_up:
+      body: |
+        Hi {{contact.firstName | "there"}}, following up — happy to set up a trial so {{account.name}} can try it on one client's ad accounts.
+    trial_invite:
+      subject: Your DataSpeaks trial
+      body: |
+        Great to hear, {{contact.firstName | "there"}}. Here is your trial link: https://dataspeaks.example/trial — connecting the first ad account takes about 5 minutes.
+    answer_question:
+      body: |
+        Thanks for the question, {{contact.firstName | "there"}}. Short answer: {{offer.valueProposition}} I'll follow up with details.
+
+outreach:
+  channels:
+    - { key: email, handle: email }
+    - { key: linkedin, handle: linkedin }
+  sequence:
+    - { key: s1_intro, channel: email, dayOffset: 0, template: intro }
+    - { key: s2_follow_up, channel: auto, dayOffset: 3, template: follow_up }
+  minScore: 45
+
+replies:
+  intents:
+    - { key: interested, label: Interested, sentiment: positive, keywords: [interested, "sounds good", trial, "sign me up", "let's try", yes], stopSequence: true }
+    - { key: question, label: Question, sentiment: positive, keywords: [how, price, pricing, cost, "?"], stopSequence: true, respondWith: answer_question }
+    - { key: not_now, label: Not now, sentiment: neutral, keywords: ["not now", later, "next quarter"], stopSequence: true }
+    - { key: not_interested, label: Not interested, sentiment: negative, keywords: ["not interested", "no thanks"], milestone: lost, stopSequence: true }
+    - { key: unsubscribe, label: Opt-out, sentiment: negative, keywords: [unsubscribe, "remove me", "stop emailing"], milestone: lost, stopSequence: true, suppress: true }
+    - { key: other, label: Other, sentiment: neutral }
+  defaultIntent: other
+  minClassificationConfidence: 0.6
+
+autonomy:
+  level: human_approval # MVP: every external action is approved by a human
+
+constraints:
+  quietHours: { startHour: 21, endHour: 8 }
+  maxTouchesPerProspect: 2
+  minHoursBetweenTouches: 48
+  rateLimits:
+    - { action: [send_message, follow_up], channel: email, perDay: 60, perHour: 15 }
+    - { action: [send_message, follow_up], channel: linkedin, perDay: 20 }
+  retry: { maxAttempts: 3, backoffSeconds: 120 }
+
+escalation:
+  rules:
+    - key: pricing_negotiation
+      when: { field: reply.text, op: containsAny, value: [discount, enterprise, contract, invoice] }
+      severity: medium
+      reason: Commercial negotiation — needs a human.
+    - key: complaint
+      when: { field: reply.text, op: containsAny, value: [spam, complaint, gdpr, legal] }
+      severity: high
+      reason: Complaint or compliance mention.
+
+analytics:
+  dimensions:
+    - { key: geography, label: Emirate, field: account.city }
+    - { key: agency_type, label: Agency type, field: research.agency_type }
+    - { key: persona, label: Persona, field: prospect.persona }
+    - { key: tier, label: Fit tier, field: prospect.tier }
+
+optimization: { enabled: true, minSampleSize: 30, cadenceHours: 24 }
+scheduling: { tickMinutes: 15 }

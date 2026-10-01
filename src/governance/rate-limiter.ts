@@ -18,21 +18,20 @@ export async function checkRateLimit(input: {
   const { action, cfg, store, now } = input;
   const channel = typeof action.payload.channel === "string" ? action.payload.channel : undefined;
   const limits = cfg.constraints.rateLimits.filter(
-    (l) => l.action === action.type && (!l.channel || l.channel === channel),
+    (l) => l.action.includes(action.type) && (!l.channel || l.channel === channel),
   );
   if (!limits.length) return { ok: true };
 
   const executed = await store.actions.find(
     (a) =>
       a.campaignId === action.campaignId &&
-      a.type === action.type &&
       a.executedAt !== undefined &&
       now.getTime() - new Date(a.executedAt).getTime() < DAY,
   );
 
   for (const limit of limits) {
     const relevant = executed
-      .filter((a) => !limit.channel || a.payload.channel === limit.channel)
+      .filter((a) => limit.action.includes(a.type) && (!limit.channel || a.payload.channel === limit.channel))
       .map((a) => new Date(a.executedAt!).getTime())
       .sort((a, b) => a - b);
     for (const [max, window] of [
@@ -46,7 +45,7 @@ export async function checkRateLimit(input: {
         return {
           ok: false,
           until: new Date(oldest + window),
-          reason: `rate limit ${max}/${window === HOUR ? "hour" : "day"} for ${action.type}${limit.channel ? ` on ${limit.channel}` : ""}`,
+          reason: `rate limit ${max}/${window === HOUR ? "hour" : "day"} for ${limit.action.join("+")}${limit.channel ? ` on ${limit.channel}` : ""}`,
         };
       }
     }

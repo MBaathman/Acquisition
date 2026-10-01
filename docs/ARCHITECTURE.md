@@ -72,10 +72,61 @@ reporting/        ── client-facing report
 | Recommendation | Learned, explainable optimization; applied through an `optimize` action. |
 | CampaignState | Runtime learning state (disabled variants, min-score override, discovery cursor). The config file is never mutated. |
 
+### Client → Campaign → Outcome
+
+A client runs any number of campaigns (e.g. DataSpeaks: *UAE Agency
+Acquisition* active, *KSA Agency Acquisition* draft). Each campaign has exactly
+one outcome definition. Everything below the campaign (ICP, research, scoring,
+outreach, replies, qualification, appointments, analytics, automation) is
+campaign configuration.
+
+### Research never fabricates
+
+`ResearchProvider` returns findings; a finding is used only if it cites a
+`source`. Unsourced findings are discarded (logged as `rejectedUnsourced` in
+the audit trail) and the prospect is marked `needs_review`. Scoring and copy
+read sourced research through `research.*`. Research status per prospect:
+`needs_research → researching → complete | needs_review`.
+
+### Scoring
+
+Signals are weighted rules. `scale: points` publishes the raw total (the
+DataSpeaks agency model totals 95); `scale: normalized` maps to 0..100. Each
+signal is `fit` (why fit) or `timing` (why now). Persona is resolved before
+signals are evaluated.
+
+### Contacts
+
+A fit prospect with no reachable handle goes through `enrich_contact`
+(a `ContactFinder` adapter, handles must come with a source). Status:
+`found | needs_contact | finding | not_found`; not found → parked.
+
+### Outreach
+
+First touch (`send_message`) and follow-ups (`follow_up`) are separate governed
+actions, so follow-ups can be automated before first touches. Steps whose
+channel the contact can't be reached on are skipped (audited). Upcoming touches
+can be previewed as drafts (`previewNextTouch`) before they are proposed.
+
+### Replies
+
+Each inbound message stores its classification, confidence and the engine's
+`nextAction` (respond, conversion step, escalate, wait, stop) with a link to
+the proposed action holding the suggested response.
+
+### Appointments
+
+Optional `appointments` config (label "Meetings", "Viewings"...) maps business
+events to an appointment lifecycle: scheduled → held | cancelled | no_show.
+Each appointment carries a brief built only from stored, sourced data: why
+fit, why now, research signals with sources, qualification, conversation.
+
 ### Milestones vs. funnel stages
 
 The engine understands a fixed set of **milestones** (`discovered, researched,
-contacted, engaged, qualified, outcome, lost`). Each campaign defines its own
+fit, contacted, replied, engaged (positive reply), qualified, outcome, lost`).
+Stages may instead be entered on a business event (`onEvent`, e.g. *Trial
+started*, *Meeting booked*). Each campaign defines its own
 client-facing **funnel stages** and maps them to milestones. The engine moves
 prospects between stages without knowing what the stages are called.
 
@@ -101,8 +152,8 @@ Action types and their risk class (`src/config/actions.ts`):
 
 | Action | Risk |
 | --- | --- |
-| discover, research, score, qualify | internal |
-| send_message, respond, conversion_step | external |
+| discover, research, score, enrich_contact, qualify | internal |
+| send_message, follow_up, respond, conversion_step | external |
 | optimize | strategic |
 
 Default mode per autonomy level:
@@ -114,6 +165,8 @@ Default mode per autonomy level:
 | autonomous | autonomous | autonomous if confidence ≥ 0.70, else approval | autonomous | 0.70 |
 
 Per-action overrides: `autonomy.actions.<type>: { mode, minConfidence }`.
+`engine.setAutonomy()` changes these at runtime; only client admins may, and
+every change (and every denied attempt) is audited.
 Hard permissions: `autonomy.allowedActions`. Human decisions require a user
 of the same client with the `approver` or `admin` role; denials are audited.
 

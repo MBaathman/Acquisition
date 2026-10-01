@@ -116,16 +116,45 @@ export const DiscoverySchema = z.object({
 export const ResearchSchema = z.object({
   provider: z.string().default("default"),
   questions: z
-    .array(z.object({ key: Key, prompt: z.string(), mapsTo: z.string().optional() }))
+    .array(
+      z.object({
+        key: Key,
+        prompt: z.string(),
+        mapsTo: z.string().optional(),
+        /** Research is "complete" only when every required question has a sourced answer. */
+        required: z.boolean().default(false),
+      }),
+    )
     .default([]),
+  /** Below this confidence a completed research pass is flagged for human review. */
+  minConfidence: z.number().min(0).max(1).default(0.7),
+});
+
+export const ContactsSchema = z.object({
+  /** Registered ContactFinder adapter used when a fit prospect has no reachable handle. */
+  finder: z.string().optional(),
 });
 
 // ---------------------------------------------------------------------------
 // Scoring & Qualification
 // ---------------------------------------------------------------------------
 export const ScoringSchema = z.object({
+  /**
+   * normalized: score is 0..100 relative to the sum of positive weights.
+   * points:     score is the raw sum of matched weights (max = sum of positive weights).
+   */
+  scale: z.enum(["normalized", "points"]).default("normalized"),
   signals: z
-    .array(z.object({ key: Key, label: z.string(), weight: z.number(), when: RuleSchema }))
+    .array(
+      z.object({
+        key: Key,
+        label: z.string(),
+        weight: z.number(),
+        when: RuleSchema,
+        /** fit = why this prospect fits; timing = why now. */
+        category: z.enum(["fit", "timing"]).default("fit"),
+      }),
+    )
     .default([]),
   tiers: z
     .array(z.object({ key: Key, label: z.string(), min: z.number() }))
@@ -161,9 +190,29 @@ export const FunnelSchema = z.object({
         key: Key,
         label: z.string(),
         milestone: z.enum(MILESTONES).optional(),
+        /** Stage entered when a recorded business event matches (e.g. a booking). */
+        onEvent: RuleSchema.optional(),
       }),
     )
     .min(2),
+});
+
+// ---------------------------------------------------------------------------
+// Appointments — optional, for outcomes that run through scheduled sessions
+// (calls, viewings, demos...). Names and event types are configuration.
+// ---------------------------------------------------------------------------
+export const AppointmentsSchema = z.object({
+  enabled: z.boolean().default(true),
+  label: z.string(),
+  singular: z.string(),
+  events: z.object({
+    booked: z.string(),
+    held: z.string(),
+    cancelled: z.string().optional(),
+    noShow: z.string().optional(),
+  }),
+  /** Dot-path into the event context holding the scheduled start time. */
+  startsAtField: z.string().default("event.payload.startsAt"),
 });
 
 // ---------------------------------------------------------------------------
@@ -276,7 +325,8 @@ export const ConstraintsSchema = z.object({
   rateLimits: z
     .array(
       z.object({
-        action: z.enum(ACTION_TYPE_KEYS),
+        /** One action type or several sharing the same budget. */
+        action: z.union([z.enum(ACTION_TYPE_KEYS), z.array(z.enum(ACTION_TYPE_KEYS)).min(1)]).transform((a) => (Array.isArray(a) ? a : [a])),
         channel: z.string().optional(),
         perHour: z.number().int().positive().optional(),
         perDay: z.number().int().positive().optional(),
@@ -307,6 +357,18 @@ export const EscalationSchema = z.object({
     .default([]),
 });
 
+export const AnalyticsSchema = z.object({
+  /** Dimensions results can be compared by; each is a dot-path into the prospect context. */
+  dimensions: z
+    .array(z.object({ key: Key, label: z.string(), field: z.string() }))
+    .default([
+      { key: "geography", label: "Geography", field: "account.country" },
+      { key: "sector", label: "Sector", field: "account.industry" },
+      { key: "persona", label: "Persona", field: "prospect.persona" },
+      { key: "tier", label: "Fit tier", field: "prospect.tier" },
+    ]),
+});
+
 export const OptimizationSchema = z.object({
   enabled: z.boolean().default(true),
   /** Minimum sends per arm before the optimizer draws conclusions. */
@@ -330,6 +392,12 @@ export const CampaignConfigSchema = z
       id: Key,
       name: z.string(),
       status: z.enum(["draft", "active", "paused", "completed"]).default("draft"),
+      description: z.string().optional(),
+      period: z.object({ start: z.string(), end: z.string().optional() }).optional(),
+      /** Spend attributable to the campaign, for cost per outcome. */
+      budget: z
+        .object({ amount: z.number().nonnegative(), currency: z.string(), period: z.enum(["monthly", "total"]).default("monthly") })
+        .optional(),
     }),
     outcome: OutcomeSchema,
     fields: z.array(FieldSchema).default([]),
@@ -338,15 +406,18 @@ export const CampaignConfigSchema = z
     offer: OfferSchema,
     discovery: DiscoverySchema,
     research: ResearchSchema.default({}),
+    contacts: ContactsSchema.default({}),
     scoring: ScoringSchema.default({}),
     qualification: QualificationSchema.default({}),
     funnel: FunnelSchema,
+    appointments: AppointmentsSchema.optional(),
     personalization: PersonalizationSchema,
     outreach: OutreachSchema,
     replies: RepliesSchema,
     autonomy: AutonomySchema.default({}),
     constraints: ConstraintsSchema.default({}),
     escalation: EscalationSchema.default({}),
+    analytics: AnalyticsSchema.default({}),
     optimization: OptimizationSchema.default({}),
     scheduling: SchedulingSchema.default({}),
   })
@@ -365,6 +436,12 @@ export const CampaignConfigSchema = z
         issue(["funnel", "stages"], `exactly one stage must have milestone '${m}'`);
       }
     }
+    cfg.funnel.stages.forEach((st, i) => {
+      if (!st.milestone && !st.onEvent) issue(["funnel", "stages", i], `stage '${st.key}' needs a milestone or an onEvent rule`);
+    });
+    const milestones = cfg.funnel.stages.map((st) => st.milestone).filter(Boolean);
+    const dupeMilestones = milestones.filter((m, i) => milestones.indexOf(m) !== i);
+    if (dupeMilestones.length) issue(["funnel", "stages"], `milestones mapped twice: ${dupeMilestones.join(", ")}`);
     cfg.outreach.sequence.forEach((step, i) => {
       if (!templateKeys.has(step.template)) issue(["outreach", "sequence", i, "template"], `unknown template '${step.template}'`);
       if (step.channel !== "auto" && !channelKeys.has(step.channel)) {

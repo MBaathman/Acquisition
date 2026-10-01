@@ -1,5 +1,6 @@
 import type {
   Account,
+  Appointment,
   CampaignState,
   Action,
   AuditEntry,
@@ -37,6 +38,7 @@ export interface Store {
   recommendations: Collection<Recommendation>;
   users: Collection<User>;
   campaignState: Collection<CampaignState>;
+  appointments: Collection<Appointment>;
 }
 
 class MemoryCollection<T extends { id: string }> implements Collection<T> {
@@ -72,5 +74,6 @@ export function createMemoryStore(): Store {
     recommendations: new MemoryCollection(),
     users: new MemoryCollection(),
     campaignState: new MemoryCollection(),
+    appointments: new MemoryCollection(),
   };
 }

@@ -13,10 +13,11 @@ campaign: `human_approval` (MVP) → `assisted` → `autonomous`.
 
 ## Campaigns
 
-| Config | Client | Outcome |
+| Config | Client — Campaign | Outcome |
 | --- | --- | --- |
-| `campaigns/dataspeaks/paid-subscribers.yaml` | DataSpeaks | Paid Subscriber |
-| `campaigns/tatimmah/qualified-meetings.yaml` | Tatimmah | Qualified Meeting |
+| `campaigns/dataspeaks/uae-agency-acquisition.yaml` | DataSpeaks — UAE Agency Acquisition | Paid Subscriber |
+| `campaigns/dataspeaks/ksa-agency-acquisition.yaml` | DataSpeaks — KSA Agency Acquisition (draft) | Paid Subscriber |
+| `campaigns/tatimmah/saudi-enterprise-outreach.yaml` | Tatimmah — Saudi Enterprise Outreach | Qualified Meeting |
 | `campaigns/templates/real-estate-qualified-leads.yaml` | template | Qualified Lead |
 
 A new client or industry is a new YAML file. No engine code changes.
