@@ -1,5 +1,6 @@
 // Builds prototype/dist/acquisition-os.html: the prototype UI with the engine's
-// builder + schema validation bundled for the browser, the setup presets, and
+// builder, schema validation, planner, intelligence layer and engine bundled for
+// the browser, the presets and agent knowledge, and
 // the demo dataset inlined.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { buildSync } from "esbuild";
@@ -13,7 +14,7 @@ const bundle = buildSync({
   bundle: true, format: "iife", globalName: "AcqEngine", platform: "browser", minify: true, write: false, target: "es2020",
 }).outputFiles[0]!.text;
 
-const presets = JSON.stringify({ outcomes: JSON.parse(read("presets/outcomes.json")).presets, intents: JSON.parse(read("presets/replies.json")).intents });
+const presets = JSON.stringify({ outcomes: JSON.parse(read("presets/outcomes.json")).presets, intents: JSON.parse(read("presets/replies.json")).intents, knowledge: JSON.parse(read("presets/knowledge.json")) });
 const safe = (s: string) => s.replace(/<\//g, "<\\/");
 const html = read("prototype/app.html")
   .replace("/*__ENGINE__*/", () => safe(bundle))

@@ -198,7 +198,72 @@ tier) from touches, positive replies and outcomes. It:
   raise the minimum score when a tier never converts — applied through a
   governed `optimize` action (approval-gated below full autonomy).
 
-## Setup flow (no-code campaign creation)
+## Agent flow: one sentence → running campaign
+
+The product starts from a goal, not a form: *USER DEFINES WHAT, ENGINE FIGURES
+OUT HOW.*
+
+```
+"50 عميل مدفوع لـ DataSpeaks من وكالات التسويق في الإمارات"
+  → understand   (src/agent/plans.ts: rules first, model only if rules can't)
+  → plan         (src/agent/planner.ts: deterministic, from presets/knowledge.json)
+      understanding · explanation (understood / will research / why / need from you)
+      assumptions [OK][Edit] · ≤ 2 questions with option buttons · strategy · CampaignDraft
+  → answer / accept       (applyAnswer: re-plans from the stored extraction — no model)
+  → approve               (buildCampaignConfig → same schema as YAML → engine)
+  → engine works          (discover → research → score → draft → approval queue)
+  → "needs your decision" (messages, prospects needing clarification, suggestions)
+```
+
+- **Knowledge is data.** `presets/knowledge.json` holds outcome vocabulary,
+  markets (countries, cities, focus cities, message language), audience
+  *archetypes* (company types, decision makers, scoring signals, assumptions,
+  the one question worth asking) and the question catalog. Teaching the agent a
+  new kind of audience = adding an archetype. The core still names no client,
+  industry or outcome (genericity test).
+- **Plans are persisted** (`Store.plans`). Viewing, navigating, answering a
+  question, accepting an assumption and approving all work on the stored
+  structure. The form-based setup is still there as *advanced settings*: a plan
+  opens in it prefilled.
+- **Simulation** (`src/agent/simulation.ts`): the prototype runs the engine's
+  first cycle on fictional prospects that resemble the plan's audience, so the
+  user sees real pipeline numbers. It is labelled as simulation; nothing is sent.
+
+## Hybrid intelligence (LLM only where it adds something)
+
+```
+User → Frontend → Backend (server/) → IntelligenceService → LlmProvider → structured JSON
+                                         │ cache · call log · token usage · schema validation
+                                         └ deterministic fallback on every path
+     → Database (Store) → engine workflows
+```
+
+| Concern | Where |
+| --- | --- |
+| Prompts, centralized and versioned, each with a zod output schema | `src/intelligence/prompts.ts` (`understand_goal`, `classify_reply`, `personalize_message`) |
+| Provider port (replaceable) | `src/intelligence/types.ts` `LlmProvider` |
+| Cache (prompt id + version + input hash), call log, token usage, fallback | `src/intelligence/service.ts` (`Store.llmCache`, `Store.llmCalls`, `usage()`) |
+| Reply classification / personalization adapters | `src/intelligence/adapters.ts` (`LlmReplyClassifier` falls back to keywords and rejects unknown intents; `LlmComposer` only sees sourced facts) |
+| Server-only provider (Anthropic SDK, structured outputs, refusal handling, server-side fallback) | `server/anthropic-provider.ts` — the only file that touches an API key, read from the environment |
+| HTTP API | `server/index.ts` |
+
+Rules:
+
+- **No model call** on page open, navigation, tab change, filters, reports or
+  approvals. The UI reads stored data.
+- **Rules first.** A request is sent to the model only if the rules could not
+  find the audience, outcome or market (`rulesAreConfident`). Every skip is
+  logged too (`status: skipped`), so usage shows how rarely the model is needed.
+- **The model can't invent structure.** Its extraction is sanitized against
+  the knowledge base (unknown archetypes, markets or outcomes are dropped);
+  invalid answers are never cached; refusals and errors fall back to rules.
+- **No key in a browser.** The prototype bundles the same service with no
+  provider (rules only), or an optional host-provided edge model
+  (`PromptJsonProvider`) that holds no key.
+- Expensive work (research, drafting, classification) runs as queued
+  background jobs, never in a request.
+
+## Advanced setup flow (no-code campaign creation)
 
 The friendly setup flow (Add client → Outcome → Audience → Offer →
 Qualification → Channels → Control → Review → Launch) produces a
@@ -237,7 +302,9 @@ No engine code changes.
 | Store | in-memory | Postgres implementation of `Store` (row-level tenant isolation) |
 | Queue | in-memory | durable queue / workflow engine (pg-boss, BullMQ or Temporal) behind `JobQueue` |
 | Discovery | static source | Apollo / Clay / Vibe Prospecting / CRM import adapters |
-| Research, classification, writing | attribute lookup, keyword classifier, templates | LLM-backed `ResearchProvider`, `ReplyClassifier`, `Composer` returning calibrated confidence |
+| Research, classification, writing | attribute lookup; keyword classifier + `LlmReplyClassifier`; templates + `LlmComposer` (server) | LLM-backed `ResearchProvider` with cited sources; eval sets per prompt |
+| Plans / LLM log / cache | in-memory + JSON files (`server/`) | Postgres tables, per-client usage metering |
+| Server | minimal Node HTTP (no auth) | authenticated API with tenant isolation |
 | Channels | outbox | email (with warm-up + deliverability), LinkedIn (e.g. Unipile), WhatsApp BSP |
 | Outcome events | `recordEvent()` | webhooks from payments (subscriptions), calendars (meetings), CRM (lead verification) |
 | Client surface | `report()` | API + client portal: outcome, progress, pipeline, attribution, recommendations, approvals inbox, exceptions |

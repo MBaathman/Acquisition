@@ -1,0 +1,1118 @@
+{
+  "$comment": "Knowledge the acquisition agent uses to turn one sentence into a campaign plan. Data, not engine code: outcome vocabulary, markets, and audience archetypes (what to look for, who decides, which signals matter, what to ask). Add an archetype here to teach the agent a new kind of audience.",
+  "outcomes": {
+    "paid_subscriber": [
+      "مشترك",
+      "مشتركين",
+      "مشتركون",
+      "اشتراك",
+      "عميل مدفوع",
+      "عملاء مدفوعين",
+      "عملاء مدفوعون",
+      "عميل يدفع",
+      "subscriber",
+      "subscribers",
+      "paid customer",
+      "paying customer",
+      "paid user",
+      "paid customers",
+      "paying customers",
+      "paid users",
+      "paying users"
+    ],
+    "qualified_meeting": [
+      "اجتماع",
+      "اجتماعات",
+      "موعد",
+      "مواعيد",
+      "مكالمة",
+      "meeting",
+      "meetings",
+      "call",
+      "calls",
+      "demo"
+    ],
+    "qualified_lead": [
+      "عميل محتمل",
+      "عملاء محتملين",
+      "عملاء محتملون",
+      "ليد",
+      "ليدز",
+      "lead",
+      "leads",
+      "qualified leads"
+    ],
+    "opportunity": [
+      "فرصة",
+      "فرص",
+      "فرص بيع",
+      "opportunity",
+      "opportunities",
+      "deal",
+      "deals"
+    ]
+  },
+  "offerHints": [
+    {
+      "keywords": [
+        "تجربة مجانية",
+        "تجربه مجانيه",
+        "free trial",
+        "trial"
+      ],
+      "cta": {
+        "ar": "ابدأ تجربة مجانية",
+        "en": "Start a free trial"
+      }
+    },
+    {
+      "keywords": [
+        "عرض توضيحي",
+        "ديمو",
+        "demo"
+      ],
+      "cta": {
+        "ar": "احجز عرضاً توضيحياً",
+        "en": "Book a demo"
+      }
+    }
+  ],
+  "autonomyHints": {
+    "autonomous": [
+      "تلقائي بالكامل",
+      "بدون موافقة",
+      "fully autonomous",
+      "without approval"
+    ],
+    "assisted": [
+      "شبه تلقائي",
+      "assisted"
+    ]
+  },
+  "regions": [
+    {
+      "code": "AE",
+      "name": {
+        "ar": "الإمارات",
+        "en": "the UAE"
+      },
+      "aliases": [
+        "الإمارات",
+        "الامارات",
+        "امارات",
+        "uae",
+        "emirates",
+        "united arab emirates"
+      ],
+      "language": "en",
+      "cities": [
+        {
+          "key": "Dubai",
+          "name": {
+            "ar": "دبي",
+            "en": "Dubai"
+          },
+          "aliases": [
+            "دبي",
+            "dubai"
+          ]
+        },
+        {
+          "key": "Abu Dhabi",
+          "name": {
+            "ar": "أبوظبي",
+            "en": "Abu Dhabi"
+          },
+          "aliases": [
+            "أبوظبي",
+            "ابوظبي",
+            "أبو ظبي",
+            "ابو ظبي",
+            "abu dhabi"
+          ]
+        },
+        {
+          "key": "Sharjah",
+          "name": {
+            "ar": "الشارقة",
+            "en": "Sharjah"
+          },
+          "aliases": [
+            "الشارقة",
+            "sharjah"
+          ]
+        }
+      ],
+      "focusCities": [
+        "Dubai",
+        "Abu Dhabi"
+      ]
+    },
+    {
+      "code": "SA",
+      "name": {
+        "ar": "السعودية",
+        "en": "Saudi Arabia"
+      },
+      "aliases": [
+        "السعودية",
+        "السعوديه",
+        "المملكة",
+        "ksa",
+        "saudi",
+        "saudi arabia"
+      ],
+      "language": "ar",
+      "cities": [
+        {
+          "key": "Riyadh",
+          "name": {
+            "ar": "الرياض",
+            "en": "Riyadh"
+          },
+          "aliases": [
+            "الرياض",
+            "رياض",
+            "riyadh"
+          ]
+        },
+        {
+          "key": "Jeddah",
+          "name": {
+            "ar": "جدة",
+            "en": "Jeddah"
+          },
+          "aliases": [
+            "جدة",
+            "جده",
+            "jeddah",
+            "jedda"
+          ]
+        },
+        {
+          "key": "Dammam",
+          "name": {
+            "ar": "الدمام",
+            "en": "Dammam"
+          },
+          "aliases": [
+            "الدمام",
+            "dammam"
+          ]
+        },
+        {
+          "key": "Khobar",
+          "name": {
+            "ar": "الخبر",
+            "en": "Khobar"
+          },
+          "aliases": [
+            "الخبر",
+            "khobar"
+          ]
+        }
+      ],
+      "focusCities": [
+        "Riyadh",
+        "Jeddah"
+      ]
+    },
+    {
+      "code": "KW",
+      "name": {
+        "ar": "الكويت",
+        "en": "Kuwait"
+      },
+      "aliases": [
+        "الكويت",
+        "kuwait"
+      ],
+      "language": "ar",
+      "cities": [],
+      "focusCities": []
+    },
+    {
+      "code": "QA",
+      "name": {
+        "ar": "قطر",
+        "en": "Qatar"
+      },
+      "aliases": [
+        "قطر",
+        "qatar"
+      ],
+      "language": "ar",
+      "cities": [],
+      "focusCities": []
+    },
+    {
+      "code": "BH",
+      "name": {
+        "ar": "البحرين",
+        "en": "Bahrain"
+      },
+      "aliases": [
+        "البحرين",
+        "bahrain"
+      ],
+      "language": "ar",
+      "cities": [],
+      "focusCities": []
+    },
+    {
+      "code": "OM",
+      "name": {
+        "ar": "عُمان",
+        "en": "Oman"
+      },
+      "aliases": [
+        "عمان",
+        "عُمان",
+        "oman"
+      ],
+      "language": "ar",
+      "cities": [],
+      "focusCities": []
+    },
+    {
+      "code": "EG",
+      "name": {
+        "ar": "مصر",
+        "en": "Egypt"
+      },
+      "aliases": [
+        "مصر",
+        "egypt"
+      ],
+      "language": "ar",
+      "cities": [],
+      "focusCities": []
+    }
+  ],
+  "archetypes": [
+    {
+      "key": "marketing_agencies",
+      "keywords": [
+        "وكالات التسويق",
+        "وكالة تسويق",
+        "وكالات تسويق",
+        "وكالات",
+        "وكالة",
+        "agencies",
+        "agency",
+        "marketing agencies"
+      ],
+      "label": {
+        "ar": "وكالات التسويق والأداء الرقمي",
+        "en": "Performance & digital marketing agencies"
+      },
+      "short": {
+        "ar": "وكالات",
+        "en": "agency"
+      },
+      "campaignName": {
+        "ar": "استقطاب وكالات {place}",
+        "en": "{Place} agency acquisition"
+      },
+      "targetType": "account",
+      "companyTypes": {
+        "ar": [
+          "وكالة تسويق أداء",
+          "وكالة تسويق رقمي"
+        ],
+        "en": [
+          "Performance marketing agency",
+          "Digital marketing agency"
+        ]
+      },
+      "size": {
+        "min": 5,
+        "max": 50
+      },
+      "titles": {
+        "ar": [
+          "المؤسس",
+          "المدير العام",
+          "مدير التسويق"
+        ],
+        "en": [
+          "Founder",
+          "Managing Director",
+          "Head of Marketing",
+          "Head of Performance"
+        ]
+      },
+      "signals": [
+        {
+          "label": {
+            "ar": "وكالة أداء / تسويق رقمي",
+            "en": "Performance / digital agency"
+          },
+          "points": 20
+        },
+        {
+          "label": {
+            "ar": "تخدم عدة عملاء (3+)",
+            "en": "Serves several clients (3+)"
+          },
+          "points": 15
+        },
+        {
+          "label": {
+            "ar": "تدير إعلانات Meta",
+            "en": "Runs Meta ads"
+          },
+          "points": 10
+        },
+        {
+          "label": {
+            "ar": "تدير إعلانات Google",
+            "en": "Runs Google ads"
+          },
+          "points": 10
+        },
+        {
+          "label": {
+            "ar": "تدير TikTok / Snapchat",
+            "en": "Runs TikTok / Snapchat"
+          },
+          "points": 5
+        },
+        {
+          "label": {
+            "ar": "احتياج واضح لتقارير الحملات",
+            "en": "Clear need for campaign reporting"
+          },
+          "points": 15
+        },
+        {
+          "label": {
+            "ar": "شركة صغيرة أو متوسطة (5–50)",
+            "en": "Small or mid-size (5–50)"
+          },
+          "points": 10,
+          "check": "size"
+        },
+        {
+          "label": {
+            "ar": "وجود صاحب قرار",
+            "en": "A decision maker is reachable"
+          },
+          "points": 5,
+          "check": "role"
+        },
+        {
+          "label": {
+            "ar": "إشارة نمو أو توسع",
+            "en": "Growth or expansion signal"
+          },
+          "points": 5,
+          "timing": true
+        }
+      ],
+      "summarySignals": {
+        "ar": [
+          "عدة عملاء",
+          "Meta + Google",
+          "احتياج للتقارير",
+          "نمو أو توسع",
+          "وجود مسؤول قرار"
+        ],
+        "en": [
+          "Several clients",
+          "Meta + Google",
+          "Reporting need",
+          "Growth or expansion",
+          "A reachable decision maker"
+        ]
+      },
+      "understood": {
+        "ar": "تريد الوصول إلى {audience} في {place} لديها احتياج واضح لإدارة وتقارير الحملات.",
+        "en": "You want to reach {audience} in {place} with a clear need to manage and report on campaigns."
+      },
+      "assumptions": {
+        "ar": [
+          "وكالات لديها عدة عملاء",
+          "تستخدم أكثر من منصة إعلانية",
+          "لديها احتياج لتقارير الحملات",
+          "التركيز الأولي على الشركات الصغيرة والمتوسطة"
+        ],
+        "en": [
+          "Agencies with several clients",
+          "Using more than one ad platform",
+          "With a need for campaign reporting",
+          "Starting with small and mid-size firms"
+        ]
+      },
+      "question": "region_focus",
+      "namePool": {
+        "a": [
+          "Falcon",
+          "Dune",
+          "Pearl",
+          "Marina",
+          "Oasis",
+          "Creek",
+          "Palm",
+          "Nomad",
+          "Atlas",
+          "Mirage",
+          "Zenith",
+          "Saffron",
+          "Corniche",
+          "Souk"
+        ],
+        "b": [
+          "Media Lab",
+          "Growth Co",
+          "Performance",
+          "Digital",
+          "Ads Studio",
+          "Clicks",
+          "Paid Social",
+          "Collective"
+        ]
+      },
+      "industry": "marketing"
+    },
+    {
+      "key": "enterprise",
+      "keywords": [
+        "شركات كبيرة",
+        "الشركات الكبيرة",
+        "الشركات الكبرى",
+        "شركات كبرى",
+        "جهات حكومية",
+        "شبه حكومية",
+        "enterprise",
+        "large companies",
+        "large enterprises",
+        "government"
+      ],
+      "label": {
+        "ar": "الشركات الكبرى والجهات الحكومية وشبه الحكومية",
+        "en": "Large enterprises, government and semi-government entities"
+      },
+      "short": {
+        "ar": "الشركات الكبرى",
+        "en": "enterprise"
+      },
+      "campaignName": {
+        "ar": "اجتماعات الشركات الكبرى في {place}",
+        "en": "{Place} enterprise meetings"
+      },
+      "targetType": "account",
+      "companyTypes": {
+        "ar": [
+          "شركة كبرى",
+          "جهة حكومية",
+          "جهة شبه حكومية"
+        ],
+        "en": [
+          "Large enterprise",
+          "Government entity",
+          "Semi-government entity"
+        ]
+      },
+      "size": {
+        "min": 500
+      },
+      "titles": {
+        "ar": [
+          "مدير التسويق",
+          "مدير العلامة التجارية",
+          "مدير الاتصال المؤسسي",
+          "مدير الاستراتيجية",
+          "مدير التحول",
+          "مدير المشتريات والشراكات"
+        ],
+        "en": [
+          "Marketing Director",
+          "Brand Manager",
+          "Head of Communications",
+          "Chief Strategy Officer",
+          "Transformation Director",
+          "Head of Procurement & Partnerships"
+        ]
+      },
+      "signals": [
+        {
+          "label": {
+            "ar": "حجم كبير (500+ موظف)",
+            "en": "Large size (500+ staff)"
+          },
+          "points": 20,
+          "check": "size"
+        },
+        {
+          "label": {
+            "ar": "صاحب قرار في التسويق أو الاتصال أو الاستراتيجية",
+            "en": "Decision maker in marketing, communications or strategy"
+          },
+          "points": 20,
+          "check": "role"
+        },
+        {
+          "label": {
+            "ar": "مبادرة حديثة: إطلاق، توسع، أو إعادة هيكلة",
+            "en": "Recent initiative: launch, expansion or restructuring"
+          },
+          "points": 20,
+          "timing": true
+        },
+        {
+          "label": {
+            "ar": "احتياج لهوية أو إعادة تموضع العلامة",
+            "en": "Need for brand identity or repositioning"
+          },
+          "points": 15
+        },
+        {
+          "label": {
+            "ar": "حملات أو حضور رقمي يحتاج تطويراً",
+            "en": "Campaigns or digital presence that need work"
+          },
+          "points": 15
+        },
+        {
+          "label": {
+            "ar": "تطرح مشاريع أو مناقصات في هذا المجال",
+            "en": "Issues projects or tenders in this area"
+          },
+          "points": 10
+        }
+      ],
+      "summarySignals": {
+        "ar": [
+          "حجم كبير",
+          "مبادرة أو توسع حديث",
+          "احتياج للعلامة أو الحملات",
+          "صاحب قرار في التسويق أو الاستراتيجية"
+        ],
+        "en": [
+          "Large size",
+          "A recent initiative or expansion",
+          "Brand or campaign need",
+          "A decision maker in marketing or strategy"
+        ]
+      },
+      "needs": {
+        "ar": [
+          "استراتيجية العلامة",
+          "إعادة الهوية",
+          "الحملات الإبداعية",
+          "الحضور الرقمي",
+          "الملفات التعريفية",
+          "النمو والتوسع"
+        ],
+        "en": [
+          "Brand strategy",
+          "Rebranding",
+          "Creative campaigns",
+          "Digital presence",
+          "Corporate profiles",
+          "Growth & expansion"
+        ]
+      },
+      "understood": {
+        "ar": "تريد اجتماعات مع {audience} في {place} لديها احتياج للعلامة أو الحملات أو التوسع.",
+        "en": "You want meetings with {audience} in {place} that need brand, campaign or growth work."
+      },
+      "assumptions": {
+        "ar": [
+          "جهات كبيرة أو حكومية أو شبه حكومية",
+          "صاحب القرار في التسويق أو الاتصال أو الاستراتيجية",
+          "أولوية لمن لديه مبادرة أو توسع حديث"
+        ],
+        "en": [
+          "Large, government or semi-government entities",
+          "Decision makers in marketing, communications or strategy",
+          "Priority to those with a recent initiative or expansion"
+        ]
+      },
+      "question": "public_sector",
+      "namePool": {
+        "a": [
+          "Nakheel",
+          "Wadi",
+          "Rawabi",
+          "Sahm",
+          "Manar",
+          "Najd",
+          "Tamkeen",
+          "Masar",
+          "Bayan",
+          "Qimam",
+          "Rukn",
+          "Afaq",
+          "Sanad",
+          "Watan"
+        ],
+        "b": [
+          "Holding",
+          "Group",
+          "Industries",
+          "Development",
+          "Authority",
+          "Company",
+          "Investments"
+        ]
+      },
+      "industry": "enterprise"
+    },
+    {
+      "key": "luxury_residential",
+      "keywords": [
+        "عقارات سكنية فاخرة",
+        "عقار فاخر",
+        "عقارات فاخرة",
+        "فلل",
+        "فيلا",
+        "شقق فاخرة",
+        "عقار",
+        "عقارات",
+        "سكني",
+        "سكنية",
+        "luxury residential",
+        "luxury real estate",
+        "real estate",
+        "property",
+        "villas",
+        "residential"
+      ],
+      "label": {
+        "ar": "مشترو ومستثمرو العقارات السكنية الفاخرة",
+        "en": "Buyers and investors of luxury residential property"
+      },
+      "short": {
+        "ar": "العقارات الفاخرة",
+        "en": "luxury property"
+      },
+      "campaignName": {
+        "ar": "عملاء العقارات الفاخرة في {place}",
+        "en": "{Place} luxury property leads"
+      },
+      "targetType": "individual",
+      "companyTypes": {
+        "ar": [
+          "مشترٍ للسكن",
+          "مستثمر عقاري"
+        ],
+        "en": [
+          "Home buyer",
+          "Property investor"
+        ]
+      },
+      "titles": {
+        "ar": [],
+        "en": []
+      },
+      "signals": [
+        {
+          "label": {
+            "ar": "ميزانية مناسبة للعقار الفاخر",
+            "en": "Budget fits luxury property"
+          },
+          "points": 30,
+          "check": "budget"
+        },
+        {
+          "label": {
+            "ar": "يبحث في المنطقة المستهدفة",
+            "en": "Looking in the target area"
+          },
+          "points": 20,
+          "check": "location"
+        },
+        {
+          "label": {
+            "ar": "شراء خلال 6 أشهر",
+            "en": "Buying within 6 months"
+          },
+          "points": 25,
+          "timing": true
+        },
+        {
+          "label": {
+            "ar": "اهتمام موثّق بالعقار السكني الفاخر",
+            "en": "Documented interest in luxury residential"
+          },
+          "points": 25
+        }
+      ],
+      "summarySignals": {
+        "ar": [
+          "ميزانية مناسبة",
+          "المنطقة المستهدفة",
+          "توقيت شراء قريب",
+          "اهتمام موثّق"
+        ],
+        "en": [
+          "Suitable budget",
+          "Target area",
+          "Near-term purchase",
+          "Documented interest"
+        ]
+      },
+      "understood": {
+        "ar": "تريد عملاء محتملين جادّين لـ{audience} في {place}.",
+        "en": "You want serious leads for {audience} in {place}."
+      },
+      "assumptions": {
+        "ar": [
+          "المشترون والمستثمرون الأفراد",
+          "ميزانية تناسب العقار الفاخر",
+          "التواصل فقط مع من لديه موافقة مسبقة أو اهتمام موثّق"
+        ],
+        "en": [
+          "Individual buyers and investors",
+          "Budgets that fit luxury property",
+          "Only contacting people with prior consent or documented interest"
+        ]
+      },
+      "question": "min_budget",
+      "budgetOptions": [
+        1000000,
+        3000000,
+        5000000
+      ],
+      "budgetCurrency": "SAR",
+      "namePool": {
+        "a": [],
+        "b": []
+      },
+      "industry": "real_estate"
+    },
+    {
+      "key": "general",
+      "fallback": true,
+      "keywords": [],
+      "label": {
+        "ar": "الشركات المناسبة لعرضك",
+        "en": "Companies that fit your offer"
+      },
+      "short": {
+        "ar": "الشركات",
+        "en": "company"
+      },
+      "campaignName": {
+        "ar": "حملة {outcome} — {place}",
+        "en": "{outcome} — {Place}"
+      },
+      "targetType": "account",
+      "companyTypes": {
+        "ar": [],
+        "en": []
+      },
+      "titles": {
+        "ar": [
+          "المؤسس",
+          "المدير العام"
+        ],
+        "en": [
+          "Founder",
+          "CEO",
+          "Managing Director"
+        ]
+      },
+      "signals": [
+        {
+          "label": {
+            "ar": "يطابق وصف الجمهور",
+            "en": "Matches the audience description"
+          },
+          "points": 30
+        },
+        {
+          "label": {
+            "ar": "احتياج واضح لما تقدّمه",
+            "en": "Clear need for what you offer"
+          },
+          "points": 30
+        },
+        {
+          "label": {
+            "ar": "وجود صاحب قرار",
+            "en": "A decision maker is reachable"
+          },
+          "points": 20,
+          "check": "role"
+        },
+        {
+          "label": {
+            "ar": "إشارة نمو أو توسع",
+            "en": "Growth or expansion signal"
+          },
+          "points": 20,
+          "timing": true
+        }
+      ],
+      "summarySignals": {
+        "ar": [
+          "مطابقة الوصف",
+          "احتياج واضح",
+          "صاحب قرار",
+          "نمو"
+        ],
+        "en": [
+          "Matches the description",
+          "Clear need",
+          "Decision maker",
+          "Growth"
+        ]
+      },
+      "understood": {
+        "ar": "تريد {outcome} من {audience} في {place}.",
+        "en": "You want {outcome} from {audience} in {place}."
+      },
+      "assumptions": {
+        "ar": [
+          "الشركات التي يطابق نشاطها وصفك",
+          "صاحب القرار هو المؤسس أو المدير العام"
+        ],
+        "en": [
+          "Companies whose business matches your description",
+          "The decision maker is the founder or CEO"
+        ]
+      },
+      "question": "audience_detail",
+      "namePool": {
+        "a": [
+          "Nova",
+          "Summit",
+          "Bright",
+          "Orbit",
+          "Vertex",
+          "Harbor",
+          "Cedar",
+          "Atlas"
+        ],
+        "b": [
+          "Labs",
+          "Group",
+          "Solutions",
+          "Partners",
+          "Co"
+        ]
+      },
+      "industry": "general"
+    }
+  ],
+  "questions": {
+    "goal": {
+      "text": {
+        "ar": "كم {unit} تريد؟",
+        "en": "How many {outcome} do you want?"
+      },
+      "options": [
+        {
+          "id": "25",
+          "label": {
+            "ar": "25",
+            "en": "25"
+          }
+        },
+        {
+          "id": "50",
+          "label": {
+            "ar": "50",
+            "en": "50"
+          }
+        },
+        {
+          "id": "100",
+          "label": {
+            "ar": "100",
+            "en": "100"
+          }
+        }
+      ],
+      "custom": "number",
+      "default": "50",
+      "effect": "goal"
+    },
+    "market": {
+      "text": {
+        "ar": "في أي سوق تريد أن نبدأ؟",
+        "en": "Which market should we start in?"
+      },
+      "effect": "country",
+      "options": [
+        {
+          "id": "SA",
+          "label": {
+            "ar": "السعودية",
+            "en": "Saudi Arabia"
+          }
+        },
+        {
+          "id": "AE",
+          "label": {
+            "ar": "الإمارات",
+            "en": "UAE"
+          }
+        },
+        {
+          "id": "KW",
+          "label": {
+            "ar": "الكويت",
+            "en": "Kuwait"
+          }
+        }
+      ],
+      "default": "SA"
+    },
+    "region_focus": {
+      "text": {
+        "ar": "هل تقبل {short} من جميع أنحاء {country}، أم تريد التركيز على {focus} أولاً؟",
+        "en": "Should we accept {short}s from all of {country}, or focus on {focus} first?"
+      },
+      "options": [
+        {
+          "id": "all",
+          "label": {
+            "ar": "كل {country}",
+            "en": "All of {country}"
+          }
+        },
+        {
+          "id": "focus",
+          "label": {
+            "ar": "{focus} أولاً",
+            "en": "{focus} first"
+          }
+        },
+        {
+          "id": "custom",
+          "label": {
+            "ar": "حدد لي",
+            "en": "Let me choose"
+          },
+          "custom": "cities"
+        }
+      ],
+      "default": "all",
+      "effect": "cities"
+    },
+    "public_sector": {
+      "text": {
+        "ar": "هل نشمل الجهات الحكومية وشبه الحكومية، أم القطاع الخاص فقط؟",
+        "en": "Should we include government and semi-government entities, or private sector only?"
+      },
+      "options": [
+        {
+          "id": "both",
+          "label": {
+            "ar": "الاثنين",
+            "en": "Both"
+          },
+          "companyTypes": null
+        },
+        {
+          "id": "private",
+          "label": {
+            "ar": "القطاع الخاص فقط",
+            "en": "Private sector only"
+          },
+          "companyTypes": {
+            "ar": [
+              "شركة كبرى"
+            ],
+            "en": [
+              "Large enterprise"
+            ]
+          }
+        },
+        {
+          "id": "public",
+          "label": {
+            "ar": "الحكومي وشبه الحكومي فقط",
+            "en": "Government only"
+          },
+          "companyTypes": {
+            "ar": [
+              "جهة حكومية",
+              "جهة شبه حكومية"
+            ],
+            "en": [
+              "Government entity",
+              "Semi-government entity"
+            ]
+          }
+        }
+      ],
+      "default": "both",
+      "effect": "companyTypes"
+    },
+    "min_budget": {
+      "text": {
+        "ar": "هل تريد حداً أدنى للميزانية؟",
+        "en": "Do you want a minimum budget?"
+      },
+      "options": [
+        {
+          "id": "1000000",
+          "label": {
+            "ar": "مليون ر.س+",
+            "en": "SAR 1M+"
+          }
+        },
+        {
+          "id": "3000000",
+          "label": {
+            "ar": "3 ملايين ر.س+",
+            "en": "SAR 3M+"
+          }
+        },
+        {
+          "id": "5000000",
+          "label": {
+            "ar": "5 ملايين ر.س+",
+            "en": "SAR 5M+"
+          }
+        },
+        {
+          "id": "none",
+          "label": {
+            "ar": "بدون حد",
+            "en": "No minimum"
+          }
+        }
+      ],
+      "default": "3000000",
+      "effect": "budget"
+    },
+    "audience_detail": {
+      "text": {
+        "ar": "صف لي نوع الشركات التي تريد الوصول إليها في جملة واحدة.",
+        "en": "In one sentence, what kind of companies should we reach?"
+      },
+      "options": [],
+      "custom": "text",
+      "effect": "audience"
+    }
+  },
+  "defaults": {
+    "outcome": "opportunity",
+    "goal": 50,
+    "country": "SA",
+    "placeholderClient": {
+      "ar": "عميل جديد",
+      "en": "New client"
+    },
+    "offer": {
+      "valueProposition": {
+        "ar": "نساعدك على تحقيق نتائج أسرع بجهد أقل.",
+        "en": "We help you get results faster with less effort."
+      },
+      "mainMessage": {
+        "ar": "لاحظنا أن {company} قد تستفيد من {offer}.",
+        "en": "We noticed {company} could benefit from {offer}."
+      },
+      "mainMessageIndividual": {
+        "ar": "نعتقد أن {offer} قد يناسب ما تبحث عنه.",
+        "en": "We think {offer} may fit what you are looking for."
+      }
+    }
+  }
+}

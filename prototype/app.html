@@ -381,6 +381,89 @@ pre.code { background: var(--surface-2); border-radius: 8px; padding: 12px; font
   .ctx-tools { margin-inline-start: 0; }
 }
 @media (prefers-reduced-motion: no-preference) { .progress > i, .bar > i, .hbar .track > i { transition: width .45s ease; } }
+/* ---------- agent conversation */
+.agent-hero { display: grid; gap: 16px; justify-items: center; text-align: center; max-width: 760px; margin-inline: auto; padding-block: clamp(16px, 6vh, 56px) 24px; }
+.agent-hero h1 { font-size: clamp(1.8rem, 4.6vw, 2.6rem); }
+.agent-hero > p { color: var(--ink-2); max-width: 54ch; }
+.ask { width: 100%; display: flex; gap: 8px; align-items: stretch; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 8px; box-shadow: 0 6px 24px rgb(16 24 40 / .06); }
+.ask:focus-within { border-color: var(--accent); }
+.ask textarea { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 1.05rem; resize: none; padding: 8px 10px; line-height: 1.6; }
+.ask textarea:focus { outline: none; }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+.example { font: inherit; font-size: .86rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer; text-align: start; }
+.example:hover { border-color: var(--accent); color: var(--accent-ink); }
+.hero-foot { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.agent { display: grid; gap: 14px; max-width: 860px; margin-inline: auto; }
+.agent-top { display: flex; justify-content: space-between; align-items: center; }
+.turn { display: flex; gap: 10px; align-items: flex-start; }
+.turn.user { justify-content: flex-end; }
+.turn.user .turn-body { background: var(--accent); color: #fff; border-radius: 14px; border-end-end-radius: 4px; padding: 10px 14px; max-width: 80%; }
+.turn.user .turn-body p { margin: 0; }
+.turn.agent .turn-body { flex: 1; min-width: 0; display: grid; gap: 12px; }
+.avatar { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-size: .95rem; }
+.lead { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; margin: 4px 0 0; }
+.thinking { color: var(--ink-3); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+.u-card, .a-card, .q-card, .plan-card, .decide { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+.u-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.u-grid > div { display: grid; gap: 2px; align-content: start; }
+.u-grid .wide { grid-column: 1 / -1; }
+.u-grid span, .plan-kpis span { font-size: .74rem; color: var(--ink-3); }
+.u-grid em, .plan-kpis small { font-style: normal; justify-self: start; }
+.explain { margin: 0; display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.explain > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; }
+.explain dt { font-weight: 600; color: var(--ink-2); font-size: .86rem; }
+.explain dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.assume { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.assume li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 8px; background: var(--surface-2); }
+.assume li.accepted { background: var(--good-soft); }
+.assume li.edited { background: var(--warn-soft); }
+.a-btns { display: inline-flex; gap: 4px; flex: none; }
+.btn.on { background: var(--good-soft); border-color: transparent; color: var(--good-ink); }
+.btn.primary-soft { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
+.q-card { border-color: var(--accent); }
+.q-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.q-custom { display: flex; gap: 6px; width: 100%; }
+.q-custom input { flex: 1; min-width: 0; font: inherit; border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; background: var(--surface); color: var(--ink); }
+.plan-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.plan-kpis > div { display: grid; gap: 1px; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.plan-kpis small { color: var(--ink-3); font-size: .74rem; }
+.signals summary { cursor: pointer; font-weight: 600; font-size: .86rem; color: var(--accent-ink); }
+.signals ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.signals li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--line); padding-block: 3px; font-size: .86rem; }
+.progress-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.progress-list li { display: flex; gap: 10px; align-items: flex-start; color: var(--ink-3); }
+.progress-list li > div { display: grid; }
+.progress-list li small { color: var(--ink-2); }
+.progress-list .tick { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: .72rem; font-weight: 700; }
+.progress-list li.done { color: var(--ink); }
+.progress-list li.done .tick { background: var(--good); border-color: var(--good); color: #fff; }
+.progress-list li.cur .tick { border-color: var(--accent); border-top-color: transparent; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.warn-note { background: var(--warn-soft); color: var(--warn-ink); border-radius: 8px; padding: 6px 10px; margin: 0; }
+.decide { border-color: var(--warn-ink); }
+.decide-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; padding-block: 6px; border-bottom: 1px dashed var(--line); }
+.decide-row:last-child { border-bottom: 0; }
+.req { margin: 0; padding: 10px 14px; border-inline-start: 3px solid var(--accent); background: var(--surface-2); border-radius: 6px; }
+.u-grid b.num, .plan-kpis b.num { justify-self: start; }
+.agent a.btn, .decide a.btn { text-decoration: none; }
+.kpis4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+/* ---------- the autonomous loop */
+.loop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.loop-node { font-size: .8rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-3); border: 1px solid transparent; }
+.loop-node.done { background: var(--accent-soft); color: var(--accent-ink); }
+.loop-node.cur { border-color: var(--accent); color: var(--accent-ink); background: var(--surface); box-shadow: 0 0 0 3px var(--accent-soft); }
+.loop-arrow { color: var(--ink-3); font-size: .8rem; }
+.loop-arrow.back { font-size: 1rem; color: var(--accent-ink); }
+.loop-wrap { display: grid; gap: 6px; }
+.loop-panel { margin-bottom: 14px; }
+@media (max-width: 700px) {
+  .u-grid, .plan-kpis, .kpis4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .explain > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .ask { flex-direction: column; }
+  .turn.user .turn-body { max-width: 92%; }
+  .avatar { display: none; }
+}
 </style>
 
 <div class="app" id="app">
@@ -406,13 +489,13 @@ const UI = {
     demoBanner: "بيانات تجريبية — سجلات وهمية من محاكاة لشهر سبتمبر 2026. لم يُرسل أي تواصل حقيقي، والأزرار لا تنفّذ شيئاً.",
     client: "العميل", campaign: "الحملة", outcome: "النتيجة", viewClient: "عرض العميل", viewOperator: "عرض المشغّل", menu: "القائمة",
     secEngine: "المحرك", secSystem: "النظام", secClient: "حسابك",
-    overview: "نظرة عامة", campaigns: "الحملات", prospects: "العملاء المحتملون", all: "الكل", highFit: "ملاءمة عالية", needsResearch: "تحتاج بحثاً", needsContact: "تحتاج جهة اتصال",
+    overview: "نظرة عامة", plan: "الخطة", agent: "وش تبغى نحقق؟", campaigns: "الحملات", prospects: "العملاء المحتملون", all: "الكل", highFit: "ملاءمة عالية", needsResearch: "تحتاج بحثاً", needsContact: "تحتاج جهة اتصال",
     contacted: "تم التواصل", replied: "ردّوا", converted: "تحققت النتيجة", scoring: "نموذج التقييم", research: "البحث", contacts: "جهات الاتصال",
     outreach: "التواصل", drafts: "مسودات", needsApproval: "بانتظار الموافقة", approved: "معتمدة", scheduled: "مجدولة", sent: "مُرسلة", followUps: "متابعات", completed: "مكتملة",
     replies: "الردود", positive: "إيجابية", neutral: "محايدة", negative: "سلبية", needsAttention: "تحتاج انتباهاً",
     upcoming: "القادمة", qualified: "المؤهَّلة", held: "المنعقدة", cancelled: "الملغاة", noShow: "لم يحضر",
     outcomes: "النتائج", analytics: "التحليلات", reports: "التقارير", integrations: "التكاملات", automation: "الأتمتة", audit: "النشاط والتدقيق", settings: "الإعدادات",
-    attention: "يحتاج انتباهك", approvals: "الموافقات", recommendations: "التوصيات", results: "النتائج المحققة",
+    attention: "يحتاج انتباهك", approvals: "يحتاج قرارك", recommendations: "التوصيات", results: "النتائج المحققة",
     goal: "الهدف", period: "الفترة", progress: "التقدم", since: "منذ", today: "حتى اليوم",
     of: "من", target: "الهدف", remaining: "متبقٍ", last7: "آخر 7 أيام", value: "القيمة", costPer: "التكلفة لكل نتيجة", notConfigured: "غير محدد",
     paceLine: "الوتيرة المطلوبة للهدف", cumulative: "تراكمي", tableView: "عرض البيانات كجدول",
@@ -446,13 +529,13 @@ const UI = {
     demoBanner: "DEMO DATA — fictional records from a September 2026 simulation. No real outreach occurred, and buttons do not perform actions.",
     client: "Client", campaign: "Campaign", outcome: "Outcome", viewClient: "Client view", viewOperator: "Operator view", menu: "Menu",
     secEngine: "Engine", secSystem: "System", secClient: "Your account",
-    overview: "Overview", campaigns: "Campaigns", prospects: "Prospects", all: "All", highFit: "High fit", needsResearch: "Needs research", needsContact: "Needs contact",
+    overview: "Overview", plan: "Plan", agent: "What to achieve?", campaigns: "Campaigns", prospects: "Prospects", all: "All", highFit: "High fit", needsResearch: "Needs research", needsContact: "Needs contact",
     contacted: "Contacted", replied: "Replied", converted: "Converted", scoring: "Scoring model", research: "Research", contacts: "Contacts",
     outreach: "Outreach", drafts: "Drafts", needsApproval: "Needs approval", approved: "Approved", scheduled: "Scheduled", sent: "Sent", followUps: "Follow-ups", completed: "Completed",
     replies: "Replies", positive: "Positive", neutral: "Neutral", negative: "Negative", needsAttention: "Needs attention",
     upcoming: "Upcoming", qualified: "Qualified", held: "Held", cancelled: "Cancelled", noShow: "No-show",
     outcomes: "Outcomes", analytics: "Analytics", reports: "Reports", integrations: "Integrations", automation: "Automation", audit: "Activity & audit", settings: "Settings",
-    attention: "Needs your attention", approvals: "Approvals", recommendations: "Recommendations", results: "Results",
+    attention: "Needs your attention", approvals: "Needs your decision", recommendations: "Recommendations", results: "Results",
     goal: "Goal", period: "Period", progress: "Progress", since: "since", today: "to date",
     of: "of", target: "Target", remaining: "Remaining", last7: "Last 7 days", value: "Value", costPer: "Cost per outcome", notConfigured: "Not configured",
     paceLine: "Pace needed for the goal", cumulative: "cumulative", tableView: "Show data as a table",
@@ -583,11 +666,11 @@ const clientName = (id) => clients().find((c) => c.id === id)?.name ?? id;
 const outcomeLabel = (c = C()) => L(c.config.outcome.label);
 for (const p of PRESETS.outcomes) for (const lang of ["ar", "en"]) for (const lab of [p.label.ar, p.label.en]) PLURAL[lang][lab] ??= p.plural[lang];
 const outcomePlural = (c = C()) => PLURAL[S.lang][c.config.outcome.label] ?? L(c.config.outcome.label);
-const unit = (c = C(), n = 2) => { const u = c.config.outcome.unit; if (UNIT[S.lang][u]) return UNIT[S.lang][u]; return S.lang === "en" && n !== 1 && /^[a-z ]+$/i.test(u) ? u + "s" : u; };
+const unit = (c = C(), n = 2) => { const u = c.config.outcome.unit; if (UNIT[S.lang][u]) return UNIT[S.lang][u]; return S.lang === "en" && n !== 1 && /^[a-z ]+$/i.test(u) ? u.replace(/([^aeiou])y$/i, "$1ie") + "s" : u; };
 const stepLabel = (k) => (S.lang === "ar" ? STEP_AR : STEP_EN)[k] ?? k ?? "";
 const TEMPLATE_NAMES = { ar: { trial_invite: "رابط التجربة", booking_link: "رابط الحجز", answer_question: "الرد على سؤال", meeting_ack: "تأكيد طلب الاجتماع", viewing_invite: "دعوة المعاينة", follow_up: "رسالة المتابعة", breakup: "رسالة الختام", intro: "الرسالة الأولى" }, en: { trial_invite: "Trial link", booking_link: "Booking link", answer_question: "Answer to a question", meeting_ack: "Meeting acknowledgement", viewing_invite: "Viewing invite", follow_up: "Follow-up", breakup: "Break-up note", intro: "Intro" } };
 const variantLabel = (k) => { if (VARIANT[S.lang][k]) return VARIANT[S.lang][k]; const [tpl, v] = String(k).split(":"); const name = TEMPLATE_NAMES[S.lang][tpl] ?? tpl.replace(/_/g, " "); return v && v !== "default" ? `${name} · ${v.replace(/_/g, " ")}` : name; };
-const keyLabel = (k) => (S.lang === "ar" ? KEYS_AR : KEYS_EN)[k] ?? k;
+const keyLabel = (k) => (S.lang === "ar" ? KEYS_AR : KEYS_EN)[k] ?? C()?.config.scoring.signals.find((s) => s.key === k)?.label ?? k;
 const SEP = () => (S.lang === "ar" ? "، " : ", ");
 const fmtVal = (v) => Array.isArray(v) ? v.map((x) => L(x)).join(SEP()) : typeof v === "number" ? fmtNum(v) : L(String(v));
 
@@ -625,6 +708,12 @@ const clientLabel = (c) => (c.demo ? `${c.name} (${tr("تجريبي", "demo")})`
 const userObjs = new Map();
 function userCampaign(uc) {
   let o = userObjs.get(uc.cfg.campaign.id);
+  if (!o && uc.sim) {
+    // A campaign started from a plan carries the engine's first (simulated) run.
+    o = { ...uc.sim, clientId: uc.clientId, config: uc.summary, isUser: true, simulated: true, launchedAt: uc.launchedAt, audit: [...uc.audit, ...uc.sim.audit] };
+    userObjs.set(uc.cfg.campaign.id, o);
+    return o;
+  }
   if (!o) {
     const s = uc.summary;
     o = {
@@ -651,25 +740,266 @@ const preset = (key) => PRESETS.outcomes.find((p) => p.key === key);
 
 /* =========================================================== onboarding */
 const ONB_ICON = `<svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="var(--accent-soft)"/><circle cx="32" cy="32" r="18" fill="none" stroke="var(--accent)" stroke-width="3"/><circle cx="32" cy="32" r="7" fill="var(--accent)"/><path d="M32 4v10M32 50v10M4 32h10M50 32h10" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/></svg>`;
-function pageWelcome() {
-  const cl = clients(); const hasClient = cl.length > 0; const current = cl.find((c) => c.id === S.clientId) || cl[0];
-  const resume = WS.draft && WS.draft.campaignName;
-  return `<section class="welcome">
-    <div class="welcome-card">
-      ${ONB_ICON}
-      <h1>${esc(hasClient ? tr(`أنشئ أول حملة لـ ${current.name}`, `Create the first campaign for ${current.name}`) : tr("ابدأ أول محرك اكتساب", "Start your first acquisition engine"))}</h1>
-      <p>${esc(tr("حدد النتيجة التي تريد تحقيقها، وسنساعدك في بناء حملة اكتساب خطوة بخطوة.", "Choose the result you want, and we'll help you build an acquisition campaign step by step."))}</p>
-      <div class="actions center">
-        <button class="btn primary lg" type="button" data-act="newCampaign">${esc(resume ? tr("أكمل إعداد الحملة", "Continue campaign setup") : tr("+ إنشاء أول حملة", "+ Create your first campaign"))}</button>
-        ${hasClient ? "" : `<button class="btn lg" type="button" data-act="newClient">${esc(tr("إضافة عميل", "Add a client"))}</button>`}
-      </div>
-      ${WS.mode !== "demo" ? `<button class="btn ghost" type="button" data-act="tryDemo">${esc(tr("أو جرّب حملة تجريبية", "Or explore a demo campaign"))}</button>` : ""}
+/* =========================================================== agent (sentence → plan → running campaign)
+   USER DEFINES WHAT, ENGINE FIGURES OUT HOW. The user writes one sentence; the
+   planner (AcqEngine.understandRequest + buildPlan, rules over the knowledge
+   base) turns it into a structured Campaign Plan that is stored in this
+   workspace. Everything after that — answering a question, accepting an
+   assumption, approving, viewing — works on the stored plan. A model is asked
+   only when the rules could not understand the sentence, through the
+   intelligence service (cached + logged); this page never holds an API key. */
+const KB = PRESETS.knowledge;
+WS.plans ??= []; WS.agent ??= { planId: null }; WS.llmCalls ??= []; WS.llmCache ??= [];
+class LocalCollection {
+  constructor(key) { this.key = key; }
+  get arr() { return WS[this.key]; }
+  async get(id) { const v = this.arr.find((x) => x.id === id); return v && structuredClone(v); }
+  async put(item) { const i = this.arr.findIndex((x) => x.id === item.id); if (i >= 0) this.arr[i] = structuredClone(item); else this.arr.push(structuredClone(item)); if (this.arr.length > 400) this.arr.splice(0, this.arr.length - 400); saveWS(); return item; }
+  async find(pred) { return this.arr.filter(pred).map((v) => structuredClone(v)); }
+  async findOne(pred) { const v = this.arr.find(pred); return v && structuredClone(v); }
+}
+let EDGE_PROVIDER = null;
+const AI = () => new AcqEngine.IntelligenceService({ provider: EDGE_PROVIDER || undefined, calls: new LocalCollection("llmCalls"), cache: new LocalCollection("llmCache"), clock: { now: () => new Date() } });
+// Optional edge model: the host's built-in model call (no key in the page). Used only when the rules can't understand a request.
+(async () => { try { const sample = window.claude?.use ? await window.claude.use("sample") : null; if (sample) EDGE_PROVIDER = new AcqEngine.PromptJsonProvider("edge", (prompt) => sample.json(prompt, { modelTier: "quick" }), "claude (host)"); } catch {} })();
+
+const planCtx = () => ({ knowledge: KB, outcomes: PRESETS.outcomes, clients: clients().filter((c) => !c.demo).map((c) => ({ id: c.id, name: c.name })), locale: S.lang });
+const curPlan = () => WS.plans.find((p) => p.id === WS.agent.planId) || null;
+const savePlan = (p) => { const i = WS.plans.findIndex((x) => x.id === p.id); if (i >= 0) WS.plans[i] = p; else WS.plans.push(p); saveWS(); };
+const EXAMPLES = () => S.lang === "ar"
+  ? ["50 عميل مدفوع لـ DataSpeaks من وكالات التسويق في الإمارات", "20 اجتماع مؤهل لـ Tatimmah مع شركات كبيرة في السعودية", "Qualified Leads لعقارات سكنية فاخرة في الرياض"]
+  : ["50 paid customers for DataSpeaks from marketing agencies in the UAE", "20 qualified meetings for Tatimmah with large companies in Saudi Arabia", "Qualified leads for luxury residential property in Riyadh"];
+
+async function agentSubmit(text) {
+  text = String(text || "").trim(); if (!text || S.agentBusy) return;
+  S.agentBusy = true; S.agentDraft = ""; WS.agent.planId = null; WS.agent.pending = text; saveWS(); renderPage();
+  try {
+    const ctx = planCtx();
+    const { extraction, understoodBy } = await AcqEngine.understandRequest(text, ctx, AI());
+    const plan = AcqEngine.buildPlan(extraction, ctx, { request: text, understoodBy, createdAt: nowIso() });
+    plan.id = uid("plan");
+    savePlan(plan); WS.agent = { planId: plan.id }; saveWS();
+    if (location.hash !== "#agent") history.replaceState(null, "", "#agent");
+  } catch (e) { toast(tr("تعذّر فهم الطلب — جرّب صياغة أخرى", "Couldn't understand that — try rephrasing")); WS.agent.pending = null; }
+  S.agentBusy = false; render();
+}
+function agentAnswer(qid, value) {
+  const p = curPlan(); if (!p || p.status === "approved") return;
+  savePlan(AcqEngine.applyAnswer(p, qid, value, planCtx())); refreshPage();
+}
+function agentAssume(id, status) {
+  const p = curPlan(); if (!p) return;
+  p.assumptions = p.assumptions.map((a) => (a.id === id ? { ...a, status } : a)); savePlan(p); refreshPage();
+}
+function ensureClient(plan) {
+  const u = plan.understanding.client;
+  if (!clients().some((c) => c.id === u.id)) WS.clients.push({ id: u.id, name: u.name, industry: plan.draft.client.industry || "", market: plan.draft.client.market || "", createdAt: nowIso(), fromPlan: plan.id });
+  return u.id;
+}
+/** Plan → the advanced setup form (the old wizard), prefilled. */
+function planToWizard(plan, step = 1) {
+  const d = plan.draft; const clientId = ensureClient(plan);
+  WS.draft = {
+    clientId, campaignId: uid("cp"), campaignName: d.campaign.name, fromPlan: plan.id,
+    outcome: { preset: d.outcome.preset, goal: String(d.outcome.goal), customLabel: "", customUnit: "", valueAmount: "", currency: "USD" },
+    audience: { targetType: d.audience.targetType, countries: [...d.audience.countries], companyTypes: [...d.audience.companyTypes], sizeMin: d.audience.sizeMin ?? "", sizeMax: d.audience.sizeMax ?? "", sectors: [], cities: [...d.audience.cities], titles: [...d.audience.titles], traits: [], advanced: { growthSignals: [], technologies: [], customFilters: "" } },
+    offer: { ...d.offer, link: "" },
+    qualification: { criteria: d.qualification.criteria.map((c) => ({ label: c.label, points: c.points, timing: Boolean(c.timing), check: c.check?.type || "research", min: c.check?.min })), threshold: String(d.qualification.threshold), requirePositiveReply: true },
+    channels: { ...d.channels, sendWindow: { ...d.channels.sendWindow } }, automation: { ...d.automation },
+  };
+  S.clientId = clientId; S.campaignId = null; saveWS(); persist();
+  location.hash = `#new-campaign.${step}`;
+}
+function agentApprove() {
+  let plan = curPlan(); if (!plan || plan.status === "approved") return;
+  for (const q of plan.questions) if (q.default) plan = AcqEngine.applyAnswer(plan, q.id, q.default, planCtx());
+  let cfg;
+  try { cfg = AcqEngine.buildCampaignConfig(plan.draft, PRESETS); } catch (e) { toast(String(e.message || e)); return; }
+  if (WS.campaigns.some((u) => u.cfg.campaign.id === cfg.campaign.id)) cfg.campaign.id = `${cfg.campaign.id}-${Date.now().toString(36)}`;
+  const clientId = ensureClient(plan);
+  S.agentBusy = true; renderPage();
+  AcqEngine.simulateFirstRun(plan, cfg, KB, { start: new Date() }).then(({ counts, snapshot }) => {
+    const uc = { clientId, cfg, summary: AcqEngine.summarizeCampaign(cfg), prospects: [], audit: [], launchedAt: nowIso(), planId: plan.id, sim: snapshot, simCounts: counts };
+    WS.campaigns.push(uc);
+    logUser(cfg.campaign.id, "campaign.created", { outcome: cfg.outcome.key, goal: cfg.outcome.target?.count, fromPlan: plan.id });
+    logUser(cfg.campaign.id, "campaign.launched", { autonomy: cfg.autonomy.level });
+    plan = { ...plan, status: "approved", campaignId: cfg.campaign.id, approvedAt: nowIso(), assumptions: plan.assumptions.map((a) => (a.status === "proposed" ? { ...a, status: "accepted" } : a)) };
+    savePlan(plan);
+    S.clientId = clientId; S.campaignId = cfg.campaign.id; persist();
+    S.agentBusy = false; S.agentStep = 0;
+    if (location.hash !== "#agent") history.replaceState(null, "", "#agent");
+    render();
+    const tick = () => { const n = progressSteps(plan, counts).length; if (S.agentStep < n) { S.agentStep++; if (S.route === "agent") renderPage(); setTimeout(tick, 650); } };
+    setTimeout(tick, 400);
+  }).catch((e) => { S.agentBusy = false; toast(String(e.message || e)); render(); });
+}
+function progressSteps(plan, k) {
+  const ind = plan.draft.audience.targetType === "individual";
+  const noun = ind ? tr("شخصاً", "people") : tr("جهة", "organizations");
+  return [
+    [tr("فهم الهدف وبناء الخطة", "Understood the goal and built the plan"), tr("الخطة محفوظة — لا حاجة لإعادة الفهم", "Plan stored — no need to re-understand")],
+    [tr("اكتشاف الجمهور", "Discovering the audience"), tr(`وجدت ${k.discovered} ${noun}`, `Found ${k.discovered} ${noun}`)],
+    [tr("البحث مع ذكر المصدر", "Researching with sources"), tr(`درست ${k.researched}، واستبعدت ${k.unsourcedDiscarded} معلومة بلا مصدر`, `Researched ${k.researched}; discarded ${k.unsourcedDiscarded} unsourced facts`)],
+    [tr("التقييم", "Scoring"), tr(`${k.fit} تتجاوز درجة ${plan.strategy.threshold} من ${plan.strategy.maxScore}`, `${k.fit} scored ${plan.strategy.threshold}+ of ${plan.strategy.maxScore}`)],
+    ...(k.needsContact ? [[tr("البحث عن جهات الاتصال", "Finding contacts"), tr(`${k.needsContact} بلا وسيلة تواصل — أوقفتها`, `${k.needsContact} unreachable — parked`)]] : []),
+    [tr("تخصيص الرسائل", "Personalizing messages"), tr(`جهزت ${k.messagesReady} رسالة`, `Drafted ${k.messagesReady} messages`)],
+    [tr("بانتظار قرارك", "Waiting for your decision"), tr("لا يُرسل شيء قبل موافقتك", "Nothing is sent before you approve")],
+  ];
+}
+
+/* --------------------------------------------------------------- the autonomous loop */
+function loopStages(c) {
+  const P = c?.prospects || []; const sent = (c?.outreach || []).some((a) => a.status === "succeeded");
+  return [
+    [tr("الهدف", "Goal"), Boolean(c)], [tr("اكتشاف", "Discover"), P.length > 0], [tr("بحث", "Research"), P.some((p) => p.milestones?.researched)],
+    [tr("تقييم", "Score"), P.some((p) => p.score != null)], [tr("تخصيص", "Personalize"), (c?.outreach || []).length > 0 || (c?.drafts || []).length > 0],
+    [tr("تواصل", "Reach out"), sent], [tr("رد", "Reply"), (c?.replies || []).length > 0], [tr("تأهيل", "Qualify"), P.some((p) => p.milestones?.qualified)],
+    [outcomeLabel(c), (c?.report?.outcome?.achieved || 0) > 0], [tr("تعلّم", "Learn"), (c?.recommendations || []).length > 0], [tr("تحسين", "Improve"), (c?.recommendations || []).some((r) => r.status === "applied")],
+  ];
+}
+function loopStrip(c, compact) {
+  const st = loopStages(c); const cur = st.findIndex(([, done]) => !done);
+  return `<div class="loop ${compact ? "compact" : ""}" role="list" aria-label="${esc(tr("حلقة العمل الذاتية", "Autonomous loop"))}">${st.map(([l, done], i) => `<span role="listitem" class="loop-node ${done ? "done" : i === cur ? "cur" : ""}">${esc(l)}</span>`).join(`<span class="loop-arrow" aria-hidden="true">${S.lang === "ar" ? "←" : "→"}</span>`)}<span class="loop-arrow back" aria-hidden="true">↺</span></div>`;
+}
+
+/* --------------------------------------------------------------- pages */
+function agentHero() {
+  return `<section class="agent-hero">
+    ${ONB_ICON}
+    <h1>${esc(tr("وش تبغى نحقق؟", "What do you want to achieve?"))}</h1>
+    <p>${esc(tr("اكتب هدفك بجملة واحدة. أنا أفهمه، أبني الخطة، وأبدأ الشغل — وأرجع لك فقط عند القرارات المهمة.", "Describe your goal in one sentence. I'll understand it, build the plan and get to work — coming back to you only for decisions that matter."))}</p>
+    <form class="ask" data-form="ask">
+      <textarea id="askInput" rows="2" maxlength="600" placeholder="${esc(tr("مثال: أبغى 50 عميل مدفوع من وكالات التسويق في الإمارات", "e.g. 50 paying customers from marketing agencies in the UAE"))}" aria-label="${esc(tr("هدفك", "Your goal"))}">${esc(S.agentDraft || "")}</textarea>
+      <button class="btn primary lg" type="submit" ${S.agentBusy ? "disabled" : ""}>${esc(S.agentBusy ? tr("أفكر…", "Thinking…") : tr("ابدأ", "Start"))}</button>
+    </form>
+    <div class="examples"><span class="small muted">${esc(tr("أمثلة:", "Examples:"))}</span>${EXAMPLES().map((x) => `<button type="button" class="example" data-act="askExample" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>
+    <div class="hero-foot">
+      <button type="button" class="btn ghost" data-act="manualSetup">${esc(tr("أو أعدّ الحملة يدوياً (إعدادات متقدمة)", "Or set the campaign up manually (advanced)"))}</button>
+      ${WS.mode !== "demo" ? `<button class="btn ghost" type="button" data-act="tryDemo">${esc(tr("شاهد حملة تجريبية", "See a demo campaign"))}</button>` : ""}
     </div>
-    <ol class="how">
-      <li><b>${esc(tr("حدّد النتيجة", "Pick the outcome"))}</b><span>${esc(tr("مشتركون، اجتماعات، عملاء محتملون… وكم تريد.", "Subscribers, meetings, leads… and how many."))}</span></li>
-      <li><b>${esc(tr("صف جمهورك وعرضك", "Describe who and what"))}</b><span>${esc(tr("من نستهدف، وماذا نعرض عليهم، وكيف نعرف أنهم مناسبون.", "Who to reach, what to offer, and how to tell a good fit."))}</span></li>
-      <li><b>${esc(tr("راجع وشغّل", "Review and launch"))}</b><span>${esc(tr("المحرك يكتشف ويبحث ويكتب الرسائل، وأنت توافق قبل أي إرسال.", "The engine finds, researches and drafts; you approve before anything is sent."))}</span></li>
-    </ol>
+  </section>`;
+}
+const bubble = (who, html) => `<div class="turn ${who}">${who === "agent" ? `<span class="avatar" aria-hidden="true">✦</span>` : ""}<div class="turn-body">${html}</div></div>`;
+function understandingCard(p) {
+  const u = p.understanding; const e = p.explanation;
+  const how = p.understoodBy === "llm" ? tr("فُهم بمساعدة النموذج (مرة واحدة، محفوظ)", "Understood with the model (once, stored)") : tr("فُهم بالقواعد — بدون استدعاء نموذج", "Understood by rules — no model call");
+  return `<div class="u-card">
+    <div class="u-grid">
+      <div><span>${esc(t("client"))}</span><b>${esc(u.client.name)}</b>${u.client.placeholder ? `<em class="chip warn">${esc(tr("افتراض", "assumed"))}</em>` : u.client.existing ? "" : `<em class="chip outline">${esc(tr("عميل جديد", "new client"))}</em>`}</div>
+      <div><span>${esc(t("outcome"))}</span><b>${esc(u.outcome.plural)}</b></div>
+      <div><span>${esc(t("goal"))}</span><b class="num">${u.outcome.goal}</b>${u.outcome.goalStated ? "" : `<em class="chip warn">${esc(tr("افتراض", "assumed"))}</em>`}</div>
+      <div><span>${esc(tr("السوق", "Market"))}</span><b>${esc(u.market.place)}</b></div>
+      <div class="wide"><span>${esc(tr("الجمهور", "Audience"))}</span><b>${esc(u.audience.label)}</b></div>
+    </div>
+    <dl class="explain">
+      <div><dt>${esc(tr("ما فهمته", "What I understood"))}</dt><dd>${esc(e.understood)}</dd></div>
+      <div><dt>${esc(tr("ما سأبحث عنه", "What I'll look for"))}</dt><dd>${e.research.map((x) => `<span class="chip accent">${esc(x)}</span>`).join(" ")}</dd></div>
+      <div><dt>${esc(tr("لماذا اخترته", "Why"))}</dt><dd>${esc(e.why)}</dd></div>
+      <div><dt>${esc(tr("ما أحتاجه منك", "What I need from you"))}</dt><dd>${e.need.length ? e.need.map((x) => esc(x)).join("<br>") : esc(tr("لا شيء — يمكنك الاعتماد مباشرة.", "Nothing — you can approve right away."))}</dd></div>
+    </dl>
+    <p class="tiny muted">${esc(how)}</p>
+  </div>`;
+}
+function assumptionsCard(p) {
+  const locked = p.status === "approved";
+  return `<div class="a-card"><h3>${esc(tr("افتراضات — ليست حقائق", "Assumptions — not facts"))}</h3><ul class="assume">${p.assumptions.map((a) => `<li class="${a.status}"><span>${esc(a.text)}</span>${locked ? `<span class="chip ${a.status === "edited" ? "warn" : "good"}">${esc(a.status === "edited" ? tr("عُدّل", "edited") : tr("مناسب", "OK"))}</span>` : `<span class="a-btns"><button type="button" class="btn small ${a.status === "accepted" ? "on" : ""}" data-act="assume" data-id="${esc(a.id)}" data-v="accepted" aria-pressed="${a.status === "accepted"}">${esc(tr("مناسب", "OK"))}</button><button type="button" class="btn small" data-act="assumeEdit" data-id="${esc(a.id)}">${esc(tr("تعديل", "Edit"))}</button></span>`}</li>`).join("")}</ul></div>`;
+}
+function questionsCard(p) {
+  if (!p.questions.length || p.status === "approved") return "";
+  return p.questions.map((q) => `<div class="q-card"><b>${esc(q.text)}</b><div class="q-opts">${q.options.map((o) => o.custom ? `<button type="button" class="btn" data-act="qCustom" data-q="${esc(q.id)}">${esc(o.label)}</button>` : `<button type="button" class="btn ${q.default === o.id ? "primary-soft" : ""}" data-act="qAnswer" data-q="${esc(q.id)}" data-v="${esc(o.id)}">${esc(o.label)}</button>`).join("")}
+    ${q.custom && !q.options.length || S.qCustom === q.id ? `<form class="q-custom" data-form="qCustom" data-q="${esc(q.id)}"><input id="qc-${esc(q.id)}" ${q.custom === "number" ? 'type="number" min="1"' : 'type="text"'} placeholder="${esc(q.id === "region_focus" ? tr("مثال: دبي، الشارقة", "e.g. Dubai, Sharjah") : tr("اكتب هنا", "Type here"))}" aria-label="${esc(q.text)}"><button class="btn" type="submit">${esc(tr("تم", "Done"))}</button></form>` : ""}
+  </div>${q.default ? `<span class="tiny muted">${esc(tr("إذا اعتمدت الآن سأختار الخيار المميّز.", "If you approve now I'll use the highlighted option."))}</span>` : ""}</div>`).join("");
+}
+function planCard(p) {
+  const s = p.strategy; const steps = AcqEngine.planSteps(p);
+  const approved = p.status === "approved";
+  return `<div class="plan-card">
+    <div class="panel-head"><h3>${esc(tr("خطة الاكتساب", "Acquisition plan"))}</h3><span class="chip ${approved ? "good" : "accent"}">${esc(approved ? tr("معتمدة", "Approved") : tr("مسودة", "Draft"))}</span></div>
+    <div class="plan-kpis">
+      <div><span>${esc(t("goal"))}</span><b class="num">${p.understanding.outcome.goal}</b><small>${esc(p.understanding.outcome.plural)}</small></div>
+      <div><span>${esc(tr("حد الملاءمة", "Fit threshold"))}</span><b class="num">${s.threshold}<small>/${s.maxScore}</small></b><small>${esc(tr(`${s.signals.length} إشارات`, `${s.signals.length} signals`))}</small></div>
+      <div><span>${esc(tr("القنوات", "Channels"))}</span><b>${esc(s.channels.join(" + "))}</b><small>${esc(tr(`${s.touches} رسائل · ${s.waitDays} أيام`, `${s.touches} touches · ${s.waitDays} days`))}</small></div>
+      <div><span>${esc(tr("الموافقة", "Approval"))}</span><b>${esc(s.autonomy === "human_approval" ? tr("موافقتك أولاً", "You approve first") : s.autonomy === "assisted" ? tr("مساعد", "Assisted") : tr("تلقائي", "Autonomous"))}</b><small>${esc(tr(`لغة الرسائل: ${s.messageLanguage === "ar" ? "العربية" : "الإنجليزية"}`, `Message language: ${s.messageLanguage === "ar" ? "Arabic" : "English"}`))}</small></div>
+    </div>
+    <ol class="flow">${steps.map((x) => `<li class="on"><span>${esc(x.text)}</span></li>`).join("")}</ol>
+    <details class="signals"><summary>${esc(tr("إشارات التقييم", "Scoring signals"))}</summary><ul>${s.signals.map((x) => `<li><span>${esc(x.label)}${x.timing ? ` <em class="chip outline">${esc(tr("توقيت", "timing"))}</em>` : ""}</span><b class="num">${x.points}</b></li>`).join("")}</ul></details>
+    ${approved ? "" : `<div class="actions"><button type="button" class="btn primary lg" data-act="agentApprove" ${S.agentBusy ? "disabled" : ""}>${esc(S.agentBusy ? tr("أبدأ…", "Starting…") : tr("اعتماد وابدأ", "Approve and start"))}</button><button type="button" class="btn" data-act="planAdvanced">${esc(tr("تعديل الخطة (إعدادات متقدمة)", "Edit the plan (advanced)"))}</button></div>`}
+  </div>`;
+}
+function decisionsCard(p, c) {
+  const k = WS.campaigns.find((u) => u.cfg.campaign.id === p.campaignId)?.simCounts; if (!k || !c) return "";
+  const pending = c.outreach.filter((a) => a.status === "pending_approval" && !S.decided[a.id]).length;
+  const unclear = c.prospects.filter((x) => x.researchStatus === "needs_review").length;
+  const sug = expansionSuggestion(p, k);
+  return `<div class="decide">
+    <h3>${esc(tr("يحتاج قرارك", "Needs your decision"))}</h3>
+    <div class="decide-row"><div><b class="num">${pending}</b> ${esc(tr("رسالة جاهزة للموافقة", "messages ready for approval"))}</div><a class="btn primary" href="#approvals">${esc(tr("مراجعة الرسائل", "Review messages"))}</a></div>
+    ${unclear ? `<div class="decide-row"><div><b class="num">${unclear}</b> ${esc(tr("جهة تحتاج توضيحاً (معلومات بلا مصدر أو ناقصة)", "need clarification (unsourced or missing facts)"))}</div><a class="btn" href="#research.needs_review">${esc(tr("مراجعة", "Review"))}</a></div>` : ""}
+    ${sug && !p.suggestionDecided ? `<div class="decide-row"><div><b>${esc(tr("اقتراح:", "Suggestion:"))}</b> ${esc(sug.text)}</div><span class="a-btns"><button type="button" class="btn" data-act="sugYes">${esc(tr("موافقة", "Approve"))}</button><button type="button" class="btn ghost" data-act="sugNo">${esc(tr("رفض", "Reject"))}</button></span></div>` : p.suggestionDecided ? `<p class="tiny muted">${esc(p.suggestionDecided === "yes" ? tr("طُبّق الاقتراح على الخطة.", "The suggestion was applied to the plan.") : tr("رُفض الاقتراح.", "Suggestion rejected."))}</p>` : ""}
+  </div>`;
+}
+function expansionSuggestion(p, k) {
+  const goal = p.understanding.outcome.goal;
+  if (p.understanding.market.cities.length && p.answers.region_focus !== "all") {
+    const country = KB.regions.find((r) => r.code === p.understanding.market.countries[0]);
+    if (country) return { kind: "region", text: tr(`توسيع الجمهور ليشمل كل ${country.name.ar} — ${k.fit} جهة مناسبة فقط من أصل هدف ${goal}.`, `Widen the audience to all of ${country.name.en} — only ${k.fit} good fits toward a goal of ${goal}.`) };
+  }
+  if (k.discovered && k.fit / k.discovered < 0.35 && p.strategy.threshold > 10) {
+    return { kind: "threshold", text: tr(`خفض حد الملاءمة من ${p.strategy.threshold} إلى ${p.strategy.threshold - 10} — نسبة الملاءمة الحالية ${Math.round((k.fit / k.discovered) * 100)}٪.`, `Lower the fit threshold from ${p.strategy.threshold} to ${p.strategy.threshold - 10} — current fit rate is ${Math.round((k.fit / k.discovered) * 100)}%.`) };
+  }
+  return null;
+}
+function applySuggestion(yes) {
+  let p = curPlan(); if (!p) return;
+  const uc = WS.campaigns.find((u) => u.cfg.campaign.id === p.campaignId);
+  const sug = uc && expansionSuggestion(p, uc.simCounts);
+  if (yes && sug && uc) {
+    if (sug.kind === "region") { p = { ...AcqEngine.applyAnswer(p, "region_focus", "all", planCtx()), status: "approved", campaignId: p.campaignId, approvedAt: p.approvedAt }; uc.cfg.icp.fit = AcqEngine.buildCampaignConfig({ ...p.draft, campaign: { ...p.draft.campaign, id: uc.cfg.campaign.id } }, PRESETS).icp.fit; }
+    else { uc.cfg.outreach.minScore = Math.max(1, (uc.cfg.outreach.minScore || p.strategy.threshold) - 10); p.strategy = { ...p.strategy, threshold: uc.cfg.outreach.minScore }; }
+    uc.summary = AcqEngine.summarizeCampaign(uc.cfg); userObjs.delete(uc.cfg.campaign.id); cache.delete(uc.cfg.campaign.id);
+    logUser(uc.cfg.campaign.id, "optimization.applied", { kind: sug.kind, by: "user" });
+  } else if (uc && sug) logUser(uc.cfg.campaign.id, "optimization.rejected", { kind: sug.kind, by: "user" });
+  p.suggestionDecided = yes ? "yes" : "no"; savePlan(p);
+  toast(yes ? tr("طُبّق على الخطة — يسري من الدورة القادمة", "Applied to the plan — takes effect from the next cycle") : tr("تم الرفض", "Rejected"));
+  render();
+}
+function pageAgent() {
+  const p = curPlan();
+  if (!p) {
+    if (S.agentBusy && WS.agent.pending) return `<section class="agent">${bubble("user", `<p>${esc(WS.agent.pending)}</p>`)}${bubble("agent", `<p class="thinking">${esc(tr("أفهم طلبك…", "Understanding your request…"))}</p>`)}</section>`;
+    return agentHero();
+  }
+  const approved = p.status === "approved";
+  const c = approved ? campaigns().find((x) => x.config.id === p.campaignId) : null;
+  const k = approved ? WS.campaigns.find((u) => u.cfg.campaign.id === p.campaignId)?.simCounts : null;
+  const steps = k ? progressSteps(p, k) : [];
+  const shown = S.agentStep == null ? steps.length : Math.min(S.agentStep, steps.length);
+  const done = k && shown >= steps.length;
+  const noun = p.draft.audience.targetType === "individual" ? tr("شخصاً", "people") : tr("جهة", "organizations");
+  return `<section class="agent">
+    <div class="agent-top"><span class="chip outline">${esc(tr("محادثة الحملة", "Campaign conversation"))}</span><button type="button" class="btn ghost small" data-act="agentNew">${esc(tr("+ هدف جديد", "+ New goal"))}</button></div>
+    ${bubble("user", `<p>${esc(p.request)}</p>`)}
+    ${bubble("agent", `<p class="lead">${esc(tr("فهمت عليك.", "Got it."))}</p>${understandingCard(p)}`)}
+    ${bubble("agent", `${questionsCard(p)}${assumptionsCard(p)}`)}
+    ${bubble("agent", planCard(p))}
+    ${approved && k ? bubble("agent", `<p class="lead">${esc(tr("سأبدأ الآن.", "Starting now."))}</p>
+      <ul class="progress-list">${steps.map(([title, detail], i) => `<li class="${i < shown ? "done" : i === shown ? "cur" : ""}"><span class="tick" aria-hidden="true">${i < shown ? "✓" : ""}</span><div><b>${esc(title)}</b>${i < shown ? `<small>${esc(detail)}</small>` : ""}</div></li>`).join("")}</ul>
+      <p class="tiny warn-note">${esc(tr("محاكاة: جهات وهمية تشبه جمهورك على المحرك الحقيقي — لم يُكتشف أو يُرسل أي شيء فعلياً.", "Simulation: fictional organizations resembling your audience, run on the real engine — nothing was actually discovered or sent."))}</p>`) : ""}
+    ${done ? bubble("agent", `<p class="lead">${esc(tr(`وجدت ${k.discovered} ${noun}، ${k.fit} منها عالية الملاءمة، وجهزت ${k.messagesReady} رسالة.`, `I found ${k.discovered} ${noun}; ${k.fit} are a strong fit, and I drafted ${k.messagesReady} messages.`))}</p>${decisionsCard(p, c)}
+      <div class="loop-wrap"><span class="small muted">${esc(tr("أعمل في حلقة مستمرة حتى تتحقق النتيجة:", "I work in a continuous loop until the outcome is reached:"))}</span>${loopStrip(c)}</div>
+      <div class="actions"><a class="btn primary" href="#overview">${esc(tr("افتح لوحة الحملة", "Open the campaign dashboard"))}</a><a class="btn" href="#plan">${esc(tr("الخطة وإعدادات الحملة", "Plan & campaign settings"))}</a></div>`) : ""}
+  </section>`;
+}
+/** The stored plan behind the current campaign (no model call — just the saved structure). */
+function pagePlan() {
+  const c = C(); const uc = userCampaignRec(c.config.id); const p = uc?.planId ? WS.plans.find((x) => x.id === uc.planId) : null;
+  const head = pageHead(tr("الخطة", "Plan"), tr("ما طلبته، وكيف يعمل المحرك لتحقيقه. الإعدادات التفصيلية في «الإعدادات».", "What you asked for and how the engine works toward it. Detailed configuration lives in Settings."));
+  if (!p) return `${head}<section class="grid">${`<article class="panel"><h2>${esc(tr("حلقة العمل", "The loop"))}</h2>${loopStrip(c)}</article>`}<article class="panel"><p>${esc(tr("أُعدّت هذه الحملة من الإعدادات مباشرة، بدون محادثة.", "This campaign was configured directly, without a conversation."))}</p><div class="actions"><a class="btn" href="#settings">${esc(tr("إعدادات الحملة", "Campaign settings"))}</a><button type="button" class="btn primary" data-act="newCampaign">${esc(tr("+ هدف جديد", "+ New goal"))}</button></div></article></section>`;
+  return `${head}<section class="grid g2">
+    <article class="panel"><h2>${esc(tr("طلبك", "Your request"))}</h2><blockquote class="req">${esc(p.request)}</blockquote>${understandingCard(p)}</article>
+    <article class="panel">${planCard(p)}</article>
+    <article class="panel"><h2>${esc(tr("حلقة العمل", "The loop"))}</h2>${loopStrip(c)}</article>
+    <article class="panel">${assumptionsCard(p)}<div class="actions"><a class="btn" href="#settings">${esc(tr("الإعدادات المتقدمة", "Advanced settings"))}</a><a class="btn ghost" href="#agent" data-act="openPlan" data-id="${esc(p.id)}">${esc(tr("عرض المحادثة", "View the conversation"))}</a></div></article>
   </section>`;
 }
 
@@ -677,7 +1007,7 @@ function pageWelcome() {
 function createMenu() {
   const items = [
     ["newClient", tr("عميل جديد", "New client"), tr("الشركة التي نعمل لصالحها", "The company we work for")],
-    ["newCampaign", tr("حملة جديدة", "New campaign"), tr("نتيجة نريد تحقيقها لعميل", "An outcome to produce for a client")],
+    ["newCampaign", tr("هدف جديد", "New goal"), tr("اكتب ما تريد تحقيقه بجملة واحدة", "Say what you want to achieve in one sentence")],
     ["newProspect", tr("عميل محتمل", "Prospect"), tr("شركة تريد أن يدرسها المحرك", "A company for the engine to research")],
     ["newContact", tr("جهة اتصال", "Contact"), tr("شخص محدد داخل شركة", "A specific person at a company")],
   ];
@@ -799,6 +1129,7 @@ function checkFor(c) {
   const a = D().audience; const t2 = c.check || "research";
   if (t2 === "size") return { type: "size", min: Number(a.sizeMin) || 0, max: Number(a.sizeMax) || 1000000 };
   if (t2 === "role") return { type: "role", titles: a.titles.length ? a.titles : ["CEO", "Founder", "Managing Director", "مدير عام", "مؤسس"] };
+  if (t2 === "budget") return { type: "budget", min: Number(c.min) || 0 };
   if (t2 === "location") return a.cities.length ? { type: "location", cities: a.cities } : { type: "location", countries: a.countries };
   return { type: "research" };
 }
@@ -994,7 +1325,7 @@ function wizardStep(i) {
 
 function pageWizard() {
   if (S.sub === "done") return pageLaunched();
-  if (!clients().length) { setTimeout(() => openClientModal("campaign"), 0); return pageWelcome(); }
+  if (!clients().length) { setTimeout(() => openClientModal("campaign"), 0); return pageAgent(); }
   if (!WS.draft) { WS.draft = newDraft(clients().find((c) => c.id === S.clientId)?.id || clients()[0].id); saveWS(); }
   if (!clients().some((c) => c.id === WS.draft.clientId)) WS.draft.clientId = clients()[0].id;
   const i = Math.max(0, Math.min(6, (Number(S.sub) || 1) - 1));
@@ -1021,6 +1352,16 @@ function launchCampaign() {
   const built = tryBuild("active"); if (!built.cfg) return;
   const d = D();
   const uc = { clientId: d.clientId, cfg: built.cfg, summary: built.summary, prospects: [], audit: [], launchedAt: nowIso() };
+  const plan = d.fromPlan && WS.plans.find((p) => p.id === d.fromPlan);
+  if (plan) {
+    // Edited in advanced settings: keep the conversation and run the first cycle on the edited config.
+    uc.planId = plan.id;
+    AcqEngine.simulateFirstRun(plan, built.cfg, KB, { start: new Date() }).then(({ counts, snapshot }) => {
+      uc.sim = snapshot; uc.simCounts = counts; userObjs.delete(built.cfg.campaign.id); cache.delete(built.cfg.campaign.id);
+      savePlan({ ...plan, status: "approved", campaignId: built.cfg.campaign.id, approvedAt: nowIso(), editedInSettings: true, assumptions: plan.assumptions.map((a) => (a.status === "proposed" ? { ...a, status: "accepted" } : a)) });
+      WS.agent = { planId: plan.id }; S.agentStep = null; saveWS(); render();
+    }).catch(() => {});
+  }
   WS.campaigns.push(uc);
   logUser(built.cfg.campaign.id, "campaign.created", { outcome: built.cfg.outcome.key, goal: built.cfg.outcome.target?.count });
   logUser(built.cfg.campaign.id, "campaign.launched", { autonomy: built.cfg.autonomy.level });
@@ -1029,7 +1370,7 @@ function launchCampaign() {
   location.hash = "#new-campaign.done";
 }
 function pageLaunched() {
-  const c = C(); if (!c) return pageWelcome();
+  const c = C(); if (!c) return pageAgent();
   const steps = [
     [tr("الاكتشاف", "Discovery"), tr("يبحث المحرك عن شركات تطابق جمهورك.", "The engine looks for companies matching your audience."), true],
     [tr("البحث", "Research"), tr("يجمع معلومات موثقة بمصادرها عن كل شركة.", "It gathers sourced facts on each company."), false],
@@ -1187,7 +1528,7 @@ function pageApprovals() {
 /* =========================================================== nav */
 const ICON = {
   overview: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z", campaigns: "M4 6h16M4 12h16M4 18h10", prospects: "M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21c0-4 4-6 8-6s8 2 8 6",
-  research: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm10 17-5-5", contacts: "M4 5h16v14H4zM4 7l8 6 8-6", outreach: "M3 11l18-8-8 18-2-8-8-2z", replies: "M4 5h16v11H8l-4 4V5z",
+  research: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm10 17-5-5", plan: "M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z", contacts: "M4 5h16v14H4zM4 7l8 6 8-6", outreach: "M3 11l18-8-8 18-2-8-8-2z", replies: "M4 5h16v11H8l-4 4V5z",
   appointments: "M5 5h14v15H5zM8 3v4M16 3v4M5 10h14", outcomes: "M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7z", analytics: "M4 20V10M10 20V4M16 20v-7M22 20H2",
   reports: "M6 3h9l5 5v13H6zM14 3v6h6M9 13h8M9 17h6", integrations: "M8 7V3M16 7V3M6 7h12v5a6 6 0 0 1-12 0V7zM12 18v3", automation: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2",
   audit: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", approvals: "M9 12l2 2 4-4M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z", settings: "M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4", attention: "M12 3l10 18H2zM12 10v5M12 18v.5", recommendations: "M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z",
@@ -1208,7 +1549,7 @@ function navOperator() {
   const c = C(); const n = counts(); const ap = c.config.appointments;
   return [
     { sec: "secEngine", items: [
-      ["overview"], ["approvals", n.attention], ["campaigns"],
+      ["overview"], ["plan"], ["approvals", n.attention], ["campaigns"],
       ["prospects", null, [["", "all"], ["high-fit", "highFit"], ["needs-research", "needsResearch"], ["needs-contact", "needsContact"], ["scoring", "scoring"]]],
       ["research"], ["contacts"],
       ["outreach", n.pendingOut, [["drafts", "drafts"], ["approval", "needsApproval"], ["sent", "sent"], ["follow-ups", "followUps"]]],
@@ -1221,7 +1562,7 @@ function navOperator() {
 }
 function navClient() {
   const c = C(); const n = counts(); const ap = c.config.appointments;
-  return [{ sec: "secClient", items: [["overview"], ["approvals", n.attention], ["outcomes"], ...(ap ? [["appointments", null, null, null, L(ap.label)]] : []), ["recommendations", n.pendingRec], ["reports"]] }];
+  return [{ sec: "secClient", items: [["overview"], ["plan"], ["approvals", n.attention], ["outcomes"], ...(ap ? [["appointments", null, null, null, L(ap.label)]] : []), ["recommendations", n.pendingRec], ["reports"]] }];
 }
 
 function workspaceFoot() {
@@ -1231,12 +1572,12 @@ function workspaceFoot() {
 }
 function renderSideOnboarding() {
   const hasClient = clients().length > 0; const inWizard = S.route === "new-campaign" && S.sub !== "done";
-  const steps = [[tr("أضف عميلاً", "Add a client"), hasClient], [tr("أنشئ حملة", "Create a campaign"), false], [tr("راجع وشغّل", "Review & launch"), false]];
+  const steps = [[tr("اكتب هدفك", "Describe your goal"), Boolean(curPlan())], [tr("راجع الخطة", "Review the plan"), curPlan()?.status === "approved"], [tr("اعتمد وابدأ", "Approve & start"), false]];
   const cur = steps.findIndex(([, d]) => !d);
   document.getElementById("side").innerHTML = `<div class="brand"><b>${esc(t("product"))}</b><span>${esc(t("tagline"))}</span></div>
-    <nav class="nav nav-group"><div class="nav-title">${esc(tr("البداية", "Getting started"))}</div><a href="#overview" class="${!inWizard ? "on" : ""}">${icon("overview")}<span>${esc(tr("البداية", "Start"))}</span></a>${WS.draft ? `<a href="#new-campaign.1" class="${inWizard ? "on" : ""}">${icon("campaigns")}<span>${esc(tr("إعداد الحملة", "Campaign setup"))}</span></a>` : ""}</nav>
+    <nav class="nav nav-group"><div class="nav-title">${esc(tr("البداية", "Getting started"))}</div><a href="#agent" class="${!inWizard ? "on" : ""}">${icon("plan")}<span>${esc(tr("وش تبغى نحقق؟", "What to achieve?"))}</span></a>${WS.draft ? `<a href="#new-campaign.1" class="${inWizard ? "on" : ""}">${icon("campaigns")}<span>${esc(tr("إعداد الحملة", "Campaign setup"))}</span></a>` : ""}</nav>
     <ol class="onb-steps">${steps.map(([l, d], i) => `<li class="${d ? "done" : i === cur ? "cur" : ""}"><span>${d ? "✓" : i + 1}</span>${esc(l)}</li>`).join("")}</ol>
-    <div style="padding-inline:8px"><button type="button" class="btn primary" data-act="newCampaign">${esc(tr("+ إنشاء حملة", "+ Create a campaign"))}</button></div>
+    <div style="padding-inline:8px;display:grid;gap:6px"><button type="button" class="btn primary" data-act="newCampaign">${esc(tr("+ هدف جديد", "+ New goal"))}</button>${WS.draft ? "" : `<button type="button" class="btn ghost small" data-act="manualSetup">${esc(tr("إعداد يدوي متقدم", "Advanced manual setup"))}</button>`}</div>
     ${workspaceFoot()}`;
 }
 function renderSide() {
@@ -1431,6 +1772,7 @@ function pageOverview() {
     <div><span>${esc(t("period"))}</span><b>${esc(since)} — ${esc(c.isUser ? tr("الآن", "now") : fmtDate(DATA.asOf + "T12:00:00Z", { day: "numeric", month: "long" }))}</b></div>
     <div><span>${esc(t("automation"))}</span><b>${esc(t("level_" + cfg.autonomy.level))}</b></div>
   </div></section>
+  <section class="panel loop-panel"><div class="panel-head"><h2>${esc(tr("حلقة العمل الذاتية", "Autonomous loop"))}</h2><a class="small" href="#plan">${esc(tr("الخطة", "Plan"))}</a></div>${loopStrip(c)}</section>
   ${isDraft() ? draftNotice() : `
   <section class="grid g-hero">
     <article class="panel">
@@ -1828,12 +2170,25 @@ function pageIntegrations() {
     [ar ? "البحث" : "Research", ig.research, "ResearchProvider", ar ? "يجب أن يعيد مصدراً لكل معلومة" : "Must return a source for every fact"],
     [ar ? "إيجاد جهة الاتصال" : "Contact finding", ig.contactFinder || "—", "ContactFinder", ar ? "كل جهة اتصال مع مصدرها" : "Every handle with its source"],
     ...ig.channels.map((ch) => [ar ? `قناة: ${L(ch)}` : `Channel: ${ch}`, ch, "ChannelSender", ar ? "إرسال واستقبال الرسائل" : "Send and receive messages"]),
-    [ar ? "تصنيف الردود" : "Reply classification", "keyword", "ReplyClassifier", ar ? "يمكن استبداله بنموذج لغوي يعيد ثقة معايرة" : "Swappable for an LLM returning calibrated confidence"],
+    [ar ? "تصنيف الردود" : "Reply classification", "keyword → LlmReplyClassifier", "ReplyClassifier", ar ? "قواعد الكلمات أولاً؛ النموذج عبر الخادم فقط مع رجوع للقواعد" : "Keyword rules; the model only via the server, falling back to rules"],
+    [ar ? "فهم الطلب وتخصيص الرسائل" : "Understanding & personalization", "IntelligenceService", "LlmProvider", ar ? "سجل وتخزين مؤقت وتتبع التوكنز؛ المفتاح على الخادم فقط" : "Logged, cached, token-tracked; the key lives on the server only"],
     [ar ? "أحداث النتيجة" : "Outcome events", "webhooks", "recordEvent()", ar ? "دفع، حجز موعد، تأكيد عميل محتمل…" : "Payment, booking, lead verification…"],
   ];
   return `${pageHead(t("integrations"), ar ? "المحرك لا يعرف أي مزود بعينه؛ كل تكامل منفذ (adapter) يُسجَّل حسب الحملة. في هذا العرض كل التكاملات تجريبية وغير متصلة." : "The engine knows no specific vendor; every integration is an adapter registered per campaign. In this demo all integrations are simulated and not connected.")}
+  ${intelligencePanel()}
   <div class="table-wrap"><table><thead><tr><th>${esc(ar ? "الوظيفة" : "Function")}</th><th>${esc(ar ? "المنفذ المضبوط" : "Configured adapter")}</th><th>${esc(ar ? "الواجهة" : "Port")}</th><th>${esc(ar ? "ملاحظة" : "Note")}</th><th>${esc(ar ? "الحالة" : "Status")}</th></tr></thead><tbody>
   ${rows.map(([f, a, port, note]) => `<tr><td>${esc(f)}</td><td class="ltr">${esc(a)}</td><td class="ltr tiny">${esc(port)}</td><td class="small">${esc(note)}</td><td><span class="chip warn">${esc(ar ? "تجريبي — غير متصل" : "Demo — not connected")}</span></td></tr>`).join("")}</tbody></table></div>`;
+}
+
+/** Hybrid intelligence at a glance, read from the local call log (viewing this costs nothing). */
+function intelligencePanel() {
+  const calls = WS.llmCalls || []; const by = (...st) => calls.filter((c) => st.includes(c.status)).length;
+  const model = by("ok", "invalid", "refused"); const cached = by("cached"); const rules = by("skipped", "rules"); const failed = by("error", "refused", "invalid");
+  return `<section class="grid g2" style="margin-bottom:14px"><article class="panel">
+    <div class="panel-head"><h2>${esc(tr("الذكاء الهجين", "Hybrid intelligence"))}</h2><span class="chip ${EDGE_PROVIDER ? "good" : "outline"}">${esc(EDGE_PROVIDER ? tr("نموذج متاح عند الحاجة", "Model available when needed") : tr("القواعد فقط", "Rules only"))}</span></div>
+    <div class="kpis kpis4"><div class="kpi"><span>${esc(tr("طلبات فُهمت", "Requests understood"))}</span><b class="num">${calls.length}</b></div><div class="kpi"><span>${esc(tr("بالقواعد فقط", "Rules only"))}</span><b class="num">${rules}</b></div><div class="kpi"><span>${esc(tr("استدعاء نموذج", "Model calls"))}</span><b class="num">${model}</b></div><div class="kpi"><span>${esc(tr("من الذاكرة المؤقتة", "From cache"))}</span><b class="num">${cached}</b></div></div>
+    <p class="small muted">${esc(tr("يُستدعى النموذج فقط لفهم طلب لم تفهمه القواعد، أو — على الخادم — لتصنيف رد أو تخصيص رسالة. التنقل وعرض البيانات والتقارير لا تستدعي أي نموذج.", "A model is called only to understand a request the rules couldn't, or — on the server — to classify a reply or personalize a message. Navigating, viewing data and reports never call a model."))}${failed ? ` ${esc(tr(`(${failed} محاولة فشلت ورجعت للقواعد)`, `(${failed} attempts failed and fell back to rules)`))}` : ""}</p>
+  </article><article class="panel"><h2>${esc(tr("متى يُستخدم النموذج؟", "When is a model used?"))}</h2><ul class="checklist">${[[tr("فهم طلب جديد لم تفهمه القواعد", "A new request the rules didn't understand"), true], [tr("تصنيف الردود (مع رجوع للقواعد)", "Classifying replies (rules fallback)"), true], [tr("تخصيص الرسائل من معلومات موثقة", "Personalizing from sourced facts"), true], [tr("فتح الصفحات، الفلاتر، التقارير، الموافقات", "Opening pages, filters, reports, approvals"), false]].map(([l, on]) => `<li class="${on ? "done" : ""}"><span>${on ? "✓" : "✕"}</span>${esc(l)}</li>`).join("")}</ul></article></section>`;
 }
 
 function pageAutomation() {
@@ -1930,8 +2285,8 @@ function drawer(id) {
 }
 
 /* =========================================================== router */
-const PAGES = { overview: pageOverview, approvals: pageApprovals, attention: pageApprovals, "new-campaign": pageWizard, campaigns: pageCampaigns, prospects: pageProspects, research: pageResearch, contacts: pageContacts, outreach: pageOutreach, replies: pageReplies, appointments: pageAppointments, outcomes: pageOutcomes, analytics: pageAnalytics, reports: pageReports, integrations: pageIntegrations, automation: pageAutomation, audit: pageAudit, settings: pageSettings, recommendations: pageRecommendations };
-const CLIENT_PAGES = new Set(["overview", "approvals", "attention", "outcomes", "appointments", "recommendations", "reports", "new-campaign"]);
+const PAGES = { agent: pageAgent, plan: pagePlan, overview: pageOverview, approvals: pageApprovals, attention: pageApprovals, "new-campaign": pageWizard, campaigns: pageCampaigns, prospects: pageProspects, research: pageResearch, contacts: pageContacts, outreach: pageOutreach, replies: pageReplies, appointments: pageAppointments, outcomes: pageOutcomes, analytics: pageAnalytics, reports: pageReports, integrations: pageIntegrations, automation: pageAutomation, audit: pageAudit, settings: pageSettings, recommendations: pageRecommendations };
+const CLIENT_PAGES = new Set(["agent", "plan", "overview", "approvals", "attention", "outcomes", "appointments", "recommendations", "reports", "new-campaign"]);
 function parseHash() {
   const h = (location.hash || "#overview").slice(1); const [route, ...rest] = h.split(".");
   S.route = PAGES[route] ? route : "overview"; S.sub = rest.join(".");
@@ -1942,7 +2297,7 @@ function parseHash() {
 function renderPage() {
   const page = document.getElementById("page");
   const c = C();
-  page.innerHTML = !c && S.route !== "new-campaign" ? pageWelcome() : PAGES[S.route]();
+  page.innerHTML = !c && !["new-campaign", "agent"].includes(S.route) ? pageAgent() : PAGES[S.route]();
   if (c && c.daily.length) {
     const days = c.daily.map((d) => d.day); let acc = 0; const cum = c.daily.map((d) => (acc += d.outcomes));
     page.querySelectorAll('[data-chart="trend"]').forEach((el) => lineChart(el, cum, c.config.outcome.target, days));
@@ -1969,6 +2324,10 @@ function refreshPage() {
 function toast(msg) { const el = document.getElementById("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (el.hidden = true), 2800); }
 function confirmBox(title, text, yes, onYes, note) { S.modal = { type: "confirm", title, text, yes, onYes, note }; render(); }
 function startCampaign() {
+  S.menu = false; WS.agent = { planId: null }; S.agentStep = null; saveWS();
+  location.hash = "#agent"; render();
+}
+function startWizard() {
   S.menu = false;
   if (!clients().length) { openClientModal("campaign"); return; }
   if (!WS.draft || WS.draft.clientId !== S.clientId && clients().some((c) => c.id === S.clientId)) {
@@ -2001,6 +2360,19 @@ document.addEventListener("click", (ev) => {
     case "newClient": S.menu = false; openClientModal("campaign"); return;
     case "newClientStay": openClientModal("stay"); return;
     case "newCampaign": startCampaign(); return;
+    case "manualSetup": startWizard(); return;
+    case "askExample": S.agentDraft = el.dataset.v; agentSubmit(el.dataset.v); return;
+    case "agentNew": WS.agent = { planId: null }; S.agentStep = null; saveWS(); render(); setTimeout(() => document.getElementById("askInput")?.focus(), 0); return;
+    case "qAnswer": agentAnswer(el.dataset.q, el.dataset.v); return;
+    case "qCustom": S.qCustom = el.dataset.q; refreshPage(); setTimeout(() => document.getElementById(`qc-${el.dataset.q}`)?.focus(), 0); return;
+    case "assume": agentAssume(el.dataset.id, el.dataset.v); return;
+    case "assumeEdit": { const id = el.dataset.id; agentAssume(id, "edited"); planToWizard(curPlan(), id === "offer" ? 3 : ["goal", "outcome", "client"].includes(id) ? 1 : 2); return; }
+    case "planAdvanced": planToWizard(curPlan(), 1); return;
+    case "agentApprove": agentApprove(); return;
+    case "sugYes": applySuggestion(true); return;
+    case "sugNo": applySuggestion(false); return;
+    case "openPlan": WS.agent = { planId: el.dataset.id }; S.agentStep = null; saveWS(); location.hash = "#agent"; return;
+
     case "newProspect": case "newContact": S.menu = false; if (!C()) { toast(tr("أنشئ حملة أولاً", "Create a campaign first")); return; } S.modal = { type: act === "newContact" ? "contact" : "prospect", data: { company: "", contact: "", title: "", email: "", linkedin: "", city: "" } }; render(); setTimeout(() => document.getElementById(act === "newContact" ? "mPerson" : "mCo")?.focus(), 0); return;
     case "closeModal": S.modal = null; render(); return;
     case "saveClient": saveClient(); return;
@@ -2030,7 +2402,14 @@ document.addEventListener("click", (ev) => {
     case "apDetails": S.clientId = el.dataset.cl; S.campaignId = el.dataset.c; S.drawer = el.dataset.id; render(); return;
   }
 });
+document.addEventListener("submit", (ev) => {
+  const f = ev.target.closest("[data-form]"); if (!f) return;
+  ev.preventDefault();
+  if (f.dataset.form === "ask") agentSubmit(document.getElementById("askInput")?.value);
+  if (f.dataset.form === "qCustom") { const v = f.querySelector("input")?.value.trim(); if (v) { S.qCustom = null; agentAnswer(f.dataset.q, v); } }
+});
 document.addEventListener("keydown", (ev) => {
+  if (ev.target.id === "askInput" && ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); agentSubmit(ev.target.value); return; }
   if (ev.key === "Escape") { if (S.modal) { S.modal = null; render(); return; } if (S.menu) { S.menu = false; renderCtx(); return; } if (S.drawer) { S.drawer = null; render(); return; } }
   const chip = ev.target.closest?.("[data-chips]");
   if (chip && (ev.key === "Enter" || ev.key === "," || ev.key === "،")) {
@@ -2043,6 +2422,7 @@ document.addEventListener("keydown", (ev) => {
   if (chip && ev.key === "Backspace" && !chip.value) { const arr = getPath(WS.draft, chip.dataset.chips) || []; if (arr.length) { setPath(WS.draft, chip.dataset.chips, arr.slice(0, -1)); saveWS(); refreshPage(); } }
 });
 document.addEventListener("input", (ev) => {
+  if (ev.target.id === "askInput") { S.agentDraft = ev.target.value; return; }
   const m = ev.target.closest("[data-m]");
   if (m && S.modal) { S.modal.data[m.dataset.m] = m.value; return; }
   const b = ev.target.closest("[data-bind]");

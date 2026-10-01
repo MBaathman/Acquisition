@@ -2,9 +2,9 @@
 // September 2026 with fictional prospects and simulated behaviour. DEMO DATA ONLY.
 import { writeFileSync } from "node:fs";
 import {
-  ACTION_TYPES, AcquisitionEngine, AttributeResearchProvider, FixtureContactFinder, KeywordReplyClassifier, ManualClock,
-  OutboxSender, StaticProspectSource, loadCampaignFile, summarizeCampaign, type CampaignConfig, type DiscoveredProspect,
-  type InMemoryQueue, type ActionType,
+  AcquisitionEngine, AttributeResearchProvider, FixtureContactFinder, KeywordReplyClassifier, ManualClock,
+  OutboxSender, StaticProspectSource, loadCampaignFile, type CampaignConfig, type DiscoveredProspect,
+  type InMemoryQueue, snapshotCampaign,
 } from "../src/index.js";
 
 let seed = 7;
@@ -144,7 +144,6 @@ const plans: Plan[] = [
 const START = new Date("2026-08-31T21:00:00Z"); // 00:00 1 Sep, Riyadh
 const DAYS = 30;
 const END = START.getTime() + DAYS * DAY;
-const riyadhDay = (iso: string | number) => new Date(new Date(iso).getTime() + 3 * 3600e3).toISOString().slice(0, 10);
 
 const clients: Record<string, { id: string; name: string; industry?: string }> = {};
 const campaigns: unknown[] = [];
@@ -217,71 +216,11 @@ for (const plan of plans) {
   }
 
   // ------------------------------------------------------------ export
-  const S = engine.store;
-  const [prospects, contacts, accounts, messages, actions, outcomes, appts, recs, excs, audit] = await Promise.all([
-    S.prospects.find((p) => p.campaignId === id), S.contacts.find((c) => c.clientId === clientId), S.accounts.find((a) => a.clientId === clientId),
-    S.messages.find((m) => m.campaignId === id), S.actions.find((a) => a.campaignId === id), S.outcomes.find((o) => o.campaignId === id),
-    S.appointments.find((a) => a.campaignId === id), S.recommendations.find((r) => r.campaignId === id), S.exceptions.find((e) => e.campaignId === id),
-    S.audit.find((e) => e.campaignId === id),
-  ]);
-  const cById = new Map(contacts.map((c) => [c.id, c])); const aById = new Map(accounts.map((a) => [a.id, a]));
-  const lastActivity = new Map<string, string>();
-  for (const e of audit) if (e.prospectId && (lastActivity.get(e.prospectId) ?? "") < e.at) lastActivity.set(e.prospectId, e.at);
-
-  const drafts = [];
-  for (const p of prospects) { const d = await engine.previewNextTouch(p.id); if (d) drafts.push(d); }
-
-  const report = plan.simulate || prospects.length ? await engine.report(id) : await engine.report(id);
-  const daily = [];
-  for (let d = 0; d < DAYS; d++) {
-    const day = riyadhDay(START.getTime() + d * DAY + 4 * 3600e3);
-    daily.push({
-      day,
-      outcomes: outcomes.filter((o) => o.counted && riyadhDay(o.at) === day).length,
-      sent: messages.filter((m) => m.direction === "outbound" && riyadhDay(m.at) === day).length,
-      replies: messages.filter((m) => m.direction === "inbound" && riyadhDay(m.at) === day).length,
-      discovered: prospects.filter((p) => riyadhDay(p.createdAt) === day).length,
-    });
-  }
-
-  campaigns.push({
-    clientId,
-    config: summarizeCampaign(cfg),
-    report, daily, analytics: await engine.analytics(id),
-    prospects: prospects.map((p) => {
-      const c = cById.get(p.contactId)!; const a = p.accountId ? aById.get(p.accountId) : undefined;
-      return {
-        id: p.id, company: a?.name, domain: a?.domain, city: a?.city ?? c.city, country: a?.country ?? c.country, employees: a?.employees,
-        sector: (p.research?.answers.sector as string) ?? (p.research?.answers.agency_type as string) ?? (c.attributes.buyer_type as string) ?? a?.industry,
-        contact: [c.firstName, c.lastName].filter(Boolean).join(" "), title: c.title, channels: Object.keys(c.handles), handleSource: c.externalIds.handleSource,
-        persona: p.persona, score: p.score, scoreMax: p.scoreMax, tier: p.tier, breakdown: p.scoreBreakdown ?? [],
-        researchStatus: p.researchStatus, signals: p.research?.signals ?? [], missing: p.research?.missing ?? [], rejected: p.research?.rejected ?? [], researchConfidence: p.research?.confidence,
-        contactStatus: p.contactStatus, stage: p.stage, status: p.status, parkedReason: p.attributes.parkedReason, lostReason: p.attributes.lostReason,
-        touches: p.touches, lastIntent: p.lastIntent, qualification: p.qualification, milestones: p.milestones,
-        attrs: plan.file.includes("real-estate") ? { budget: c.attributes.budget, timeline: c.attributes.timeline, target_area: c.attributes.target_area, buyer_type: c.attributes.buyer_type } : undefined,
-        lastActivity: lastActivity.get(p.id) ?? p.updatedAt, createdAt: p.createdAt,
-      };
-    }),
-    outreach: actions.filter((a) => ["send_message", "follow_up", "respond", "conversion_step"].includes(a.type)).map((a) => ({
-      id: a.id, type: a.type, status: a.status, prospectId: a.prospectId, channel: a.payload.channel, subject: a.payload.subject, body: a.payload.body,
-      step: a.payload.stepKey, template: a.payload.templateKey, variant: a.payload.variantKey, unresolved: a.payload.unresolved, confidence: a.confidence,
-      rationale: a.rationale, createdAt: a.createdAt, executedAt: a.executedAt, runAfter: a.runAfter, decidedBy: a.decidedBy?.type, error: a.lastError, mode: a.mode,
-    })),
-    drafts: drafts.map((d) => ({ prospectId: d.prospectId, step: d.stepKey, dueAt: d.dueAt, channel: d.channel, subject: d.subject, body: d.body, confidence: d.confidence, variant: d.variantKey })),
-    replies: messages.filter((m) => m.direction === "inbound").map((m) => ({ id: m.id, prospectId: m.prospectId, at: m.at, channel: m.channel, body: m.body, intent: m.intent, confidence: m.intentConfidence, nextAction: m.nextAction })),
-    appointments: appts.map((a) => ({ id: a.id, prospectId: a.prospectId, status: a.status, startsAt: a.startsAt, bookedAt: a.bookedAt, qualifiedAtBooking: a.qualifiedAtBooking, brief: { ...a.brief, conversation: a.brief.conversation.slice(-4) } })),
-    outcomes: outcomes.map((o) => ({ id: o.id, prospectId: o.prospectId, at: o.at, counted: o.counted, value: o.value?.amount, source: o.attribution.sourceTouch ?? o.attribution.lastTouch, touches: o.attribution.touches, persona: o.attribution.persona, tier: o.attribution.tier })),
-    recommendations: recs.map((r) => ({ id: r.id, kind: r.kind, summary: r.summary, evidence: r.evidence, change: r.change, status: r.status, at: r.at, actionId: actions.find((a) => a.idempotencyKey === `optimize:${r.id}`)?.id })),
-    exceptions: excs.map((e) => ({ id: e.id, kind: e.kind, severity: e.severity, reason: e.reason, prospectId: e.prospectId, status: e.status, at: e.at, resolvedAt: e.resolvedAt })),
-    audit: audit.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 250).map((e) => ({ at: e.at, event: e.event, actor: e.actor.type, prospectId: e.prospectId, detail: e.detail })),
-    auditCounts: audit.reduce<Record<string, number>>((m, e) => ((m[e.event] = (m[e.event] ?? 0) + 1), m), {}),
-    governance: {
-      auditTotal: audit.length, autoInternal: actions.filter((a) => a.decidedBy?.type === "system" && ACTION_TYPES[a.type].risk === "internal").length,
-      humanApproved: actions.filter((a) => a.decidedBy?.type === "user" && a.status !== "rejected").length, rejected: actions.filter((a) => a.status === "rejected").length,
-      blocked: actions.filter((a) => a.status === "blocked").length, deferred: audit.filter((e) => e.event === "action.deferred").length, retries: audit.filter((e) => e.event === "action.retry_scheduled").length,
-    },
-  });
-  console.log(cfg.client.name, "/", cfg.campaign.name, report.outcome.achieved, "/", report.outcome.target, "prospects", prospects.length, "pending", actions.filter((a) => a.status === "pending_approval").length, "appts", appts.length, "drafts", drafts.length);
+  const snap = await snapshotCampaign(engine, cfg, { start: START, days: DAYS });
+  campaigns.push(snap);
+  const { report, prospects, appointments: appts, drafts } = snap;
+  const pending = snap.outreach.filter((a) => a.status === "pending_approval").length;
+  console.log(cfg.client.name, "/", cfg.campaign.name, report.outcome.achieved, "/", report.outcome.target, "prospects", prospects.length, "pending", pending, "appts", appts.length, "drafts", drafts.length);
 }
 
 const data = { generatedAt: new Date(END).toISOString(), asOf: "2026-09-30", demo: true, clients: Object.values(clients), campaigns };

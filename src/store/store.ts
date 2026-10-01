@@ -13,6 +13,8 @@ import type {
   Recommendation,
   User,
 } from "../domain/types.js";
+import type { LlmCacheEntry, LlmCallRecord } from "../intelligence/types.js";
+import type { CampaignPlan } from "../agent/planner.js";
 
 /**
  * Persistence port. The in-memory implementation backs tests and demos; a
@@ -39,6 +41,12 @@ export interface Store {
   users: Collection<User>;
   campaignState: Collection<CampaignState>;
   appointments: Collection<Appointment>;
+  /** Campaign plans produced from a natural-language request (persisted so viewing never re-plans). */
+  plans: Collection<CampaignPlan>;
+  /** Every model call (or cache hit / rules fallback): prompt, version, tokens, latency, status. */
+  llmCalls: Collection<LlmCallRecord>;
+  /** Validated model outputs keyed by prompt + version + input hash, reused for repeated requests. */
+  llmCache: Collection<LlmCacheEntry>;
 }
 
 class MemoryCollection<T extends { id: string }> implements Collection<T> {
@@ -75,5 +83,8 @@ export function createMemoryStore(): Store {
     users: new MemoryCollection(),
     campaignState: new MemoryCollection(),
     appointments: new MemoryCollection(),
+    plans: new MemoryCollection(),
+    llmCalls: new MemoryCollection(),
+    llmCache: new MemoryCollection(),
   };
 }

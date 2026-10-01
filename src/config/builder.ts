@@ -35,7 +35,8 @@ export type CriterionCheck =
   | { type: "research" } // researched per prospect; counts only with a cited source
   | { type: "size"; min?: number; max?: number }
   | { type: "role"; titles: string[] }
-  | { type: "location"; countries?: string[]; cities?: string[] };
+  | { type: "location"; countries?: string[]; cities?: string[] }
+  | { type: "budget"; min: number };
 
 export interface CampaignDraft {
   locale: Locale;
@@ -50,6 +51,8 @@ export interface CampaignDraft {
     value?: { amount: number; currency: string; recurrence?: "one_time" | "monthly" | "annual" };
   };
   audience: {
+    /** Companies (default) or individuals (buyers, investors, consumers). */
+    targetType?: "account" | "individual";
     countries: string[];
     companyTypes: string[];
     sizeMin?: number;
@@ -116,7 +119,7 @@ export interface BuilderPresets {
   intents: IntentPreset[];
 }
 
-function criterionRule(c: CampaignDraft["qualification"]["criteria"][number], key: string): Rule {
+function criterionRule(c: CampaignDraft["qualification"]["criteria"][number], key: string, individual: boolean): Rule {
   const check = c.check ?? { type: "research" };
   switch (check.type) {
     case "size":
@@ -125,8 +128,10 @@ function criterionRule(c: CampaignDraft["qualification"]["criteria"][number], ke
       return { field: "contact.title", op: "containsAny", value: check.titles };
     case "location":
       return check.cities?.length
-        ? { field: "account.city", op: "in", value: check.cities }
-        : { field: "account.country", op: "in", value: check.countries ?? [] };
+        ? { field: individual ? "contact.city" : "account.city", op: "in", value: check.cities }
+        : { field: individual ? "contact.country" : "account.country", op: "in", value: check.countries ?? [] };
+    case "budget":
+      return { field: "attributes.budget", op: "gte", value: check.min };
     case "research":
       return { field: `research.${key}`, op: "exists" };
   }
@@ -148,8 +153,11 @@ export function buildCampaignConfig(draft: CampaignDraft, presets: BuilderPreset
   const criterionKey = (i: number) => `criterion_${i + 1}`;
 
   const fit: Rule[] = [];
-  if (a.countries.length) fit.push({ field: "account.country", op: "in", value: a.countries });
-  if (a.sizeMin !== undefined || a.sizeMax !== undefined) fit.push({ field: "account.employees", op: "between", value: [a.sizeMin ?? 0, a.sizeMax ?? 1_000_000] });
+  const individual = a.targetType === "individual";
+  const geo = individual ? "contact" : "account";
+  if (a.cities.length) fit.push({ field: `${geo}.city`, op: "in", value: a.cities });
+  else if (a.countries.length) fit.push({ field: `${geo}.country`, op: "in", value: a.countries });
+  if (!individual && (a.sizeMin !== undefined || a.sizeMax !== undefined)) fit.push({ field: "account.employees", op: "between", value: [a.sizeMin ?? 0, a.sizeMax ?? 1_000_000] });
 
   const researchQuestions = q.criteria
     .map((c, i) => ({ c, i }))
@@ -201,7 +209,7 @@ export function buildCampaignConfig(draft: CampaignDraft, presets: BuilderPreset
       : undefined,
     icp: {
       description: [a.companyTypes.join(", "), a.sectors.join(", "), a.traits.join(", ")].filter(Boolean).join(" · ") || undefined,
-      targetType: "account",
+      targetType: individual ? "individual" : "account",
       personas: a.titles.length ? [{ key: "target_role", label: a.titles.join(" / "), match: { field: "contact.title", op: "containsAny", value: a.titles } }] : [],
       fit: fit.length ? { all: fit } : { always: true },
     },
@@ -226,7 +234,7 @@ export function buildCampaignConfig(draft: CampaignDraft, presets: BuilderPreset
     scoring: {
       scale: "points",
       signals: q.criteria.map((c, i) => ({
-        key: criterionKey(i), label: c.label, weight: c.points, category: c.timing ? "timing" : "fit", when: criterionRule(c, criterionKey(i)),
+        key: criterionKey(i), label: c.label, weight: c.points, category: c.timing ? "timing" : "fit", when: criterionRule(c, criterionKey(i), individual),
       })),
       tiers: [
         { key: "a", label: copy.tiers[0], min: threshold },
@@ -294,7 +302,7 @@ export function buildCampaignConfig(draft: CampaignDraft, presets: BuilderPreset
     },
     analytics: {
       dimensions: [
-        { key: "geography", label: loc === "ar" ? "الدولة" : "Country", field: "account.country" },
+        { key: "geography", label: loc === "ar" ? "المدينة" : "City", field: `${geo}.city` },
         { key: "persona", label: loc === "ar" ? "نوع الشخص" : "Persona", field: "prospect.persona" },
         { key: "tier", label: loc === "ar" ? "فئة الملاءمة" : "Fit tier", field: "prospect.tier" },
       ],
