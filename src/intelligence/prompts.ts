@@ -128,4 +128,59 @@ export const personalizeMessage = definePrompt<PersonalizeInput, z.infer<typeof 
   effort: "medium",
 });
 
-export const PROMPTS = { understandGoal, classifyReply, personalizeMessage } as const;
+// ---------------------------------------------------------------- interpret_message
+
+const ChangesSchema = z.object({
+  countries: z.array(z.string()).nullable(),
+  cities: z.array(z.string()).nullable(),
+  goal: z.number().nullable(),
+  sizeMin: z.number().nullable(),
+  sizeMax: z.number().nullable(),
+  minClients: z.number().nullable(),
+  email: z.boolean().nullable(),
+  linkedin: z.boolean().nullable(),
+  language: z.enum(["ar", "en"]).nullable(),
+  threshold: z.number().nullable(),
+  decisionMakersOnly: z.boolean().nullable(),
+  autonomy: z.enum(["human_approval", "assisted", "autonomous"]).nullable(),
+});
+
+export const MessageInterpretationSchema = z.object({
+  intents: z.array(
+    z.object({
+      type: z.enum(["new_goal", "update_plan", "answer", "confirm", "reject", "start", "pause", "resume", "prepare_outreach", "query", "unknown"]),
+      questionId: z.string().nullable(),
+      value: z.string().nullable(),
+      topic: z.enum(["status", "results", "top", "explain", "approvals", "plan", "activity", "help"]).nullable(),
+      changes: ChangesSchema.nullable(),
+    }),
+  ),
+});
+
+export interface InterpretMessageInput {
+  message: string;
+  locale: string;
+  plan: { goal: number; outcome: string; market: string; audience: string; channels: string[]; threshold: number; maxScore: number } | null;
+  openQuestions: { id: string; text: string; options: { id: string; label: string }[] }[];
+  regions: { code: string; cities: string[] }[];
+  running: boolean;
+}
+
+export const interpretMessage = definePrompt<InterpretMessageInput, z.infer<typeof MessageInterpretationSchema>>({
+  id: "interpret_message",
+  version: 1,
+  purpose: "Turn a chat message to the acquisition agent into structured intents when the rules found none.",
+  system: [
+    "You interpret a user's chat message to an acquisition agent that runs a campaign for them.",
+    "Return one or more intents. update_plan carries only the fields the message changes (others null); countries are ISO codes and cities keys from the catalog.",
+    "answer is for a reply to one of the open questions (questionId + option id in value). query topics: status, results, top, explain, approvals, plan, activity, help.",
+    "autonomy: human_approval when the user wants to approve messages before sending; never loosen it unless explicitly asked.",
+    "If the message is unrelated to running the campaign, return a single unknown intent. Never invent values the message does not state.",
+  ].join("\n"),
+  render: (i) => `Plan: ${json(i.plan)}\nRunning: ${i.running}\nOpen questions: ${json(i.openQuestions)}\nCatalog regions: ${json(i.regions)}\n\nMessage (${i.locale}):\n${i.message}`,
+  output: MessageInterpretationSchema,
+  maxTokens: 1500,
+  effort: "low",
+});
+
+export const PROMPTS = { understandGoal, classifyReply, personalizeMessage, interpretMessage } as const;

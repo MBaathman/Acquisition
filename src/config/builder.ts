@@ -60,6 +60,8 @@ export interface CampaignDraft {
     sectors: string[];
     cities: string[];
     titles: string[];
+    /** Only contacts whose title matches `titles` fit (e.g. decision makers only). */
+    requireTitle?: boolean;
     traits: string[];
     advanced?: { growthSignals?: string[]; technologies?: string[]; customFilters?: string };
   };
@@ -157,6 +159,7 @@ export function buildCampaignConfig(draft: CampaignDraft, presets: BuilderPreset
   const geo = individual ? "contact" : "account";
   if (a.cities.length) fit.push({ field: `${geo}.city`, op: "in", value: a.cities });
   else if (a.countries.length) fit.push({ field: `${geo}.country`, op: "in", value: a.countries });
+  if (a.requireTitle && a.titles.length) fit.push({ field: "contact.title", op: "containsAny", value: a.titles });
   if (!individual && (a.sizeMin !== undefined || a.sizeMax !== undefined)) fit.push({ field: "account.employees", op: "between", value: [a.sizeMin ?? 0, a.sizeMax ?? 1_000_000] });
 
   const researchQuestions = q.criteria

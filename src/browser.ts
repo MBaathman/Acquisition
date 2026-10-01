@@ -10,3 +10,5 @@ export { understandRequest, rulesAreConfident } from "./agent/plans.js";
 export { simulateFirstRun } from "./agent/simulation.js";
 export { IntelligenceService } from "./intelligence/service.js";
 export { PromptJsonProvider } from "./intelligence/edge-provider.js";
+export { AcquisitionAgent, countsOf } from "./agent/agent.js";
+export { DECISION_POLICY, countOf, diffPlans, applyChanges } from "./agent/planner.js";

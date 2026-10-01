@@ -9,6 +9,7 @@ import {
   ManualClock,
   PlanService,
   applyAnswer,
+  applyChanges,
   buildCampaignConfig,
   createMemoryStore,
   extractGoal,
@@ -56,8 +57,8 @@ describe("agent planner (one sentence → plan)", () => {
     const plan = planFromRequest(AGENCIES, ctx);
     expect(plan.extraction).toMatchObject({ clientName: "DataSpeaks", outcome: "paid_subscriber", goal: 50, countries: ["AE"], archetype: "marketing_agencies" });
     expect(plan.understanding.client).toMatchObject({ id: "c-dataspeaks", existing: true });
-    expect(plan.questions.map((q) => q.id)).toEqual(["region_focus"]);
-    expect(plan.questions[0]!.options.map((o) => o.label)).toEqual(["كل الإمارات", "دبي وأبوظبي أولاً", "حدد لي"]);
+    expect(plan.questions.map((q) => q.id)).toEqual(["company_size"]);
+    expect(plan.questions[0]!.options.map((o) => o.label)).toEqual(["الصغيرة والمتوسطة فقط", "جميع الأحجام"]);
     expect(plan.strategy).toMatchObject({ maxScore: 95, threshold: 70, touches: 2, autonomy: "human_approval", messageLanguage: "en" });
   });
 
@@ -90,10 +91,13 @@ describe("agent planner (one sentence → plan)", () => {
 
   it("re-plans from answers without re-reading the sentence", () => {
     let plan = planFromRequest(AGENCIES, ctx);
-    plan = applyAnswer(plan, "region_focus", "focus", ctx);
+    plan = applyAnswer(plan, "company_size", "all", ctx);
     expect(plan.status).toBe("ready");
+    expect(plan.draft.audience.sizeMin).toBeUndefined();
+    plan = applyChanges(plan, { cities: ["Dubai", "Abu Dhabi"] }, ctx);
     expect(plan.understanding.market.cities).toEqual(["Dubai", "Abu Dhabi"]);
     expect(plan.draft.campaign.name).toBe("استقطاب وكالات دبي وأبوظبي");
+    expect(plan.answers.company_size).toBe("all"); // earlier answers survive later changes
 
     let luxury = planFromRequest(LUXURY, ctx);
     luxury = applyAnswer(applyAnswer(luxury, "goal", "30", ctx), "min_budget", "5000000", ctx);
@@ -109,10 +113,10 @@ describe("agent planner (one sentence → plan)", () => {
 
   it("runs on the real engine: one sentence → drafted messages waiting for approval", async () => {
     let plan = planFromRequest(AGENCIES, ctx);
-    plan = applyAnswer(plan, "region_focus", "all", ctx);
+    plan = applyAnswer(plan, "company_size", "smb", ctx);
     const cfg = buildCampaignConfig(plan.draft, presets);
     const { counts, snapshot } = await simulateFirstRun(plan, cfg, knowledge, { start: START });
-    expect(counts.discovered).toBe(40);
+    expect(counts.discovered).toBe(63); // goal 50 × 1.25
     expect(counts.fit).toBeGreaterThan(0);
     expect(counts.messagesReady).toBeGreaterThan(0);
     expect(snapshot.outreach.filter((a) => a.status === "pending_approval").every((a) => a.mode === "approval")).toBe(true);

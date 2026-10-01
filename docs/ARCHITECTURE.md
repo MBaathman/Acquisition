@@ -198,36 +198,54 @@ tier) from touches, positive replies and outcomes. It:
   raise the minimum score when a tier never converts — applied through a
   governed `optimize` action (approval-gated below full autonomy).
 
-## Agent flow: one sentence → running campaign
-
-The product starts from a goal, not a form: *USER DEFINES WHAT, ENGINE FIGURES
-OUT HOW.*
+## The agent: chat is the primary interface
 
 ```
-"50 عميل مدفوع لـ DataSpeaks من وكالات التسويق في الإمارات"
-  → understand   (src/agent/plans.ts: rules first, model only if rules can't)
-  → plan         (src/agent/planner.ts: deterministic, from presets/knowledge.json)
-      understanding · explanation (understood / will research / why / need from you)
-      assumptions [OK][Edit] · ≤ 2 questions with option buttons · strategy · CampaignDraft
-  → answer / accept       (applyAnswer: re-plans from the stored extraction — no model)
-  → approve               (buildCampaignConfig → same schema as YAML → engine)
-  → engine works          (discover → research → score → draft → approval queue)
-  → "needs your decision" (messages, prospects needing clarification, suggestions)
+USER → NATURAL LANGUAGE → AGENT UNDERSTANDS → PLANS → EXECUTES → USER APPROVES IMPORTANT ACTIONS → AGENT REPORTS
 ```
 
-- **Knowledge is data.** `presets/knowledge.json` holds outcome vocabulary,
-  markets (countries, cities, focus cities, message language), audience
-  *archetypes* (company types, decision makers, scoring signals, assumptions,
-  the one question worth asking) and the question catalog. Teaching the agent a
-  new kind of audience = adding an archetype. The core still names no client,
-  industry or outcome (genericity test).
-- **Plans are persisted** (`Store.plans`). Viewing, navigating, answering a
-  question, accepting an assumption and approving all work on the stored
-  structure. The form-based setup is still there as *advanced settings*: a plan
-  opens in it prefilled.
-- **Simulation** (`src/agent/simulation.ts`): the prototype runs the engine's
-  first cycle on fictional prospects that resemble the plan's audience, so the
-  user sees real pipeline numbers. It is labelled as simulation; nothing is sent.
+The user talks to an acquisition agent (`src/agent/agent.ts`), not a form.
+Every message becomes **structured intents** (`src/agent/intents.ts`), and the
+agent acts on stored data:
+
+| Intent | Example | What happens |
+| --- | --- | --- |
+| `new_goal` | "أبغى 100 عميل مدفوع لـDataSpeaks في الإمارات من وكالات التسويق" | understand → plan; a different goal opens its own conversation |
+| `update_plan` `{changes}` | "خلها السعودية وركز على الرياض", "استخدم البريد فقط", "ارفع درجة التأهيل إلى 80" | plan rebuilt from the stored extraction + accumulated changes; reply shows the diff |
+| `answer` | "جميع الأحجام" (to an open question) | applied; no form |
+| `start` / `pause` / `resume` | "ابدأ البحث", "وقف الحملة", "استأنف" | campaign run created / status changed |
+| `prepare_outreach` | "جهز التواصل لكن لا ترسل أي شيء بدون موافقتي" | drafts ready; policy confirmed (multi-intent message) |
+| `query` | "وش لقيت؟", "ورني أفضل الفرص", "ليش اخترت هذي الشركات؟", "كم شركة عندك؟" | answered from stored engine data |
+| `confirm` / `reject` | "اعتمد", "لا" | decides a pending change |
+
+Data model: `Conversation` → `ConversationMessage` (text, `intents`,
+`understoodBy`, ordered `cards`) · `CampaignPlan` (extraction, answers,
+`changes`, assumptions, questions, strategy, draft) · `CampaignRun` (config,
+counts, engine snapshot, activity feed) · `AgentApproval` (plan changes waiting
+on a human). Cards are structured (plan, questions, diff, status, progress,
+prospects, actions...) so any client can render them.
+
+**Who decides what** (`DECISION_POLICY`):
+
+- **AUTO** — finding, researching, scoring, prioritizing, drafting messages.
+- **ASK** — at most two questions, only when the answer changes the plan
+  (e.g. company size for agencies, public sector for enterprise, minimum budget
+  for property, "did you mean the client you already have?"). Everything else
+  is a stated assumption the user can change by saying so.
+- **APPROVAL** — sending any real message (MVP), and major changes to a
+  running campaign (market, goal, size, threshold, audience, looser autonomy):
+  these become approvals in the chat and in the approvals center. Minor changes
+  (language, channels, stricter approval) apply immediately.
+
+Domain knowledge is data (`presets/knowledge.json`): outcome vocabulary,
+markets, audience archetypes (signals, decision makers, the one question worth
+asking, parameterized signals like "{n}+ clients"), answer aliases.
+The prototype runs the engine's first cycle on fictional prospects (labelled
+simulation); the server registers the campaign on the real engine.
+
+The form-based setup remains as **advanced setup**, and the operational pages
+(ICP, scoring, research, outreach, automation, audit...) as **advanced
+details** — available, but not the way the product is run.
 
 ## Hybrid intelligence (LLM only where it adds something)
 
@@ -240,7 +258,7 @@ User → Frontend → Backend (server/) → IntelligenceService → LlmProvider 
 
 | Concern | Where |
 | --- | --- |
-| Prompts, centralized and versioned, each with a zod output schema | `src/intelligence/prompts.ts` (`understand_goal`, `classify_reply`, `personalize_message`) |
+| Prompts, centralized and versioned, each with a zod output schema | `src/intelligence/prompts.ts` (`understand_goal`, `interpret_message`, `classify_reply`, `personalize_message`) |
 | Provider port (replaceable) | `src/intelligence/types.ts` `LlmProvider` |
 | Cache (prompt id + version + input hash), call log, token usage, fallback | `src/intelligence/service.ts` (`Store.llmCache`, `Store.llmCalls`, `usage()`) |
 | Reply classification / personalization adapters | `src/intelligence/adapters.ts` (`LlmReplyClassifier` falls back to keywords and rejects unknown intents; `LlmComposer` only sees sourced facts) |
@@ -251,8 +269,9 @@ Rules:
 
 - **No model call** on page open, navigation, tab change, filters, reports or
   approvals. The UI reads stored data.
-- **Rules first.** A request is sent to the model only if the rules could not
-  find the audience, outcome or market (`rulesAreConfident`). Every skip is
+- **Rules first.** A goal is sent to the model only if the rules could not
+  find the audience, outcome or market (`rulesAreConfident`); a chat message
+  only if the rules found no intent at all (`interpret_message`). Every skip is
   logged too (`status: skipped`), so usage shows how rarely the model is needed.
 - **The model can't invent structure.** Its extraction is sanitized against
   the knowledge base (unknown archetypes, markets or outcomes are dropped);

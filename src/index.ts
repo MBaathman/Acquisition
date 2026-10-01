@@ -29,3 +29,5 @@ export * from "./intelligence/adapters.js";
 export * from "./agent/snapshot.js";
 export * from "./agent/simulation.js";
 export * from "./intelligence/edge-provider.js";
+export * from "./agent/intents.js";
+export * from "./agent/agent.js";

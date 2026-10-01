@@ -15,6 +15,7 @@ import type {
 } from "../domain/types.js";
 import type { LlmCacheEntry, LlmCallRecord } from "../intelligence/types.js";
 import type { CampaignPlan } from "../agent/planner.js";
+import type { AgentApproval, CampaignRun, Conversation } from "../agent/agent.js";
 
 /**
  * Persistence port. The in-memory implementation backs tests and demos; a
@@ -47,6 +48,12 @@ export interface Store {
   llmCalls: Collection<LlmCallRecord>;
   /** Validated model outputs keyed by prompt + version + input hash, reused for repeated requests. */
   llmCache: Collection<LlmCacheEntry>;
+  /** Agent conversations: every message with its structured intents and the cards the agent replied with. */
+  conversations: Collection<Conversation>;
+  /** Campaigns the agent started from a plan: config, latest engine state, activity feed. */
+  runs: Collection<CampaignRun>;
+  /** Changes to running campaigns that wait for a human decision. */
+  approvals: Collection<AgentApproval>;
 }
 
 class MemoryCollection<T extends { id: string }> implements Collection<T> {
@@ -86,5 +93,8 @@ export function createMemoryStore(): Store {
     plans: new MemoryCollection(),
     llmCalls: new MemoryCollection(),
     llmCache: new MemoryCollection(),
+    conversations: new MemoryCollection(),
+    runs: new MemoryCollection(),
+    approvals: new MemoryCollection(),
   };
 }

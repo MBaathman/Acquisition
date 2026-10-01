@@ -11,13 +11,21 @@
 // GET  /api/campaigns/:id/report                             client report — no model call
 // GET  /api/usage?clientId=&campaignId=                      model calls, cache hits, tokens
 //
+// The agent (chat is the primary interface):
+// POST /api/conversations              {text, locale}   one sentence → conversation + plan
+// GET  /api/conversations/:id                           stored conversation — no model call
+// POST /api/conversations/:id/messages {text}           message → structured intents → agent acts
+// GET  /api/runs/:campaignId                            status, counts, activity feed
+// GET  /api/approvals?campaignId=                       pending human decisions
+// POST /api/approvals/:id              {approve}        approve / reject a plan change
+//
 // Authentication, tenancy checks and a durable store/queue are production work
 // (see docs/ARCHITECTURE.md); this server binds to localhost by default.
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  AcquisitionEngine, AttributeResearchProvider, IntelligenceService, KeywordReplyClassifier, LlmComposer, LlmReplyClassifier,
+  AcquisitionAgent, AcquisitionEngine, AttributeResearchProvider, snapshotCampaign, IntelligenceService, KeywordReplyClassifier, LlmComposer, LlmReplyClassifier,
   OutboxSender, PlanService, StaticProspectSource, createMemoryStore, summarizeCampaign, systemClock,
   type BuilderPresets, type Collection, type InMemoryQueue, type Knowledge, type Locale,
 } from "../src/index.js";
@@ -45,6 +53,9 @@ const store = {
   plans: new JsonFileCollection<never>(join(DATA, "plans.json")),
   llmCalls: new JsonFileCollection<never>(join(DATA, "llm-calls.json")),
   llmCache: new JsonFileCollection<never>(join(DATA, "llm-cache.json")),
+  conversations: new JsonFileCollection<never>(join(DATA, "conversations.json")),
+  runs: new JsonFileCollection<never>(join(DATA, "runs.json")),
+  approvals: new JsonFileCollection<never>(join(DATA, "approvals.json")),
 } as ReturnType<typeof createMemoryStore>;
 
 const knowledge: Knowledge = readJson("knowledge.json");
@@ -72,6 +83,19 @@ const plans = new PlanService({
   clock: systemClock,
   ai,
   ctx: (locale: Locale) => ({ knowledge, outcomes: presets.outcomes, clients: [...clients.values()], locale }),
+});
+
+// The agent drives the same engine: approving a plan registers the campaign; its jobs run on the queue.
+const agent = new AcquisitionAgent({
+  conversations: store.conversations, plans: store.plans, runs: store.runs, approvals: store.approvals,
+  planner: (locale: Locale) => ({ knowledge, outcomes: presets.outcomes, clients: [...clients.values()], locale }),
+  presets, clock: systemClock, ai,
+  execute: async (_plan, cfg) => {
+    await engine.registerCampaign(cfg);
+    await (engine.queue as InMemoryQueue).runDue();
+    return snapshotCampaign(engine, cfg, { start: new Date(), days: 1 });
+  },
+  onCampaignStarted: (run) => void clients.set(run.clientId, { id: run.clientId, name: run.clientName }),
 });
 
 // Background work: due jobs (ticks, approved actions, retries, follow-ups) run on the queue, not on requests.
@@ -122,6 +146,39 @@ const server = createServer(async (req, res) => {
         clients.set(config.client.id, { id: config.client.id, name: config.client.name });
         await engine.registerCampaign(config);
         return send(res, 200, { plan, campaign: summarizeCampaign(config) });
+      }
+    }
+
+    if (resource === "conversations") {
+      if (req.method === "POST" && !id) {
+        const b = await body(req);
+        const text = String(b.text ?? "").trim().slice(0, 1000);
+        if (!text) return send(res, 400, { error: "text is required" });
+        return send(res, 201, await agent.start(text, b.locale === "en" ? "en" : "ar"));
+      }
+      if (req.method === "GET" && id && !sub) {
+        const c = await store.conversations.get(id);
+        return c ? send(res, 200, c) : send(res, 404, { error: "conversation not found" });
+      }
+      if (req.method === "POST" && id && sub === "messages") {
+        const b = await body(req);
+        const text = String(b.text ?? "").trim().slice(0, 1000);
+        if (!text) return send(res, 400, { error: "text is required" });
+        return send(res, 200, await agent.send(id, text));
+      }
+    }
+    if (req.method === "GET" && resource === "runs" && id) {
+      const r = await store.runs.get(id);
+      return r ? send(res, 200, { id: r.id, status: r.status, counts: r.counts, activity: r.activity, planId: r.planId, conversationId: r.conversationId }) : send(res, 404, { error: "run not found" });
+    }
+    if (resource === "approvals") {
+      if (req.method === "GET" && !id) {
+        const campaignId = url.searchParams.get("campaignId");
+        return send(res, 200, await store.approvals.find((a) => a.status === "pending" && (!campaignId || a.campaignId === campaignId)));
+      }
+      if (req.method === "POST" && id) {
+        const b = await body(req);
+        return send(res, 200, await agent.decide(id, b.approve === true));
       }
     }
 

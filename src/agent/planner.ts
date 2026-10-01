@@ -33,6 +33,9 @@ export interface KnowledgeSignal {
   points: number;
   timing?: boolean;
   check?: "size" | "role" | "location" | "budget";
+  /** A label parameter the conversation can change, e.g. "{n}+ clients". */
+  param?: "minClients";
+  paramDefault?: number;
 }
 
 export interface KnowledgeArchetype {
@@ -61,8 +64,8 @@ export interface KnowledgeArchetype {
 
 export interface KnowledgeQuestion {
   text: Text;
-  effect: "goal" | "country" | "cities" | "companyTypes" | "budget" | "audience";
-  options: { id: string; label: Text; custom?: string; companyTypes?: Record<Locale, string[]> | null }[];
+  effect: "goal" | "country" | "cities" | "companyTypes" | "budget" | "audience" | "size" | "client";
+  options: { id: string; label: Text; custom?: string; aliases?: string[]; companyTypes?: Record<Locale, string[]> | null }[];
   custom?: string;
   default?: string;
 }
@@ -80,7 +83,11 @@ export interface Knowledge {
     country: string;
     placeholderClient: Text;
     offer: { valueProposition: Text; mainMessage: Text; mainMessageIndividual: Text };
+    minClientsLabel?: Text;
+    excludeLargeMax?: number;
   };
+  /** Title keywords that mark a decision maker. */
+  seniorTitleKeywords?: string[];
 }
 
 export interface PlannerContext {
@@ -108,7 +115,7 @@ export interface GoalExtraction {
 export interface PlanQuestion {
   id: string;
   text: string;
-  options: { id: string; label: string; custom?: string }[];
+  options: { id: string; label: string; custom?: string; aliases?: string[] }[];
   custom?: string;
   default?: string;
 }
@@ -129,6 +136,10 @@ export interface CampaignPlan {
   understoodBy: "rules" | "llm";
   extraction: GoalExtraction;
   answers: Record<string, string>;
+  /** Everything the user changed in conversation, re-applied on every rebuild. */
+  changes: PlanChanges;
+  /** Consequences the agent applied and should mention (e.g. a widened size band). */
+  notes: string[];
   status: "needs_input" | "ready" | "approved";
   understanding: {
     client: { id: string; name: string; existing: boolean; placeholder: boolean };
@@ -146,8 +157,12 @@ export interface CampaignPlan {
     channels: string[];
     touches: number;
     waitDays: number;
+    channelKeys: string[];
     autonomy: AutonomyLevel;
     messageLanguage: Locale;
+    size: { min: number | null; max: number | null } | null;
+    minClients: number | null;
+    decisionMakersOnly: boolean;
   };
   draft: CampaignDraft;
 }
@@ -192,6 +207,11 @@ const slug = (s: string) => {
   return `x${h.toString(36)}`;
 };
 const fill = (tpl: string, vars: Record<string, string>) => tpl.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "");
+/** Count phrases: Arabic uses the plural form only for 3–10 ("5 مشتركون", "100 مشترك"). */
+export function countOf(loc: Locale, n: number, singular: string, plural: string): string {
+  if (loc === "ar") return `${n} ${n >= 3 && n <= 10 ? plural : singular}`;
+  return `${n} ${n === 1 ? singular : plural}`;
+}
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const round5 = (n: number) => Math.max(5, Math.round(n / 5) * 5);
 
@@ -284,16 +304,51 @@ export function sanitizeExtraction(x: GoalExtraction, ctx: PlannerContext): Goal
 // ---------------------------------------------------------------------------
 // Step 2 — deterministic plan
 
+/**
+ * Structured changes the user asked for in conversation ("خلها السعودية",
+ * "استخدم البريد فقط", "ارفع درجة التأهيل إلى 80"...). They accumulate on the
+ * plan and are re-applied on every rebuild, so nothing the user said is lost.
+ */
+export interface PlanChanges {
+  countries?: string[];
+  cities?: string[];
+  goal?: number;
+  /** null = no bound. */
+  sizeMin?: number | null;
+  sizeMax?: number | null;
+  minClients?: number;
+  channels?: { email?: boolean; linkedin?: boolean };
+  language?: Locale;
+  threshold?: number;
+  decisionMakersOnly?: boolean;
+  autonomy?: AutonomyLevel;
+}
+
+export const CHANGE_KEYS = ["countries", "cities", "goal", "sizeMin", "sizeMax", "minClients", "channels", "language", "threshold", "decisionMakersOnly", "autonomy"] as const;
+
+/** Later changes win; `channels` merges. */
+export function mergeChanges(a: PlanChanges, b: PlanChanges): PlanChanges {
+  const out: PlanChanges = { ...a, ...b };
+  if (a.channels || b.channels) out.channels = { ...a.channels, ...b.channels };
+  if (b.countries && !b.cities) delete out.cities; // a new market resets city focus unless cities came with it
+  return out;
+}
+
 const COPY: Record<Locale, {
   why: (signals: string) => string;
   goalAssumed: (n: number) => string;
   marketAssumed: (place: string) => string;
   outcomeAssumed: (label: string) => string;
+  languageAssumed: (lang: string) => string;
   clientAssumed: string;
   offerAssumed: string;
   approval: string;
+  approvalAssisted: string;
+  approvalAuto: string;
   channels: (list: string, touches: number, days: number) => string;
   threshold: (t: number, max: number) => string;
+  widenedSize: (min: number, max: number) => string;
+  langName: Record<Locale, string>;
   and: string;
 }> = {
   ar: {
@@ -301,11 +356,16 @@ const COPY: Record<Locale, {
     goalAssumed: (n) => `الهدف ${n} (لم يُذكر رقم)`,
     marketAssumed: (p) => `السوق: ${p}`,
     outcomeAssumed: (l) => `نوع النتيجة: ${l}`,
-    clientAssumed: "العميل غير محدد — سننشئ عميلاً جديداً وتعدّل اسمه لاحقاً",
-    offerAssumed: "سأكتب العرض من وصف العميل — عدّله من إعدادات الحملة",
+    languageAssumed: (l) => `الرسائل ب${l} في البداية — يمكنك تغيير ذلك متى أردت`,
+    clientAssumed: "العميل غير محدد — سأنشئ عميلاً جديداً ويمكنك تسميته لاحقاً",
+    offerAssumed: "سأكتب العرض من وصف العميل — قل لي إن أردت تعديله",
     approval: "كل رسالة خارجية تنتظر موافقتك قبل الإرسال",
+    approvalAssisted: "الرسائل عالية الثقة تُرسل تلقائياً، والباقي ينتظر موافقتك",
+    approvalAuto: "الرسائل تُرسل تلقائياً ضمن حدود الحملة",
     channels: (l, t, d) => `التواصل عبر ${l}، ${t === 2 ? "رسالتان" : "رسالة واحدة"} بينهما ${d} أيام`,
     threshold: (t, m) => `نتواصل فقط مع من تتجاوز درجته ${t} من ${m}`,
+    widenedSize: (a, b) => `هذا سيقلل حجم السوق المتوقع، لذلك وسّعت نطاق الشركات إلى ${a}–${b} موظف.`,
+    langName: { ar: "العربية", en: "الإنجليزية" },
     and: " و",
   },
   en: {
@@ -313,16 +373,31 @@ const COPY: Record<Locale, {
     goalAssumed: (n) => `Goal of ${n} (no number was given)`,
     marketAssumed: (p) => `Market: ${p}`,
     outcomeAssumed: (l) => `Outcome type: ${l}`,
+    languageAssumed: (l) => `Messages in ${l} to start — change it any time`,
     clientAssumed: "No client named — I'll create a new one you can rename",
-    offerAssumed: "I'll write the offer from the client description — edit it in campaign settings",
+    offerAssumed: "I'll write the offer from the client description — tell me if you want it changed",
     approval: "Every outbound message waits for your approval",
+    approvalAssisted: "High-confidence messages go out automatically; the rest wait for you",
+    approvalAuto: "Messages go out automatically within the campaign limits",
     channels: (l, t, d) => `Reach out by ${l}, ${t} touch${t === 2 ? "es" : ""} ${d} days apart`,
     threshold: (t, m) => `Only contact prospects scoring ${t}+ out of ${m}`,
+    widenedSize: (a, b) => `That shrinks the expected market, so I widened company size to ${a}–${b} employees.`,
+    langName: { ar: "Arabic", en: "English" },
     and: " and ",
   },
 };
 
 const CHANNEL_NAMES: Record<string, Text> = { email: { ar: "البريد", en: "email" }, linkedin: { ar: "LinkedIn", en: "LinkedIn" } };
+
+/** What the agent decides itself, what it asks about, and what needs approval. */
+export const DECISION_POLICY: { key: string; mode: "auto" | "ask" | "approval"; label: Text }[] = [
+  { key: "discover", mode: "auto", label: { ar: "البحث عن الجهات", en: "Finding prospects" } },
+  { key: "score", mode: "auto", label: { ar: "تقييم الجهات وترتيب الأولويات", en: "Scoring and prioritizing" } },
+  { key: "draft", mode: "auto", label: { ar: "كتابة الرسائل المقترحة", en: "Drafting messages" } },
+  { key: "ambiguity", mode: "ask", label: { ar: "معلومة مؤثرة غير واضحة", en: "An unclear detail that matters" } },
+  { key: "send", mode: "approval", label: { ar: "إرسال أي رسالة حقيقية", en: "Sending any real message" } },
+  { key: "strategy", mode: "approval", label: { ar: "تغيير جوهري في حملة تعمل", en: "A major change to a running campaign" } },
+];
 
 export interface BuildPlanOptions {
   id?: string;
@@ -330,40 +405,63 @@ export interface BuildPlanOptions {
   createdAt?: string;
   understoodBy?: "rules" | "llm";
   answers?: Record<string, string>;
+  changes?: PlanChanges;
   assumptionStatus?: Record<string, PlanAssumption["status"]>;
 }
+
+/** Edit distance, for "did you mean the client you already have?". */
+function distance(a: string, b: string): number {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0]![j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i]![j] = Math.min(d[i - 1]![j]! + 1, d[i]![j - 1]! + 1, d[i - 1]![j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length]![b.length]!;
+}
+const compact = (s: string) => normalize(s).replace(/[^\p{L}\p{N}]/gu, "");
 
 export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts: BuildPlanOptions = {}): CampaignPlan {
   const kb = ctx.knowledge;
   const loc = ctx.locale;
   const copy = COPY[loc];
   const answers = { ...(opts.answers ?? {}) };
+  const ch = opts.changes ?? {};
   const x = extraction;
+  const notes: string[] = [];
 
   const arch = kb.archetypes.find((a) => a.key === x.archetype) ?? kb.archetypes.find((a) => a.fallback)!;
   const preset = ctx.outcomes.find((o) => o.key === (x.outcome ?? kb.defaults.outcome)) ?? ctx.outcomes[0]!;
+  const individual = arch.targetType === "individual";
 
-  // Market (answers override the request).
+  // Market: request → answers → conversation changes.
   let countries = x.countries.length ? [...x.countries] : [];
   if (answers.market) countries = [answers.market];
+  if (ch.countries?.length) countries = [...ch.countries];
   const marketKnown = countries.length > 0;
   if (!marketKnown) countries = [kb.defaults.country];
-  const regions = countries.map((c) => kb.regions.find((r) => r.code === c)).filter((r): r is KnowledgeRegion => Boolean(r));
-  const primary = regions[0];
-  let cities = [...x.cities];
-  if (answers.region_focus === "focus" && primary) cities = [...primary.focusCities];
+  let cities = ch.countries?.length && !ch.cities ? [] : [...x.cities];
+  if (answers.region_focus === "focus") cities = [...(kb.regions.find((r) => r.code === countries[0])?.focusCities ?? [])];
   else if (answers.region_focus === "all") cities = [];
   else if (answers.region_focus && !["focus", "all", "custom"].includes(answers.region_focus)) cities = answers.region_focus.split(",").map((s) => s.trim()).filter(Boolean);
-  const cityName = (key: string) => regions.flatMap((r) => r.cities).find((c) => c.key === key)?.name[loc] ?? key;
+  if (ch.cities) cities = [...ch.cities];
+  const regions = countries.map((c) => kb.regions.find((r) => r.code === c)).filter((r): r is KnowledgeRegion => Boolean(r));
+  // A city implies its country.
+  for (const c of cities) {
+    const r = kb.regions.find((reg) => reg.cities.some((k) => k.key === c));
+    if (r && !countries.includes(r.code)) { countries = [r.code]; regions.splice(0, regions.length, r); }
+  }
+  const primary = regions[0];
+  const cityName = (key: string) => kb.regions.flatMap((r) => r.cities).find((c) => c.key === key)?.name[loc] ?? key;
   const place = cities.length ? cities.map(cityName).join(copy.and) : regions.map((r) => r.name[loc]).join(copy.and);
 
   // Goal.
   const goalAnswer = answers.goal ? Number(answers.goal) : NaN;
-  const goal = Number.isFinite(goalAnswer) && goalAnswer > 0 ? goalAnswer : x.goal ?? kb.defaults.goal;
-  const goalStated = x.goal !== null || Number.isFinite(goalAnswer);
+  const goal = ch.goal ?? (Number.isFinite(goalAnswer) && goalAnswer > 0 ? goalAnswer : x.goal ?? kb.defaults.goal);
+  const goalStated = x.goal !== null || Number.isFinite(goalAnswer) || ch.goal !== undefined;
 
-  // Client.
-  const existing = x.clientName ? (ctx.clients ?? []).find((c) => normalize(c.name) === normalize(x.clientName!)) : undefined;
+  // Client: exact match links automatically; a near match is confirmed by asking.
+  const known = ctx.clients ?? [];
+  let existing = x.clientName ? known.find((c) => normalize(c.name) === normalize(x.clientName!)) : undefined;
+  const near = !existing && x.clientName ? known.find((c) => compact(c.name) === compact(x.clientName!) || distance(compact(c.name), compact(x.clientName!)) <= 2) : undefined;
+  if (near && answers.client_confirm === "yes") existing = near;
   const placeholder = !x.clientName;
   const clientName = existing?.name ?? x.clientName ?? kb.defaults.placeholderClient[loc];
   const clientId = existing?.id ?? `c-${slug(clientName)}`;
@@ -376,23 +474,58 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
   const budgetAnswer = answers.min_budget ?? kb.questions.min_budget?.default;
   const budgetMin = budgetAnswer && budgetAnswer !== "none" ? Number(budgetAnswer) : 0;
 
+  let sizeMin = individual ? undefined : arch.size?.min;
+  let sizeMax = individual ? undefined : arch.size?.max;
+  if (answers.company_size === "all") [sizeMin, sizeMax] = [undefined, undefined];
+  if (ch.sizeMin !== undefined) sizeMin = ch.sizeMin ?? undefined;
+  if (ch.sizeMax !== undefined) sizeMax = ch.sizeMax ?? undefined;
+  // Asking for bigger client books shrinks the market: widen the size band (unless the user set it).
+  const minClients = ch.minClients;
+  if (!individual && minClients !== undefined && minClients >= 5 && ch.sizeMax === undefined && (sizeMax ?? Infinity) < 100) {
+    sizeMin = Math.max(10, sizeMin ?? 0);
+    sizeMax = 100;
+    notes.push(copy.widenedSize(sizeMin, sizeMax));
+  }
+
+  let titles = arch.titles.en.length ? arch.titles.en : ["Founder", "CEO"];
+  if (ch.decisionMakersOnly) {
+    const senior = titles.filter((t) => (kb.seniorTitleKeywords ?? []).some((k) => t.toLowerCase().includes(k.toLowerCase())));
+    titles = senior.length ? senior : kb.seniorTitleKeywords ?? titles;
+  }
+
   const checkFor = (s: KnowledgeSignal): CriterionCheck | undefined => {
     switch (s.check) {
-      case "size": return { type: "size", min: arch.size?.min, max: arch.size?.max };
-      case "role": return { type: "role", titles: arch.titles.en.length ? arch.titles.en : ["Founder", "CEO"] };
+      case "size": return { type: "size", min: sizeMin, max: sizeMax };
+      case "role": return { type: "role", titles };
       case "location": return { type: "location", countries, cities };
       case "budget": return { type: "budget", min: budgetMin };
       default: return undefined;
     }
   };
-  const criteria = arch.signals.map((s) => ({ label: s.label[loc], points: s.points, timing: s.timing, check: checkFor(s) }));
+  const sizeText = (sizeMin !== undefined || sizeMax !== undefined) ? `${sizeMin ?? 1}–${sizeMax ?? "∞"}` : "";
+  const labelOf = (s: KnowledgeSignal) => {
+    let l = s.label[loc];
+    if (s.param === "minClients") l = fill(l, { n: String(minClients ?? s.paramDefault ?? 3) });
+    if (s.check === "size" && sizeText && (sizeMin !== arch.size?.min || sizeMax !== arch.size?.max)) l = l.replace(/\(?\d+\s*[–-]\s*\d+\)?|\(\d+\+\s*[^)]*\)/, `(${sizeText})`);
+    return l;
+  };
+  const signals = arch.signals.filter((s) => !(s.check === "size" && sizeMin === undefined && sizeMax === undefined));
+  const criteria: CampaignDraft["qualification"]["criteria"] = signals.map((s) => ({ label: labelOf(s), points: s.points, timing: s.timing, check: checkFor(s) }));
+  if (minClients !== undefined && !arch.signals.some((s) => s.param === "minClients")) {
+    criteria.push({ label: fill(kb.defaults.minClientsLabel?.[loc] ?? "{n}+", { n: String(minClients) }), points: 15 });
+  }
   const maxScore = criteria.reduce((sum, c) => sum + c.points, 0);
-  const threshold = Math.min(maxScore, round5(maxScore * 0.75));
+  const threshold = Math.max(1, Math.min(maxScore, ch.threshold ?? round5(maxScore * 0.75)));
 
-  const messageLanguage: Locale = primary?.language ?? loc;
-  const individual = arch.targetType === "individual";
-  const channels = { email: true, linkedin: !individual, touches: 2 as const, waitDays: 3, language: messageLanguage, sendWindow: { startHour: 9, endHour: 18 } };
-  const autonomy: AutonomyLevel = x.autonomy ?? "human_approval";
+  const marketLanguage: Locale = primary?.language ?? loc;
+  const messageLanguage: Locale = ch.language ?? marketLanguage;
+  const channels = {
+    email: ch.channels?.email ?? true,
+    linkedin: individual ? false : ch.channels?.linkedin ?? true,
+    touches: 2 as const, waitDays: 3, language: messageLanguage, sendWindow: { startHour: 9, endHour: 18 },
+  };
+  if (!channels.email && !channels.linkedin) channels.email = true; // at least one channel
+  const autonomy: AutonomyLevel = ch.autonomy ?? x.autonomy ?? "human_approval";
 
   const vars = {
     place, Place: cap(place), audience: audienceLabel, outcome: preset.plural[loc], short: arch.short[loc],
@@ -412,10 +545,11 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
       countries,
       cities,
       companyTypes: companyTypes.en,
-      sizeMin: individual ? undefined : arch.size?.min,
-      sizeMax: individual ? undefined : arch.size?.max,
+      sizeMin,
+      sizeMax,
       sectors: [],
-      titles: arch.titles.en,
+      titles,
+      requireTitle: Boolean(ch.decisionMakersOnly),
       traits: [],
     },
     offer: {
@@ -430,32 +564,37 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
     automation: { level: autonomy },
   };
 
-  // Questions: at most two, the most important first.
+  // Questions: at most two, the most important first. Anything the user already said is never asked.
   const qIds: string[] = [];
+  if (near && !answers.client_confirm) qIds.push("client_confirm");
   if (!goalStated && !answers.goal) qIds.push("goal");
   if (!marketKnown && !answers.market) qIds.push("market");
   const archQ = arch.question;
-  const archQNeeded = archQ && !(archQ in answers) && !(archQ === "region_focus" && (x.cities.length > 0 || !primary?.focusCities.length));
-  if (archQ && archQNeeded) qIds.push(archQ);
+  const archQAnswered =
+    !archQ || archQ in answers ||
+    (archQ === "region_focus" && (x.cities.length > 0 || ch.cities !== undefined || !primary?.focusCities.length)) ||
+    (archQ === "company_size" && (ch.sizeMin !== undefined || ch.sizeMax !== undefined || minClients !== undefined));
+  if (archQ && !archQAnswered) qIds.push(archQ);
+  const qVars = { ...vars, outcome: preset.plural[loc], unit: preset.unit[loc], existing: near?.name ?? "" };
   const questions: PlanQuestion[] = qIds.slice(0, 2).map((id) => {
     const q = kb.questions[id]!;
-    const qVars = { ...vars, outcome: preset.plural[loc], unit: preset.unit[loc] };
     return {
       id,
       text: fill(q.text[loc], qVars),
-      options: q.options.map((o) => ({ id: o.id, label: fill(o.label[loc], qVars), custom: o.custom })),
+      options: q.options.map((o) => ({ id: o.id, label: fill(o.label[loc], qVars), custom: o.custom, aliases: o.aliases })),
       custom: q.custom,
       default: q.default,
     };
   });
 
-  // Assumptions the user can accept or edit (never presented as facts).
+  // Assumptions: stated, never presented as facts; the user can change any of them by saying so.
   const status = opts.assumptionStatus ?? {};
   const assumptionTexts: [string, string][] = arch.assumptions[loc].map((t, i) => [`a${i + 1}`, t]);
   if (!x.outcome) assumptionTexts.push(["outcome", copy.outcomeAssumed(preset.label[loc])]);
   if (!marketKnown && !answers.market) assumptionTexts.push(["market", copy.marketAssumed(place)]);
   if (!goalStated) assumptionTexts.push(["goal", copy.goalAssumed(goal)]);
   if (placeholder) assumptionTexts.push(["client", copy.clientAssumed]);
+  if (!ch.language) assumptionTexts.push(["language", copy.languageAssumed(copy.langName[messageLanguage])]);
   assumptionTexts.push(["offer", copy.offerAssumed]);
   const assumptions = assumptionTexts.map(([id, text]) => ({ id, text, status: status[id] ?? ("proposed" as const) }));
 
@@ -469,17 +608,19 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
     understoodBy: opts.understoodBy ?? "rules",
     extraction: x,
     answers,
+    changes: ch,
+    notes,
     status: questions.length ? "needs_input" : "ready",
     understanding: {
       client: { id: clientId, name: clientName, existing: Boolean(existing), placeholder },
       outcome: { preset: preset.key, label: preset.label[loc], plural: preset.plural[loc], goal, goalStated },
       market: { countries, cities, place },
-      audience: { archetype: arch.key, label: audienceLabel, companyTypes: companyTypes[loc], titles: arch.titles[loc], needs: arch.needs?.[loc] ?? [] },
+      audience: { archetype: arch.key, label: audienceLabel, companyTypes: companyTypes[loc], titles: ch.decisionMakersOnly ? titles : arch.titles[loc], needs: arch.needs?.[loc] ?? [] },
     },
     explanation: {
       understood: fill(arch.understood[loc], vars),
       research: arch.summarySignals[loc],
-      why: copy.why(arch.summarySignals[loc].join("، ")),
+      why: copy.why(arch.summarySignals[loc].join(loc === "ar" ? "، " : ", ")),
       need: questions.map((q) => q.text),
     },
     assumptions,
@@ -489,14 +630,30 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
       maxScore,
       signals: criteria.map((c) => ({ label: c.label, points: c.points, timing: Boolean(c.timing) })),
       channels: channelList.map((c) => CHANNEL_NAMES[c]?.[loc] ?? c),
+      channelKeys: channelList,
       touches: channels.touches,
       waitDays: channels.waitDays,
       autonomy,
       messageLanguage,
+      size: individual ? null : { min: sizeMin ?? null, max: sizeMax ?? null },
+      minClients: minClients ?? null,
+      decisionMakersOnly: Boolean(ch.decisionMakersOnly),
     },
     draft,
   };
 }
+
+const replan = (plan: CampaignPlan, ctx: PlannerContext, over: Partial<BuildPlanOptions>) =>
+  buildPlan(plan.extraction, { ...ctx, locale: plan.locale }, {
+    id: plan.id,
+    request: plan.request,
+    createdAt: plan.createdAt,
+    understoodBy: plan.understoodBy,
+    answers: plan.answers,
+    changes: plan.changes,
+    assumptionStatus: Object.fromEntries(plan.assumptions.map((a) => [a.id, a.status])),
+    ...over,
+  });
 
 /** One sentence → plan, deterministically. */
 export function planFromRequest(request: string, ctx: PlannerContext, opts: BuildPlanOptions = {}): CampaignPlan {
@@ -505,28 +662,49 @@ export function planFromRequest(request: string, ctx: PlannerContext, opts: Buil
 
 /** Records an answer and re-plans. No LLM call: the extraction is reused. */
 export function applyAnswer(plan: CampaignPlan, questionId: string, value: string, ctx: PlannerContext): CampaignPlan {
-  return buildPlan(plan.extraction, { ...ctx, locale: plan.locale }, {
-    id: plan.id,
-    request: plan.request,
-    createdAt: plan.createdAt,
-    understoodBy: plan.understoodBy,
-    answers: { ...plan.answers, [questionId]: value },
-    assumptionStatus: Object.fromEntries(plan.assumptions.map((a) => [a.id, a.status])),
-  });
+  return replan(plan, ctx, { answers: { ...plan.answers, [questionId]: value } });
 }
 
-/** Human-readable plan steps (shown as "the plan" and as the progress checklist). */
+/** Applies conversational changes and re-plans (keeps every earlier answer and change). */
+export function applyChanges(plan: CampaignPlan, changes: PlanChanges, ctx: PlannerContext): CampaignPlan {
+  return replan(plan, ctx, { changes: mergeChanges(plan.changes ?? {}, changes) });
+}
+
+/** Human-readable plan steps. */
 export function planSteps(plan: CampaignPlan): { key: string; text: string }[] {
   const ar = plan.locale === "ar";
   const u = plan.understanding;
   const s = plan.strategy;
+  const c = COPY[plan.locale];
   return [
     { key: "discover", text: ar ? `اكتشاف ${u.audience.label} في ${u.market.place}` : `Discover ${u.audience.label} in ${u.market.place}` },
     { key: "research", text: ar ? `دراسة كل جهة مع ذكر المصدر: ${plan.explanation.research.join("، ")}` : `Research each prospect with sources: ${plan.explanation.research.join(", ")}` },
-    { key: "score", text: COPY[plan.locale].threshold(s.threshold, s.maxScore) },
+    { key: "score", text: c.threshold(s.threshold, s.maxScore) },
     { key: "personalize", text: ar ? "تخصيص رسالة لكل جهة مناسبة" : "Personalize a message for each fit prospect" },
-    { key: "outreach", text: COPY[plan.locale].channels(s.channels.join(COPY[plan.locale].and), s.touches, s.waitDays) },
-    { key: "approval", text: COPY[plan.locale].approval },
-    { key: "outcome", text: ar ? `متابعة الردود وتأهيلها حتى ${u.outcome.goal} ${u.outcome.plural}` : `Handle replies and qualify toward ${u.outcome.goal} ${u.outcome.plural}` },
+    { key: "outreach", text: c.channels(s.channels.join(c.and), s.touches, s.waitDays) },
+    { key: "approval", text: s.autonomy === "human_approval" ? c.approval : s.autonomy === "assisted" ? c.approvalAssisted : c.approvalAuto },
+    { key: "outcome", text: ar ? `متابعة الردود وتأهيلها حتى ${countOf("ar", u.outcome.goal, u.outcome.label, u.outcome.plural)}` : `Handle replies and qualify toward ${countOf("en", u.outcome.goal, u.outcome.label, u.outcome.plural)}` },
   ];
+}
+
+/** Human-readable differences between two versions of a plan. */
+export function diffPlans(before: CampaignPlan, after: CampaignPlan): { key: string; label: string; from: string; to: string }[] {
+  const loc = after.locale;
+  const ar = loc === "ar";
+  const L = (a: string, e: string) => (ar ? a : e);
+  const yes = L("نعم", "yes");
+  const no = L("لا", "no");
+  const size = (p: CampaignPlan) => (p.strategy.size && (p.strategy.size.min !== null || p.strategy.size.max !== null) ? `${p.strategy.size.min ?? 1}–${p.strategy.size.max ?? "∞"}` : L("كل الأحجام", "any size"));
+  const rows: [string, string, (p: CampaignPlan) => string][] = [
+    ["market", L("السوق", "Market"), (p) => p.understanding.market.place],
+    ["goal", L("الهدف", "Goal"), (p) => countOf(loc, p.understanding.outcome.goal, p.understanding.outcome.label, p.understanding.outcome.plural)],
+    ["size", L("حجم الشركات", "Company size"), size],
+    ["minClients", L("الحد الأدنى للعملاء", "Minimum clients"), (p) => (p.strategy.minClients ? `${p.strategy.minClients}+` : "—")],
+    ["dm", L("أصحاب القرار فقط", "Decision makers only"), (p) => (p.strategy.decisionMakersOnly ? yes : no)],
+    ["threshold", L("حد التأهيل", "Qualification threshold"), (p) => `${p.strategy.threshold}/${p.strategy.maxScore}`],
+    ["channels", L("القنوات", "Channels"), (p) => p.strategy.channels.join(" + ")],
+    ["language", L("لغة الرسائل", "Message language"), (p) => COPY[loc].langName[p.strategy.messageLanguage]],
+    ["autonomy", L("الموافقة", "Approval"), (p) => (p.strategy.autonomy === "human_approval" ? L("كل رسالة بموافقتك", "You approve every message") : p.strategy.autonomy === "assisted" ? L("مساعد", "Assisted") : L("تلقائي", "Autonomous"))],
+  ];
+  return rows.map(([key, label, f]) => ({ key, label, from: f(before), to: f(after) })).filter((r) => r.from !== r.to);
 }

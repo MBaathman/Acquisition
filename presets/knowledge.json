@@ -352,10 +352,12 @@
         },
         {
           "label": {
-            "ar": "تخدم عدة عملاء (3+)",
-            "en": "Serves several clients (3+)"
+            "ar": "تخدم {n}+ عملاء",
+            "en": "Serves {n}+ clients"
           },
-          "points": 15
+          "points": 15,
+          "param": "minClients",
+          "paramDefault": 3
         },
         {
           "label": {
@@ -432,7 +434,7 @@
       },
       "assumptions": {
         "ar": [
-          "وكالات لديها عدة عملاء",
+          "وكالات تدير عدة عملاء",
           "تستخدم أكثر من منصة إعلانية",
           "لديها احتياج لتقارير الحملات",
           "التركيز الأولي على الشركات الصغيرة والمتوسطة"
@@ -444,7 +446,7 @@
           "Starting with small and mid-size firms"
         ]
       },
-      "question": "region_focus",
+      "question": "company_size",
       "namePool": {
         "a": [
           "Falcon",
@@ -973,14 +975,25 @@
           "label": {
             "ar": "كل {country}",
             "en": "All of {country}"
-          }
+          },
+          "aliases": [
+            "كل",
+            "جميع",
+            "all"
+          ]
         },
         {
           "id": "focus",
           "label": {
             "ar": "{focus} أولاً",
             "en": "{focus} first"
-          }
+          },
+          "aliases": [
+            "اولا",
+            "أولاً",
+            "first",
+            "focus"
+          ]
         },
         {
           "id": "custom",
@@ -1006,7 +1019,13 @@
             "ar": "الاثنين",
             "en": "Both"
           },
-          "companyTypes": null
+          "companyTypes": null,
+          "aliases": [
+            "الاثنين",
+            "كلهم",
+            "الكل",
+            "both"
+          ]
         },
         {
           "id": "private",
@@ -1021,7 +1040,12 @@
             "en": [
               "Large enterprise"
             ]
-          }
+          },
+          "aliases": [
+            "الخاص",
+            "خاص",
+            "private"
+          ]
         },
         {
           "id": "public",
@@ -1038,7 +1062,13 @@
               "Government entity",
               "Semi-government entity"
             ]
-          }
+          },
+          "aliases": [
+            "حكومي",
+            "الحكومي",
+            "government",
+            "public"
+          ]
         }
       ],
       "default": "both",
@@ -1076,7 +1106,13 @@
           "label": {
             "ar": "بدون حد",
             "en": "No minimum"
-          }
+          },
+          "aliases": [
+            "بدون",
+            "لا يهم",
+            "no minimum",
+            "none"
+          ]
         }
       ],
       "default": "3000000",
@@ -1090,6 +1126,88 @@
       "options": [],
       "custom": "text",
       "effect": "audience"
+    },
+    "company_size": {
+      "text": {
+        "ar": "هل تريدني أستهدف الجهات الصغيرة والمتوسطة فقط، أم جميع الأحجام؟",
+        "en": "Should I target small and mid-size {short}s only, or all sizes?"
+      },
+      "effect": "size",
+      "options": [
+        {
+          "id": "smb",
+          "label": {
+            "ar": "الصغيرة والمتوسطة فقط",
+            "en": "Small & mid-size only"
+          },
+          "aliases": [
+            "صغيره",
+            "متوسطه",
+            "الصغيره والمتوسطه",
+            "small",
+            "mid",
+            "smb"
+          ]
+        },
+        {
+          "id": "all",
+          "label": {
+            "ar": "جميع الأحجام",
+            "en": "All sizes"
+          },
+          "aliases": [
+            "جميع",
+            "كل الاحجام",
+            "كل الأحجام",
+            "كلها",
+            "all sizes",
+            "all",
+            "any size"
+          ]
+        }
+      ],
+      "default": "smb"
+    },
+    "client_confirm": {
+      "text": {
+        "ar": "هل تقصد {existing} الموجود عندك؟",
+        "en": "Do you mean {existing}, already in your workspace?"
+      },
+      "effect": "client",
+      "options": [
+        {
+          "id": "yes",
+          "label": {
+            "ar": "نعم، هو نفسه",
+            "en": "Yes, that one"
+          },
+          "aliases": [
+            "نعم",
+            "ايوه",
+            "ايه",
+            "اي",
+            "صح",
+            "هو نفسه",
+            "yes",
+            "yep",
+            "same"
+          ]
+        },
+        {
+          "id": "no",
+          "label": {
+            "ar": "لا، عميل جديد",
+            "en": "No, a new client"
+          },
+          "aliases": [
+            "لا",
+            "جديد",
+            "no",
+            "new"
+          ]
+        }
+      ],
+      "default": "yes"
     }
   },
   "defaults": {
@@ -1113,6 +1231,24 @@
         "ar": "نعتقد أن {offer} قد يناسب ما تبحث عنه.",
         "en": "We think {offer} may fit what you are looking for."
       }
-    }
-  }
+    },
+    "minClientsLabel": {
+      "ar": "لديها {n} عملاء أو أكثر",
+      "en": "Has {n}+ clients"
+    },
+    "excludeLargeMax": 200
+  },
+  "seniorTitleKeywords": [
+    "Founder",
+    "Co-Founder",
+    "CEO",
+    "Chief",
+    "Managing Director",
+    "General Manager",
+    "Director",
+    "Head",
+    "Owner",
+    "Partner",
+    "VP"
+  ]
 }

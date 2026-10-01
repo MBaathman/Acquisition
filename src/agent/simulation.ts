@@ -120,8 +120,10 @@ export async function simulateFirstRun(
 ): Promise<SimulationResult> {
   const start = opts.start ?? new Date();
   const clock = new ManualClock(start);
+  // Enough of the audience to reach the goal with typical fit rates (bounded so it stays fast in a browser).
+  const n = opts.prospects ?? Math.min(150, Math.max(40, Math.round(plan.understanding.outcome.goal * 1.25)));
   const outbox = new OutboxSender();
-  const source = new StaticProspectSource(simulatedProspects(plan, cfg, knowledge, opts.prospects ?? 40));
+  const source = new StaticProspectSource(simulatedProspects(plan, cfg, knowledge, n));
   const engine = new AcquisitionEngine({
     clock,
     sources: { [cfg.discovery.source]: source },
@@ -130,7 +132,7 @@ export async function simulateFirstRun(
     channels: Object.fromEntries(cfg.outreach.channels.map((c) => [c.key, outbox])),
     classifier: opts.classifier ?? new KeywordReplyClassifier(),
   });
-  const run = { ...cfg, discovery: { ...cfg.discovery, batchSize: opts.prospects ?? 40 } };
+  const run = { ...cfg, discovery: { ...cfg.discovery, batchSize: n } };
   await engine.registerCampaign(run);
   const q = engine.queue as InMemoryQueue;
   await q.runDue();
