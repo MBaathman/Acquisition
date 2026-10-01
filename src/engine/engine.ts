@@ -531,7 +531,14 @@ export class AcquisitionEngine {
       id: newId("out"), clientId: cfg.client.id, campaignId: cfg.campaign.id, prospectId: p?.id,
       outcomeKey: cfg.outcome.key, counted,
       value: v && amount !== undefined ? { amount, currency: v.currency, recurrence: v.recurrence } : undefined,
-      attribution: { firstTouch: ref(touches[0]), lastTouch: ref(touches[touches.length - 1]), touches: touches.length, persona: p?.persona, tier: p?.tier },
+      attribution: {
+        firstTouch: ref(touches[0]),
+        lastTouch: ref(touches.at(-1)),
+        sourceTouch: ref(touches.filter((m) => m.kind === "sequence").at(-1)),
+        touches: touches.length,
+        persona: p?.persona,
+        tier: p?.tier,
+      },
       event, at: now,
     };
     await this.store.outcomes.put(outcome);
@@ -580,6 +587,7 @@ export class AcquisitionEngine {
       const changeKey = JSON.stringify(prop.change);
       const dupe = await this.store.recommendations.findOne((r) => r.campaignId === cfg.campaign.id && JSON.stringify(r.change) === changeKey && r.status !== "dismissed");
       if (dupe) continue;
+      await this.supersedeRecommendations(cfg.campaign.id, prop.change);
       const rec: Recommendation = { id: newId("rec"), clientId: cfg.client.id, campaignId: cfg.campaign.id, ...prop, status: "open", at: state.lastOptimizedAt };
       await this.store.recommendations.put(rec);
       created.push(rec);
@@ -589,6 +597,20 @@ export class AcquisitionEngine {
       });
     }
     return created;
+  }
+
+  /** Newer evidence about the same lever replaces any open recommendation for it. */
+  private async supersedeRecommendations(campaignId: string, change: NonNullable<Recommendation["change"]>) {
+    const sameLever = (r: Recommendation) =>
+      r.change?.op === change.op &&
+      (change.op !== "disable_variant" || (r.change.op === "disable_variant" && r.change.templateKey === change.templateKey));
+    const open = await this.store.recommendations.find((r) => r.campaignId === campaignId && r.status === "open" && sameLever(r));
+    for (const rec of open) {
+      rec.status = "dismissed";
+      await this.store.recommendations.put(rec);
+      const pendingAction = await this.store.actions.findOne((a) => a.campaignId === campaignId && a.idempotencyKey === `optimize:${rec.id}`);
+      if (pendingAction) await this.gateway.cancel(pendingAction.id, "superseded by a newer recommendation");
+    }
   }
 
   private async applyOptimization(action: Action) {

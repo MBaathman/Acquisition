@@ -50,7 +50,10 @@ describe("end-to-end: paid subscriber campaign under human approval", () => {
     const report = await engine.report(id);
     expect(report.outcome).toMatchObject({ key: "paid_subscriber", achieved: 1, target: 50, progressPct: 2, value: { amount: 149 } });
     expect(report.pipeline.find((s) => s.stage === "subscribed")?.count).toBe(1);
+    expect(outcome?.attribution.lastTouch?.templateKey).toBe("trial_invite");
+    expect(outcome?.attribution.sourceTouch?.stepKey).toBe("s1_intro");
     expect(report.attribution.byChannel).toEqual({ email: 1 });
+    expect(report.attribution.byStep).toEqual({ s1_intro: 1 });
     expect(report.activity).toMatchObject({ prospects: 2, contacted: 2, replied: 1, positiveReplies: 1 });
 
     // Every decision is on the audit trail.

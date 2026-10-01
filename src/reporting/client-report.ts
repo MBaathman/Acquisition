@@ -74,7 +74,7 @@ export async function buildClientReport(input: { cfg: CampaignConfig; store: Sto
 
   const attribution: ClientReport["attribution"] = { byChannel: {}, byStep: {}, byVariant: {}, byPersona: {} };
   for (const o of counted) {
-    const t = o.attribution.lastTouch;
+    const t = o.attribution.sourceTouch ?? o.attribution.lastTouch;
     tally(attribution.byChannel, t?.channel);
     tally(attribution.byStep, t?.stepKey);
     tally(attribution.byVariant, t?.templateKey && `${t.templateKey}:${t.variantKey}`);

@@ -100,6 +100,8 @@ export interface OutcomeRecord extends Tenanted {
   attribution: {
     firstTouch?: TouchRef;
     lastTouch?: TouchRef;
+    /** Last outreach-sequence touch — the message that earned the conversation. */
+    sourceTouch?: TouchRef;
     touches: number;
     persona?: string;
     tier?: string;

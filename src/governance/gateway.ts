@@ -158,6 +158,17 @@ export class ActionGateway {
     return this.close(action, "rejected", reason, user);
   }
 
+  /** Withdraw an action that has not run yet (e.g. superseded by newer evidence). */
+  async cancel(actionId: string, reason: string, actor: Actor = SYSTEM_ACTOR): Promise<Action | undefined> {
+    const action = await this.deps.store.actions.get(actionId);
+    if (!action || !["proposed", "pending_approval", "approved", "scheduled"].includes(action.status)) return action;
+    action.status = "cancelled";
+    action.lastError = reason;
+    await this.save(action);
+    await this.deps.audit.record({ clientId: action.clientId, campaignId: action.campaignId, actionId, prospectId: action.prospectId, actor, event: "action.cancelled", detail: { reason } });
+    return action;
+  }
+
   /** Job handler: runs an approved/scheduled action with constraints, rate limits and retry. */
   async execute(actionId: string): Promise<void> {
     const { store, clock, audit, queue } = this.deps;

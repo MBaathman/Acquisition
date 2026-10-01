@@ -66,7 +66,7 @@ export function computeStats(input: {
     if (typeof a.channel === "string") bump(stats.channels, a.channel, "sent");
   }
   for (const o of outcomes.filter((o) => o.counted)) {
-    const t = o.attribution.lastTouch;
+    const t = o.attribution.sourceTouch ?? o.attribution.lastTouch;
     if (t?.templateKey) bump(stats.variants, `${t.templateKey}:${t.variantKey}`, "outcomes");
     if (t) bump(stats.channels, t.channel, "outcomes");
     bump(stats.tiers, o.attribution.tier, "outcomes");

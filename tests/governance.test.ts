@@ -227,3 +227,50 @@ describe("learning loop", () => {
     expect(state!.disabledVariants).toEqual(["intro:question_led"]);
   });
 });
+
+describe("optimizer hygiene", () => {
+  it("a newer recommendation on the same template supersedes the open one", async () => {
+    const { engine, run, clock } = setup(many(40));
+    const cfg = await loadWith(DATASPEAKS, (c) => {
+      c.autonomy.level = "autonomous";
+      c.autonomy.actions = { optimize: { mode: "approval" } };
+      c.optimization.minSampleSize = 10;
+      c.constraints.rateLimits = [];
+      c.discovery.targetActivePool = 40;
+      c.discovery.batchSize = 40;
+    });
+    const id = cfg.campaign.id;
+    await engine.registerCampaign(cfg);
+    await run();
+
+    // A stale open recommendation (from older evidence) to retire the other variant.
+    await engine.store.recommendations.put({
+      id: "rec_stale", clientId: "dataspeaks", campaignId: id, kind: "variant_underperforming",
+      summary: "Retire variant 'pain_led' of 'intro'", evidence: {},
+      change: { op: "disable_variant", templateKey: "intro", variantKey: "pain_led" }, status: "open", at: START.toISOString(),
+    });
+    const stale = await engine.gateway.propose({
+      clientId: "dataspeaks", campaignId: id, type: "optimize", idempotencyKey: "optimize:rec_stale",
+      payload: { recommendationId: "rec_stale" }, confidence: 0.8, rationale: "stale", actor: { type: "agent", id: "test" },
+    });
+    expect(stale.status).toBe("pending_approval");
+
+    // New evidence: pain_led converts, question_led does not.
+    const intro = await engine.store.messages.find((m) => m.stepKey === "s1_intro");
+    for (const m of intro.filter((m) => m.variantKey === "pain_led")) {
+      const p = (await engine.store.prospects.get(m.prospectId))!;
+      const contact = (await engine.store.contacts.get(p.contactId))!;
+      await engine.receiveReply({ campaignId: id, from: contact.handles.email, channel: "email", text: "interested!" });
+    }
+    await run();
+    clock.set(new Date(START.getTime() + 25 * HOUR));
+    await engine.tick(id);
+    await run();
+
+    const recs = await engine.store.recommendations.find((r) => r.campaignId === id);
+    expect(recs.filter((r) => r.status === "open").map((r) => r.summary)).toEqual([expect.stringMatching(/Retire variant 'question_led'/)]);
+    expect(recs.find((r) => r.id === "rec_stale")!.status).toBe("dismissed");
+    expect((await engine.store.actions.get(stale.id))!.status).toBe("cancelled");
+    expect(await pending(engine, id, "optimize")).toHaveLength(1);
+  });
+});

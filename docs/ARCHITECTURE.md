@@ -65,7 +65,7 @@ reporting/        ── client-facing report
 | Prospect | A contact's enrollment in one campaign — the unit the engine works on (status, stage, milestones, score, research, qualification, sequence position). |
 | Message | Outbound touches and inbound replies (intent + confidence). |
 | EventRecord | External business facts (payment, meeting held, lead verified...). |
-| OutcomeRecord | A credited outcome with value and first/last-touch attribution. |
+| OutcomeRecord | A credited outcome with value and first-, last- and sourcing-touch attribution. |
 | Action | A governed agent step with confidence, rationale, mode, status, attempts. |
 | AuditEntry | Every proposal, decision, execution, retry, failure, escalation. |
 | ExceptionItem | What a human needs to look at ("needs attention"). |
