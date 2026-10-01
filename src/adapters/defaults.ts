@@ -74,15 +74,33 @@ export class OutboxSender implements ChannelSender {
   }
 }
 
-/** Keyword classifier driven by each campaign's configured intents. */
+/**
+ * Keyword classifier driven by each campaign's configured intents. The most
+ * specific match wins: a keyword found only inside a longer matched keyword
+ * ("interested" inside "not interested") does not count.
+ */
 export class KeywordReplyClassifier implements ReplyClassifier {
   async classify({ campaign, text }: Parameters<ReplyClassifier["classify"]>[0]) {
     const lower = text.toLowerCase();
-    let best = { intent: campaign.replies.defaultIntent, hits: 0 };
+    const matches: { intent: string; start: number; end: number }[] = [];
     for (const intent of campaign.replies.intents) {
-      const hits = intent.keywords.filter((k) => lower.includes(k.toLowerCase())).length;
-      if (hits > best.hits) best = { intent: intent.key, hits };
+      for (const k of intent.keywords) {
+        const kw = k.toLowerCase();
+        for (let i = lower.indexOf(kw); i !== -1; i = lower.indexOf(kw, i + 1)) {
+          matches.push({ intent: intent.key, start: i, end: i + kw.length });
+        }
+      }
     }
-    return { intent: best.intent, confidence: best.hits ? Math.min(0.95, 0.7 + 0.1 * best.hits) : 0.4 };
+    const kept = matches.filter(
+      (m) => !matches.some((o) => o !== m && o.start <= m.start && o.end >= m.end && o.end - o.start > m.end - m.start),
+    );
+    const score = new Map<string, { hits: number; chars: number }>();
+    for (const m of kept) {
+      const s = score.get(m.intent) ?? { hits: 0, chars: 0 };
+      score.set(m.intent, { hits: s.hits + 1, chars: s.chars + (m.end - m.start) });
+    }
+    const best = [...score.entries()].sort((a, b) => b[1].hits - a[1].hits || b[1].chars - a[1].chars)[0];
+    if (!best) return { intent: campaign.replies.defaultIntent, confidence: 0.4 };
+    return { intent: best[0], confidence: Math.min(0.95, 0.7 + 0.1 * best[1].hits) };
   }
 }

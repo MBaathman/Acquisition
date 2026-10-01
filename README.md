@@ -30,6 +30,15 @@ npm test           # unit + end-to-end + governance tests
 npm run typecheck
 npm run validate   # validate every campaign config
 npm run demo       # run the active campaigns on one engine and print client reports
+npm run prototype  # simulate September on the engine (demo data) and build prototype/dist/acquisition-os.html
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design.
+
+## Prototype UI
+
+`prototype/app.html` is the client/operator interface prototype (Arabic-first,
+RTL, English toggle). `npm run prototype` runs every campaign config on the
+real engine with fictional prospects, exports the dataset and inlines it into
+`prototype/dist/acquisition-os.html`. Everything it shows is DEMO DATA.
+

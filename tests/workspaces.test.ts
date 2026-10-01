@@ -164,3 +164,15 @@ describe("analytics", () => {
     expect(analytics.map((b) => b.key)).toEqual(["geography", "agency_type", "persona", "tier", "channel", "step", "angle"]);
   });
 });
+
+describe("reply classification", () => {
+  it("does not read 'not interested' as interested", async () => {
+    const { KeywordReplyClassifier } = await import("../src/index.js");
+    const cfg = await loadWith(TATIMMAH);
+    const c = new KeywordReplyClassifier();
+    const p = {} as never;
+    expect((await c.classify({ campaign: cfg, prospect: p, text: "Not interested, thanks" })).intent).toBe("not_interested");
+    expect((await c.classify({ campaign: cfg, prospect: p, text: "Interested — tell me more" })).intent).toBe("interested");
+    expect((await c.classify({ campaign: cfg, prospect: p, text: "noted" })).intent).toBe("other");
+  });
+});

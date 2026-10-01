@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "validate": "tsx src/cli/validate.ts campaigns",
-    "demo": "tsx src/cli/demo.ts"
+    "demo": "tsx src/cli/demo.ts",
+    "prototype": "tsx scripts/demo-data.ts && tsx scripts/build-prototype.ts"
   },
   "engines": {
     "node": ">=20"

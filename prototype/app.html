@@ -1,0 +1,1229 @@
+<title>محرك الاستحواذ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an acquisition operating system — persistent sidebar on the reading-start side, context bar (client → campaign → outcome) on top, one workspace per page. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #eef1f5; --surface-3: #e4e8ee;
+  --ink: #111720; --ink-2: #4a5462; --ink-3: #6d7685; --line: #dde2ea;
+  --accent: #2a78d6; --accent-soft: #dceafb; --accent-ink: #1c5cab; --pace: #8a93a1;
+  --good: #0ca30c; --good-ink: #0b7a0b; --good-soft: #e1f3e1;
+  --warn: #fab219; --warn-ink: #8a5b00; --warn-soft: #fdf1d6;
+  --critical: #d03b3b; --critical-ink: #b42f2f; --critical-soft: #f9e1e1;
+  --side: #0f1a2b; --side-ink: #c9d3e1; --side-ink-2: #8392a8; --side-active: #1d2c44; --side-line: #22324b;
+  --font-display: "Reem Kufi", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116; --surface: #161a21; --surface-2: #1d222b; --surface-3: #262c37; --ink: #f2f4f7; --ink-2: #b9c0cb; --ink-3: #8c95a3; --line: #2a313c;
+    --accent: #3987e5; --accent-soft: #1a2c44; --accent-ink: #86b6ef; --pace: #7d8694;
+    --good-ink: #5fd35f; --good-soft: #15301a; --warn-ink: #fab219; --warn-soft: #33290f; --critical-ink: #ee7b7b; --critical-soft: #3a1b1b;
+    --side: #0a0e14; --side-ink: #c9d3e1; --side-ink-2: #7d8aa0; --side-active: #18233a; --side-line: #1b2638; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1116; --surface: #161a21; --surface-2: #1d222b; --surface-3: #262c37; --ink: #f2f4f7; --ink-2: #b9c0cb; --ink-3: #8c95a3; --line: #2a313c;
+  --accent: #3987e5; --accent-soft: #1a2c44; --accent-ink: #86b6ef; --pace: #7d8694;
+  --good-ink: #5fd35f; --good-soft: #15301a; --warn-ink: #fab219; --warn-soft: #33290f; --critical-ink: #ee7b7b; --critical-soft: #3a1b1b;
+  --side: #0a0e14; --side-ink: #c9d3e1; --side-ink-2: #7d8aa0; --side-active: #18233a; --side-line: #1b2638; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14.5px; line-height: 1.6; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.3; }
+h1 { font-size: 1.45rem; } h2 { font-size: 1.1rem; } h3 { font-size: .98rem; }
+p { margin: 0; }
+a { color: var(--accent-ink); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
+.muted { color: var(--ink-3); } .small { font-size: .84rem; } .tiny { font-size: .76rem; }
+.ltr { direction: ltr; text-align: left; unicode-bidi: isolate; }
+
+/* ---------- shell ---------- */
+.app { display: grid; grid-template-columns: 252px minmax(0, 1fr); min-height: 100%; }
+.side { background: var(--side); color: var(--side-ink); position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; padding-block: 18px; padding-inline: 12px; gap: 14px; }
+.brand { display: grid; gap: 2px; padding-inline: 8px; }
+.brand b { font-family: var(--font-display); font-size: 1.12rem; color: #fff; letter-spacing: .01em; }
+.brand span { font-size: .74rem; color: var(--side-ink-2); }
+.nav-group { display: grid; gap: 2px; }
+.nav-title { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--side-ink-2); padding-inline: 10px; margin-block: 6px 2px; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 7px; color: var(--side-ink); text-decoration: none; font-size: .9rem; }
+.nav a:hover { background: var(--side-active); }
+.nav a.on { background: var(--side-active); color: #fff; font-weight: 600; }
+.nav a .ico { width: 16px; height: 16px; flex: none; opacity: .8; }
+.nav a .badge { margin-inline-start: auto; background: var(--accent); color: #fff; font-size: .7rem; font-weight: 700; padding: 0 7px; border-radius: 999px; min-width: 20px; text-align: center; }
+.nav a .badge.warn { background: #c98500; }
+.nav .sub { display: grid; margin-inline-start: 26px; border-inline-start: 1px solid var(--side-line); padding-inline-start: 6px; }
+.nav .sub a { font-size: .82rem; padding-block: 4px; color: var(--side-ink-2); }
+.nav .sub a.on { color: #fff; background: transparent; font-weight: 600; }
+.side-foot { margin-top: auto; font-size: .72rem; color: var(--side-ink-2); padding-inline: 8px; display: grid; gap: 6px; }
+.demo-flag { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; letter-spacing: .06em; color: #f5c451; font-size: .72rem; }
+
+.main { min-width: 0; display: flex; flex-direction: column; }
+.ctx { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); padding-block: 10px; padding-inline: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.menu-btn { display: none; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.picker { display: grid; gap: 0; }
+.picker label { font-size: .68rem; color: var(--ink-3); letter-spacing: .04em; }
+.picker select { font: inherit; font-weight: 600; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 8px; padding: 4px 8px; max-width: 260px; }
+.ctx .arrow { color: var(--ink-3); align-self: end; padding-bottom: 6px; }
+.outcome-pill .ico { width: 16px; height: 16px; flex: none; }
+.outcome-pill { align-self: end; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent-ink); border-radius: 999px; padding: 4px 12px; font-weight: 600; font-size: .86rem; }
+.ctx-tools { margin-inline-start: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 8px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: var(--ink-2); font-size: .82rem; font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+.demo-banner { background: repeating-linear-gradient(-45deg, var(--warn-soft), var(--warn-soft) 10px, var(--surface) 10px, var(--surface) 20px); border-bottom: 1px solid var(--line); color: var(--warn-ink); font-size: .8rem; font-weight: 600; padding-block: 5px; padding-inline: 20px; text-align: center; }
+
+.page { padding-block: 22px 56px; padding-inline: 20px; display: grid; gap: 18px; max-width: 1280px; width: 100%; margin-inline: auto; align-content: start; }
+.page-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 16px; }
+.page-head p { color: var(--ink-2); max-width: 70ch; }
+.crumbs { font-size: .78rem; color: var(--ink-3); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; min-width: 0; display: grid; gap: 12px; align-content: start; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.grid { display: grid; gap: 18px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g-hero { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+@media (max-width: 1100px) { .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .g2, .g-hero, .g3 { grid-template-columns: minmax(0, 1fr); } }
+
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.chip.good { background: var(--good-soft); color: var(--good-ink); }
+.chip.warn { background: var(--warn-soft); color: var(--warn-ink); }
+.chip.crit { background: var(--critical-soft); color: var(--critical-ink); }
+.chip.accent { background: var(--accent-soft); color: var(--accent-ink); }
+.chip.outline { background: transparent; border: 1px solid var(--line); }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
+.tabs a { text-decoration: none; color: var(--ink-2); padding: 7px 12px; border-bottom: 2px solid transparent; font-size: .88rem; font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
+.tabs a.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.tabs a .n { font-family: var(--font-data); font-size: .74rem; color: var(--ink-3); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.filters label { display: grid; gap: 2px; font-size: .7rem; color: var(--ink-3); }
+.filters select, .filters input { font: inherit; font-size: .84rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 7px; padding: 5px 8px; min-width: 0; max-width: 190px; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+th, td { text-align: start; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--ink-3); font-weight: 600; font-size: .74rem; letter-spacing: .02em; background: var(--surface-2); white-space: nowrap; position: sticky; top: 0; }
+tr.click { cursor: pointer; } tr.click:hover td { background: var(--surface-2); }
+td .sub { display: block; color: var(--ink-3); font-size: .78rem; }
+.nowrap { white-space: nowrap; }
+
+.btn { font-size: .84rem; font-weight: 600; border-radius: 7px; padding: 6px 13px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent-ink); }
+.btn:hover { filter: brightness(1.05); }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* metrics */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 0; }
+.kpi b { font-size: 1.3rem; font-weight: 600; }
+.kpi span { font-size: .76rem; color: var(--ink-3); }
+.kpi.hl { border-color: var(--accent); background: var(--accent-soft); }
+.kpi.hl b { color: var(--accent-ink); }
+
+.goal-figure { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.goal-figure .big { font-family: var(--font-display); font-size: clamp(2.6rem, 6vw, 4rem); font-weight: 700; line-height: 1; }
+.goal-figure .of { font-size: 1.05rem; color: var(--ink-2); }
+.progress { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.progress > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.fact { display: grid; gap: 0; } .fact b { font-size: 1.1rem; } .fact span { font-size: .78rem; color: var(--ink-3); }
+.ctx-card { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; }
+.ctx-card div { display: grid; } .ctx-card span { font-size: .72rem; color: var(--ink-3); } .ctx-card b { font-weight: 600; }
+
+/* charts */
+.chart { position: relative; direction: ltr; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--ink-3); font-family: var(--font-body); font-size: 11px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--accent); vertical-align: middle; margin-inline-end: 6px; }
+.legend i.pace { border-top: 2px dashed var(--pace); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .78rem; padding: 5px 9px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); direction: rtl; z-index: 3; }
+[dir="ltr"] .tip { direction: ltr; }
+
+/* funnel & bars */
+.funnel { display: grid; gap: 4px; }
+.fstage { display: grid; grid-template-columns: minmax(110px, 170px) minmax(0, 1fr) 56px; align-items: center; gap: 10px; }
+.fstage .name { font-size: .87rem; color: var(--ink-2); }
+.bar { height: 22px; background: var(--surface-2); border-radius: 4px; position: relative; }
+.bar > i { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--accent); border-radius: 4px; min-width: 2px; }
+.fstage.out .bar > i { background: var(--good); }
+.fstage.lost .bar > i { background: var(--pace); }
+.fstage .count { text-align: end; font-weight: 500; }
+.frate { font-size: .74rem; color: var(--ink-3); padding-inline-start: calc(min(170px, 30%) + 10px); }
+.hbars { display: grid; gap: 7px; }
+.hbar { display: grid; grid-template-columns: minmax(100px, 200px) minmax(0, 1fr) minmax(40px, auto); gap: 10px; align-items: center; font-size: .86rem; }
+.hbar .track { height: 14px; background: var(--surface-2); border-radius: 3px; position: relative; }
+.hbar .track > i { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--accent); border-radius: 3px; }
+.scorebar { display: inline-grid; grid-template-columns: 54px auto; align-items: center; gap: 6px; }
+.scorebar .t { height: 6px; background: var(--surface-3); border-radius: 3px; position: relative; overflow: hidden; }
+.scorebar .t i { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--accent); }
+.scorebar.a .t i { background: var(--good); }
+.scorebar.c .t i { background: var(--pace); }
+
+/* queue items */
+.list { display: grid; gap: 10px; }
+.item { border: 1px solid var(--line); border-radius: 9px; padding: 13px 14px; display: grid; gap: 8px; background: var(--surface); border-inline-start: 4px solid var(--line); min-width: 0; }
+.item.s-approval { border-inline-start-color: var(--accent); }
+.item.s-medium { border-inline-start-color: var(--warn); }
+.item.s-high { border-inline-start-color: var(--critical); }
+.item.s-good { border-inline-start-color: var(--good); }
+.item.done { opacity: .6; }
+.item-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; align-items: baseline; }
+.item-top b { font-weight: 600; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .8rem; color: var(--ink-3); align-items: center; }
+.msg { background: var(--surface-2); border-radius: 7px; padding: 10px 12px; font-size: .86rem; white-space: pre-line; color: var(--ink-2); overflow-wrap: anywhere; }
+.msg .subj { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+.msg.in { background: var(--accent-soft); color: var(--ink); }
+.conf { display: inline-grid; grid-template-columns: 44px auto; gap: 6px; align-items: center; }
+.conf .t { height: 5px; background: var(--surface-3); border-radius: 3px; position: relative; overflow: hidden; }
+.conf .t i { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--good); }
+.conf.low .t i { background: var(--warn); }
+.signals { display: grid; gap: 6px; }
+.signal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: .84rem; padding-block: 6px; border-bottom: 1px dashed var(--line); }
+.signal:last-child { border-bottom: 0; }
+.signal .src { grid-column: 1 / -1; font-size: .76rem; color: var(--ink-3); }
+.signal .src a { color: var(--accent-ink); }
+.empty { color: var(--ink-3); font-size: .9rem; padding: 18px; text-align: center; border: 1px dashed var(--line); border-radius: 8px; }
+.note { font-size: .82rem; color: var(--ink-2); background: var(--surface-2); border-radius: 8px; padding: 10px 12px; }
+.levels { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.levels .lvl { padding: 5px 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-3); font-weight: 600; font-size: .84rem; }
+.levels .lvl.on { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }
+.timeline { display: grid; gap: 0; }
+.tl { display: grid; grid-template-columns: 92px 18px minmax(0, 1fr); gap: 8px; font-size: .84rem; }
+.tl .when { color: var(--ink-3); font-size: .76rem; text-align: end; padding-top: 2px; }
+.tl .dot { position: relative; } .tl .dot::before { content: ""; position: absolute; inset-inline-start: 7px; top: 0; bottom: 0; width: 2px; background: var(--line); }
+.tl .dot::after { content: ""; position: absolute; inset-inline-start: 3px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+.tl .dot.h::after { border-color: var(--good); } .tl .dot.s::after { border-color: var(--pace); }
+.tl .what { padding-bottom: 12px; min-width: 0; overflow-wrap: anywhere; }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgb(8 12 20 / .45); z-index: 40; }
+.drawer { position: fixed; inset-block: 0; inset-inline-end: 0; width: min(560px, 100%); background: var(--bg); z-index: 41; overflow-y: auto; padding-block: calc(16px + env(safe-area-inset-top, 0px)) 32px; padding-inline: 18px; display: grid; gap: 14px; align-content: start; box-shadow: 0 0 40px rgb(0 0 0 / .25); }
+.drawer-head { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+
+.toast { position: fixed; inset-inline: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); margin-inline: auto; max-width: 440px; background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 8px; font-size: .86rem; text-align: center; z-index: 60; }
+
+@media (max-width: 960px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .side { position: fixed; inset-block: 0; inset-inline-start: 0; width: 272px; z-index: 50; transform: translateX(100%); transition: transform .2s ease; }
+  [dir="ltr"] .side { transform: translateX(-100%); }
+  .app.nav-open .side { transform: none; }
+  .app.nav-open::after { content: ""; position: fixed; inset: 0; background: rgb(8 12 20 / .45); z-index: 45; }
+  .menu-btn { display: inline-flex; }
+  .ctx { padding-inline: 16px; }
+  .page { padding-inline: 16px; }
+  .picker select { max-width: 170px; }
+}
+@media (max-width: 520px) {
+  .fstage { grid-template-columns: 96px minmax(0, 1fr) 40px; }
+  .frate { padding-inline-start: 106px; }
+  .hbar { grid-template-columns: 96px minmax(0, 1fr) auto; }
+  .ctx-tools { margin-inline-start: 0; }
+}
+@media (prefers-reduced-motion: no-preference) { .progress > i, .bar > i, .hbar .track > i { transition: width .45s ease; } }
+</style>
+
+<div class="app" id="app">
+  <aside class="side" id="side" aria-label="Navigation"></aside>
+  <div class="main">
+    <header class="ctx" id="ctx"></header>
+    <div class="demo-banner" id="demoBanner"></div>
+    <main class="page" id="page" tabindex="-1"></main>
+  </div>
+</div>
+<div id="overlay"></div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+const DATA = __DATA__;
+
+/* =========================================================== i18n */
+const UI = {
+  ar: {
+    product: "محرك الاستحواذ", tagline: "نظام تشغيل لتحقيق نتائج الأعمال", demo: "بيانات تجريبية",
+    demoBanner: "بيانات تجريبية — سجلات وهمية من محاكاة لشهر سبتمبر 2026. لم يُرسل أي تواصل حقيقي، والأزرار لا تنفّذ شيئاً.",
+    client: "العميل", campaign: "الحملة", outcome: "النتيجة", viewClient: "عرض العميل", viewOperator: "عرض المشغّل", menu: "القائمة",
+    secEngine: "المحرك", secSystem: "النظام", secClient: "حسابك",
+    overview: "نظرة عامة", campaigns: "الحملات", prospects: "العملاء المحتملون", all: "الكل", highFit: "ملاءمة عالية", needsResearch: "تحتاج بحثاً", needsContact: "تحتاج جهة اتصال",
+    contacted: "تم التواصل", replied: "ردّوا", converted: "تحققت النتيجة", scoring: "نموذج التقييم", research: "البحث", contacts: "جهات الاتصال",
+    outreach: "التواصل", drafts: "مسودات", needsApproval: "بانتظار الموافقة", approved: "معتمدة", scheduled: "مجدولة", sent: "مُرسلة", followUps: "متابعات", completed: "مكتملة",
+    replies: "الردود", positive: "إيجابية", neutral: "محايدة", negative: "سلبية", needsAttention: "تحتاج انتباهاً",
+    upcoming: "القادمة", qualified: "المؤهَّلة", held: "المنعقدة", cancelled: "الملغاة", noShow: "لم يحضر",
+    outcomes: "النتائج", analytics: "التحليلات", reports: "التقارير", integrations: "التكاملات", automation: "الأتمتة", audit: "النشاط والتدقيق", settings: "الإعدادات",
+    attention: "يحتاج انتباهك", recommendations: "التوصيات", results: "النتائج المحققة",
+    goal: "الهدف", period: "الفترة", progress: "التقدم", since: "منذ", today: "حتى اليوم",
+    of: "من", target: "الهدف", remaining: "متبقٍ", last7: "آخر 7 أيام", value: "القيمة", costPer: "التكلفة لكل نتيجة", notConfigured: "غير محدد",
+    paceLine: "الوتيرة المطلوبة للهدف", cumulative: "تراكمي", tableView: "عرض البيانات كجدول",
+    funnel: "مسار الاستحواذ", funnelNote: "كم عميلاً محتملاً وصل إلى كل مرحلة هذه الحملة", toNext: "ينتقلون للمرحلة التالية", lost: "خرجوا من المسار",
+    didTitle: "ما أنجزه المحرك (آخر 7 أيام)", nextTitle: "ما سيفعله المحرك بعد ذلك", activity: "نشاط الشهر", sentPerDay: "رسائل مُرسلة يومياً",
+    discovered: "اكتُشفوا", researched: "تمت دراستهم", contactsFound: "جهات اتصال متاحة", outreachSent: "رسائل مُرسلة", repliesN: "ردود", positiveN: "ردود إيجابية",
+    company: "الشركة", contact: "جهة الاتصال", role: "المنصب", fit: "الملاءمة", sector: "القطاع", location: "الموقع", whyFit: "لماذا يناسب", whyNow: "لماذا الآن",
+    researchStatus: "حالة البحث", contactStatus: "حالة جهة الاتصال", stage: "المرحلة", lastActivity: "آخر نشاط", search: "بحث", score: "التقييم", minScore: "أدنى تقييم", any: "الكل",
+    geography: "المنطقة", showMore: "عرض المزيد", rows: "سجل",
+    rs_needs_research: "تحتاج بحثاً", rs_researching: "قيد البحث", rs_complete: "مكتمل", rs_needs_review: "يحتاج مراجعة",
+    cs_found: "متاحة", cs_needs_contact: "تحتاج جهة اتصال", cs_finding: "قيد البحث", cs_not_found: "لم تُعثر",
+    signals: "الإشارات", source: "المصدر", whyMatters: "لماذا تهم", angle: "الزاوية المقترحة", noSource: "ادعاء بلا مصدر — تم تجاهله", missingReq: "معلومة مطلوبة ناقصة",
+    researchRule: "كل إشارة بحثية مرتبطة بمصدرها. أي معلومة بلا مصدر يتجاهلها المحرك ولا تدخل في التقييم أو الرسائل.",
+    channel: "القناة", message: "الرسالة", personalization: "التخصيص", approval: "الاعتماد", approve: "اعتماد وإرسال", reject: "رفض", edit: "تعديل",
+    confidence: "الثقة", classification: "التصنيف", suggested: "الرد المقترح", nextAction: "الإجراء التالي", escalated: "أُحيل لشخص",
+    whenDue: "موعد الإرسال", step: "الخطوة",
+    meetingBrief: "ملخص التحضير", qualReasons: "أسباب التأهيل", date: "الموعد", sourceLinks: "روابط المصادر",
+    conversionRate: "معدل التحويل", trend: "الاتجاه", bySource: "حسب مصدر التواصل", pipeline: "المسار", recent: "أحدث النتائج",
+    preview: "معاينة — لا يُنفَّذ شيء", approvedToast: "تم الاعتماد (معاينة — لم يُرسل شيء)", rejectedToast: "تم الرفض (معاينة)", resolvedToast: "تمت المعالجة (معاينة)",
+    noItems: "لا يوجد شيء هنا الآن.", draftCampaign: "هذه الحملة مسودة ولم تبدأ بعد. ستظهر البيانات عند تفعيلها.",
+    mode_autonomous: "تلقائي", mode_approval: "بموافقة بشرية", mode_disabled: "معطّل",
+    level_human_approval: "موافقة بشرية", level_assisted: "أتمتة مساعَدة", level_autonomous: "تشغيل مستقل",
+    status_active: "نشطة", status_draft: "مسودة", status_paused: "متوقفة", status_completed: "مكتملة",
+    guardrails: "ضوابط كل إجراء تلقائي", workflow: "سير العمل", mode: "الوضع", threshold: "حد الثقة", risk: "النوع",
+    risk_internal: "داخلي", risk_external: "خارجي", risk_strategic: "استراتيجي",
+    actor_agent: "المحرك", actor_user: "شخص", actor_system: "النظام",
+    reportTitle: "تقرير الحملة", share: "مشاركة التقرير مع العميل",
+  },
+  en: {
+    product: "Acquisition Engine", tagline: "An operating system for business outcomes", demo: "DEMO DATA",
+    demoBanner: "DEMO DATA — fictional records from a September 2026 simulation. No real outreach occurred, and buttons do not perform actions.",
+    client: "Client", campaign: "Campaign", outcome: "Outcome", viewClient: "Client view", viewOperator: "Operator view", menu: "Menu",
+    secEngine: "Engine", secSystem: "System", secClient: "Your account",
+    overview: "Overview", campaigns: "Campaigns", prospects: "Prospects", all: "All", highFit: "High fit", needsResearch: "Needs research", needsContact: "Needs contact",
+    contacted: "Contacted", replied: "Replied", converted: "Converted", scoring: "Scoring model", research: "Research", contacts: "Contacts",
+    outreach: "Outreach", drafts: "Drafts", needsApproval: "Needs approval", approved: "Approved", scheduled: "Scheduled", sent: "Sent", followUps: "Follow-ups", completed: "Completed",
+    replies: "Replies", positive: "Positive", neutral: "Neutral", negative: "Negative", needsAttention: "Needs attention",
+    upcoming: "Upcoming", qualified: "Qualified", held: "Held", cancelled: "Cancelled", noShow: "No-show",
+    outcomes: "Outcomes", analytics: "Analytics", reports: "Reports", integrations: "Integrations", automation: "Automation", audit: "Activity & audit", settings: "Settings",
+    attention: "Needs your attention", recommendations: "Recommendations", results: "Results",
+    goal: "Goal", period: "Period", progress: "Progress", since: "since", today: "to date",
+    of: "of", target: "Target", remaining: "Remaining", last7: "Last 7 days", value: "Value", costPer: "Cost per outcome", notConfigured: "Not configured",
+    paceLine: "Pace needed for the goal", cumulative: "cumulative", tableView: "Show data as a table",
+    funnel: "Acquisition funnel", funnelNote: "How many prospects reached each stage in this campaign", toNext: "move to the next stage", lost: "Left the funnel",
+    didTitle: "What the engine did (last 7 days)", nextTitle: "What the engine will do next", activity: "Activity this month", sentPerDay: "Messages sent per day",
+    discovered: "Discovered", researched: "Researched", contactsFound: "Contacts found", outreachSent: "Messages sent", repliesN: "Replies", positiveN: "Positive replies",
+    company: "Company", contact: "Contact", role: "Role", fit: "Fit", sector: "Sector", location: "Location", whyFit: "Why fit", whyNow: "Why now",
+    researchStatus: "Research", contactStatus: "Contact", stage: "Stage", lastActivity: "Last activity", search: "Search", score: "Score", minScore: "Min score", any: "Any",
+    geography: "Geography", showMore: "Show more", rows: "records",
+    rs_needs_research: "Needs research", rs_researching: "Researching", rs_complete: "Complete", rs_needs_review: "Needs review",
+    cs_found: "Found", cs_needs_contact: "Needs contact", cs_finding: "Finding", cs_not_found: "Not found",
+    signals: "Signals", source: "Source", whyMatters: "Why it matters", angle: "Recommended angle", noSource: "Unsourced claim — discarded", missingReq: "Required fact missing",
+    researchRule: "Every research signal is tied to its source. Anything without a source is discarded and never used for scoring or messaging.",
+    channel: "Channel", message: "Message", personalization: "Personalization", approval: "Approval", approve: "Approve & send", reject: "Reject", edit: "Edit",
+    confidence: "Confidence", classification: "Classification", suggested: "Suggested response", nextAction: "Next action", escalated: "Escalated to a human",
+    whenDue: "Due", step: "Step",
+    meetingBrief: "Brief", qualReasons: "Qualification", date: "Date", sourceLinks: "Source links",
+    conversionRate: "Conversion rate", trend: "Trend", bySource: "By opening touch", pipeline: "Pipeline", recent: "Recent outcomes",
+    preview: "Preview — nothing runs", approvedToast: "Approved (preview — nothing sent)", rejectedToast: "Rejected (preview)", resolvedToast: "Resolved (preview)",
+    noItems: "Nothing here right now.", draftCampaign: "This campaign is a draft and hasn't started. Data appears once it is activated.",
+    mode_autonomous: "Autonomous", mode_approval: "Human approval", mode_disabled: "Disabled",
+    level_human_approval: "Human approval", level_assisted: "Assisted", level_autonomous: "Autonomous",
+    status_active: "Active", status_draft: "Draft", status_paused: "Paused", status_completed: "Completed",
+    guardrails: "Guardrails on every autonomous action", workflow: "Workflow", mode: "Mode", threshold: "Confidence threshold", risk: "Type",
+    risk_internal: "Internal", risk_external: "External", risk_strategic: "Strategic",
+    actor_agent: "Engine", actor_user: "Person", actor_system: "System",
+    reportTitle: "Campaign report", share: "Share report with client",
+  },
+};
+
+/* Config labels are authored in English; the Arabic UI translates the known ones (fallback: as authored). */
+const AR = {
+  "Paid Subscriber": "مشترك مدفوع", "Qualified Meeting": "اجتماع مؤهَّل", "Qualified Lead": "عميل محتمل مؤهَّل",
+  "UAE Agency Acquisition": "استقطاب وكالات الإمارات", "KSA Agency Acquisition": "استقطاب وكالات السعودية", "Saudi Enterprise Outreach": "التواصل مع الشركات السعودية", "Off-plan Investors (example)": "مستثمرو البيع على الخريطة (مثال)",
+  Discovered: "اكتُشف", Researched: "تمت دراسته", "High fit": "ملاءمة عالية", Contacted: "تم التواصل", Replied: "ردّ", "Trial started": "بدأ التجربة", "Paid subscriber": "مشترك مدفوع", "Closed lost": "خرج من المسار",
+  "Positive reply": "رد إيجابي", "Meeting booked": "اجتماع محجوز", "Meeting held": "اجتماع منعقد", "Qualified meeting": "اجتماع مؤهَّل", Disqualified: "غير مؤهَّل",
+  New: "جديد", Responding: "يتفاعل", Qualified: "مؤهَّل", "Viewing booked": "معاينة محجوزة", "Verified Lead": "عميل محتمل مؤكَّد", "Not a fit": "غير ملائم",
+  "Performance agency": "وكالة أداء", "3+ clients": "3 عملاء أو أكثر", "Runs Meta ads": "تدير إعلانات Meta", "Runs Google ads": "تدير إعلانات Google", "Runs TikTok / Snapchat ads": "تدير إعلانات TikTok / Snapchat",
+  "Recurring client reporting": "تقارير دورية للعملاء", "5–50 employees": "5–50 موظفاً", "Decision maker": "صاحب قرار", "Growth signal": "مؤشر نمو",
+  "Executive persona": "قيادي تنفيذي", "Department head": "رئيس إدارة", "200+ employees": "أكثر من 200 موظف", "Active initiative": "مبادرة قائمة",
+  Investor: "مستثمر", "Budget ≥ 1.5M SAR": "ميزانية ≥ 1.5 مليون ر.س", "Buying within 6 months": "شراء خلال 6 أشهر", "Target area match": "منطقة مستهدفة محددة",
+  Interested: "مهتم", Question: "سؤال", "Not now": "ليس الآن", "Not interested": "غير مهتم", "Opt-out": "طلب الإيقاف", Other: "أخرى", "Wants a meeting": "يطلب اجتماعاً", "Referred elsewhere": "أحالنا لغيره",
+  "Founder / Managing Director": "مؤسس / مدير عام", "Head of Performance / Paid Media": "رئيس الأداء / الإعلانات", "C-level / GM": "قيادي تنفيذي", "Business owner": "صاحب عمل", "Home buyer": "مشترٍ للسكن",
+  "Replied positively": "ردّ بإيجابية", "High or medium fit": "ملاءمة عالية أو متوسطة", "Expressed need": "عبّر عن حاجة", "Budget signalled": "أشار إلى ميزانية", "Timeline this quarter": "توقيت خلال الربع",
+  "Responded with interest": "ردّ باهتمام", "Budget confirmed": "الميزانية مؤكدة", "Target area known": "المنطقة المستهدفة معروفة", "Within 12 months": "خلال 12 شهراً", "Property type known": "نوع العقار معروف",
+  "Medium fit": "ملاءمة متوسطة", "Low fit": "ملاءمة منخفضة", "Tier A": "الفئة A", "Tier B": "الفئة B", "Tier C": "الفئة C",
+  Meetings: "الاجتماعات", Meeting: "اجتماع", Viewings: "المعاينات", Viewing: "معاينة",
+  Emirate: "الإمارة", "Agency type": "نوع الوكالة", Persona: "نوع الشخص", "Fit tier": "فئة الملاءمة", Sector: "القطاع", City: "المدينة", Channel: "القناة", "Sequence step": "خطوة التواصل", "Message angle": "زاوية الرسالة", "Target area": "المنطقة المستهدفة", "Buyer type": "نوع المشتري",
+  performance: "أداء", full_service: "متكاملة", media: "إعلامية", creative: "إبداعية",
+  retail: "تجزئة", logistics: "لوجستيات", healthcare: "رعاية صحية", manufacturing: "تصنيع", hospitality: "ضيافة", construction: "إنشاءات", marketing: "تسويق",
+  investor: "مستثمر", end_user: "مشترٍ للسكن", business_owner: "صاحب عمل",
+  decision_maker: "صاحب قرار", performance_lead: "مسؤول الأداء", executive: "قيادي تنفيذي", department_head: "رئيس إدارة",
+  Dubai: "دبي", "Abu Dhabi": "أبوظبي", Sharjah: "الشارقة", Riyadh: "الرياض", Jeddah: "جدة", Dammam: "الدمام", Khobar: "الخبر",
+  "North Riyadh": "شمال الرياض", "Jeddah Waterfront": "واجهة جدة البحرية", "Al Khobar Corniche": "كورنيش الخبر",
+  email: "البريد", linkedin: "لينكدإن", whatsapp: "واتساب", phone: "هاتف",
+  "Commercial negotiation — needs a human.": "تفاوض تجاري — يحتاج شخصاً", "Complaint or compliance mention.": "شكوى أو إشارة قانونية",
+  "Positive reply from an executive — human to review before booking.": "رد إيجابي من قيادي — راجعه قبل الحجز", "Prospect referred us to someone else — confirm the new contact.": "أحالنا لشخص آخر — أكّد جهة الاتصال الجديدة",
+  "Is this a performance / paid-media agency?": "هل هي وكالة أداء / إعلانات مدفوعة؟", "How many active clients does the agency show (case studies, client logos)?": "كم عميلاً نشطاً تعرضه الوكالة؟",
+  "Which ad platforms does the agency manage (Meta, Google, TikTok, Snapchat)?": "ما منصات الإعلان التي تديرها الوكالة؟", "Is there evidence the agency produces recurring client reports?": "هل هناك دليل على تقارير دورية للعملاء؟",
+  "Any recent growth signal (hiring, new office, new clients)?": "هل هناك مؤشر نمو حديث (توظيف، مكتب جديد، عملاء جدد)؟", "Primary sector of the company": "القطاع الرئيسي للشركة",
+  "Any recent expansion, hiring wave or transformation initiative?": "هل هناك توسع أو توظيف أو مبادرة تحول حديثة؟",
+};
+const KEYS_AR = { agency_type: "نوع الوكالة", client_count: "عدد العملاء", ad_platforms: "منصات الإعلان", reporting_requirement: "متطلبات التقارير", growth_signal: "مؤشر النمو", sector: "القطاع", recent_initiative: "مبادرة حديثة" };
+const KEYS_EN = { agency_type: "Agency type", client_count: "Active clients", ad_platforms: "Ad platforms", reporting_requirement: "Client reporting", growth_signal: "Growth signal", sector: "Sector", recent_initiative: "Recent initiative" };
+const PLURAL = { ar: { "Paid Subscriber": "مشتركون مدفوعون", "Qualified Meeting": "اجتماعات مؤهَّلة", "Qualified Lead": "عملاء محتملون مؤهَّلون" }, en: { "Paid Subscriber": "Paid Subscribers", "Qualified Meeting": "Qualified Meetings", "Qualified Lead": "Qualified Leads" } };
+const UNIT = { ar: { subscriber: "مشترك", meeting: "اجتماع", lead: "عميل محتمل" }, en: {} };
+const STEP_AR = { s1_intro: "الرسالة الأولى", s2_follow_up: "المتابعة", t1_intro: "الرسالة الأولى", t2_follow_up: "المتابعة", r1_intro: "الرسالة الأولى", r2_follow_up: "المتابعة" };
+const STEP_EN = { s1_intro: "First touch", s2_follow_up: "Follow-up", t1_intro: "First touch", t2_follow_up: "Follow-up", r1_intro: "First touch", r2_follow_up: "Follow-up" };
+const VARIANT = {
+  ar: { "intro:pain_led": "افتتاحية: تبدأ بالمشكلة", "intro:question_led": "افتتاحية: تبدأ بسؤال", "intro:initiative_led": "افتتاحية: مبادرة الشركة", "intro:outcome_led": "افتتاحية: نتائج خلال 90 يوماً", "follow_up:default": "رسالة المتابعة", "intro:default": "الرسالة الأولى" },
+  en: { "intro:pain_led": "Intro: pain-led", "intro:question_led": "Intro: question-led", "intro:initiative_led": "Intro: initiative-led", "intro:outcome_led": "Intro: 90-day results", "follow_up:default": "Follow-up", "intro:default": "Intro" },
+};
+const WORKFLOWS = [
+  ["research", { ar: "البحث", en: "Research" }], ["score", { ar: "التقييم", en: "Scoring" }], ["enrich_contact", { ar: "إيجاد جهة الاتصال", en: "Contact finding" }],
+  ["qualify", { ar: "التأهيل", en: "Qualification" }], ["send_message", { ar: "التواصل الأول (يشمل التخصيص)", en: "First outreach (incl. personalization)" }],
+  ["follow_up", { ar: "المتابعة", en: "Follow-up" }], ["respond", { ar: "الرد على الرسائل", en: "Reply handling" }],
+  ["conversion_step", { ar: "دفع النتيجة (رابط الحجز / التجربة)", en: "Conversion step (booking / trial link)" }], ["optimize", { ar: "تطبيق التحسينات", en: "Applying optimizations" }], ["discover", { ar: "اكتشاف العملاء المحتملين", en: "Prospect discovery" }],
+];
+const AUDIT_CAT = {
+  research: ["research.completed"], scoring: ["score.changed"], contacts: ["contact.lookup"], messages: ["action.proposed"], approvals: ["action.approved", "action.rejected", "action.pending_approval", "action.auto_approved", "action.decision_denied"],
+  sending: ["action.succeeded", "action.deferred", "action.retry_scheduled", "action.blocked", "action.failed", "sequence.step_skipped"], replies: ["reply.classified"], qualification: ["qualification.changed"],
+  meetings: ["appointment.scheduled", "appointment.held", "appointment.cancelled", "appointment.no_show"], outcomes: ["outcome.achieved", "event.recorded", "stage.changed"], automation: ["automation.changed", "automation.change_denied", "campaign.registered"],
+  exceptions: ["exception.raised", "exception.resolved"],
+};
+const AUDIT_CAT_LABEL = {
+  ar: { research: "البحث", scoring: "التقييم", contacts: "جهات الاتصال", messages: "إنشاء الرسائل", approvals: "الاعتماد", sending: "الإرسال", replies: "الردود", qualification: "التأهيل", meetings: "المواعيد", outcomes: "النتائج", automation: "الأتمتة", exceptions: "الاستثناءات" },
+  en: { research: "Research", scoring: "Scoring", contacts: "Contacts", messages: "Message generation", approvals: "Approval", sending: "Sending", replies: "Replies", qualification: "Qualification", meetings: "Appointments", outcomes: "Outcomes", automation: "Automation", exceptions: "Exceptions" },
+};
+
+/* =========================================================== state */
+const S = { clientId: DATA.clients[0].id, campaignId: null, view: "operator", lang: "ar", route: "overview", sub: "", filters: {}, decided: {}, limit: 50, drawer: null, analyticsDim: null, auditCat: "" };
+try {
+  const saved = JSON.parse(localStorage.getItem("acq-os") || "{}");
+  for (const k of ["clientId", "campaignId", "view", "lang"]) if (saved[k]) S[k] = saved[k];
+} catch {}
+const persist = () => { try { localStorage.setItem("acq-os", JSON.stringify({ clientId: S.clientId, campaignId: S.campaignId, view: S.view, lang: S.lang })); } catch {} };
+
+const t = (k) => UI[S.lang][k] ?? UI.en[k] ?? k;
+const EN_CH = { email: "Email", linkedin: "LinkedIn", whatsapp: "WhatsApp", phone: "Phone" };
+const humanize = (s) => (/^[a-z0-9_]+$/.test(s) && s.includes("_") ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ") : /^[a-z]+$/.test(s) ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const L = (s) => (s == null ? "" : S.lang === "ar" ? AR[s] ?? s : EN_CH[s] ?? humanize(String(s)));
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const fmtNum = (n) => new Intl.NumberFormat("en-US").format(n ?? 0);
+const pct = (x) => (x == null || !isFinite(x) ? "—" : `${Math.round(x * 1000) / 10}%`);
+const money = (amount, cur) => (cur === "USD" ? "$" + fmtNum(amount) : `${fmtNum(amount)} ${S.lang === "ar" ? (cur === "SAR" ? "ر.س" : cur) : cur}`);
+const tz = () => C().config.timezone || "Asia/Riyadh";
+const fmtDate = (iso, opts = { day: "numeric", month: "short" }) => iso ? new Intl.DateTimeFormat(S.lang === "ar" ? "ar-u-nu-latn-ca-gregory" : "en-GB", { timeZone: tz(), ...opts }).format(new Date(iso)) : "—";
+const fmtDT = (iso) => fmtDate(iso, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+const AS_OF = new Date(DATA.generatedAt);
+const ago = (iso) => {
+  if (!iso) return "—";
+  const h = Math.max(0, (AS_OF - new Date(iso)) / 3600e3);
+  if (h < 1) return S.lang === "ar" ? "الآن" : "just now";
+  if (h < 24) return S.lang === "ar" ? `قبل ${Math.round(h)} س` : `${Math.round(h)}h ago`;
+  const d = Math.round(h / 24);
+  return S.lang === "ar" ? `قبل ${d} يوم` : `${d}d ago`;
+};
+
+const clientCampaigns = (cid) => DATA.campaigns.filter((c) => c.clientId === cid);
+function C() {
+  let c = DATA.campaigns.find((x) => x.config.id === S.campaignId && x.clientId === S.clientId);
+  if (!c) { c = clientCampaigns(S.clientId).find((x) => x.config.status === "active") || clientCampaigns(S.clientId)[0]; S.campaignId = c.config.id; }
+  return c;
+}
+const clientName = (id) => DATA.clients.find((c) => c.id === id)?.name ?? id;
+const outcomeLabel = (c = C()) => L(c.config.outcome.label);
+const outcomePlural = (c = C()) => PLURAL[S.lang][c.config.outcome.label] ?? L(c.config.outcome.label);
+const unit = (c = C(), n = 2) => UNIT[S.lang][c.config.outcome.unit] ?? (n === 1 ? c.config.outcome.unit : c.config.outcome.unit + "s");
+const stepLabel = (k) => (S.lang === "ar" ? STEP_AR : STEP_EN)[k] ?? k ?? "";
+const TEMPLATE_NAMES = { ar: { trial_invite: "رابط التجربة", booking_link: "رابط الحجز", answer_question: "الرد على سؤال", meeting_ack: "تأكيد طلب الاجتماع", viewing_invite: "دعوة المعاينة", follow_up: "رسالة المتابعة", breakup: "رسالة الختام", intro: "الرسالة الأولى" }, en: { trial_invite: "Trial link", booking_link: "Booking link", answer_question: "Answer to a question", meeting_ack: "Meeting acknowledgement", viewing_invite: "Viewing invite", follow_up: "Follow-up", breakup: "Break-up note", intro: "Intro" } };
+const variantLabel = (k) => { if (VARIANT[S.lang][k]) return VARIANT[S.lang][k]; const [tpl, v] = String(k).split(":"); const name = TEMPLATE_NAMES[S.lang][tpl] ?? tpl.replace(/_/g, " "); return v && v !== "default" ? `${name} · ${v.replace(/_/g, " ")}` : name; };
+const keyLabel = (k) => (S.lang === "ar" ? KEYS_AR : KEYS_EN)[k] ?? k;
+const SEP = () => (S.lang === "ar" ? "، " : ", ");
+const fmtVal = (v) => Array.isArray(v) ? v.map((x) => L(x)).join(SEP()) : typeof v === "number" ? fmtNum(v) : L(String(v));
+
+/* derived indexes, cached per campaign */
+const cache = new Map();
+function X() {
+  const c = C();
+  if (cache.has(c.config.id)) return cache.get(c.config.id);
+  const P = new Map(c.prospects.map((p) => [p.id, p]));
+  const intents = new Map(c.config.intents.map((i) => [i.key, i]));
+  const outreachById = new Map(c.outreach.map((a) => [a.id, a]));
+  const repliesBy = new Map(); for (const r of c.replies) repliesBy.set(r.prospectId, [...(repliesBy.get(r.prospectId) || []), r]);
+  const sentBy = new Map(); for (const a of c.outreach) if (a.status === "succeeded") sentBy.set(a.prospectId, [...(sentBy.get(a.prospectId) || []), a]);
+  const x = { P, intents, outreachById, repliesBy, sentBy };
+  cache.set(c.config.id, x);
+  return x;
+}
+
+/* =========================================================== nav */
+const ICON = {
+  overview: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z", campaigns: "M4 6h16M4 12h16M4 18h10", prospects: "M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21c0-4 4-6 8-6s8 2 8 6",
+  research: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm10 17-5-5", contacts: "M4 5h16v14H4zM4 7l8 6 8-6", outreach: "M3 11l18-8-8 18-2-8-8-2z", replies: "M4 5h16v11H8l-4 4V5z",
+  appointments: "M5 5h14v15H5zM8 3v4M16 3v4M5 10h14", outcomes: "M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7z", analytics: "M4 20V10M10 20V4M16 20v-7M22 20H2",
+  reports: "M6 3h9l5 5v13H6zM14 3v6h6M9 13h8M9 17h6", integrations: "M8 7V3M16 7V3M6 7h12v5a6 6 0 0 1-12 0V7zM12 18v3", automation: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2",
+  audit: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", settings: "M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4", attention: "M12 3l10 18H2zM12 10v5M12 18v.5", recommendations: "M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z",
+};
+const icon = (k) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[k] || ICON.overview}"/></svg>`;
+
+function counts() {
+  const c = C(); const x = X();
+  const pendingOut = c.outreach.filter((a) => a.status === "pending_approval" && !S.decided[a.id]).length;
+  const pendingRec = c.recommendations.filter((r) => r.status === "open" && !S.decided[r.id]).length;
+  const openExc = c.exceptions.filter((e) => e.status === "open" && !S.decided[e.id]).length;
+  const openP = new Set(c.exceptions.filter((e) => e.status === "open" && !S.decided[e.id]).map((e) => e.prospectId));
+  const replyAttn = c.replies.filter((r) => r.nextAction?.kind === "escalate" && openP.has(r.prospectId)).length;
+  return { pendingOut, pendingRec, openExc, attention: pendingOut + pendingRec + openExc, replyAttn };
+}
+
+function navOperator() {
+  const c = C(); const n = counts(); const ap = c.config.appointments;
+  return [
+    { sec: "secEngine", items: [
+      ["overview"], ["campaigns"],
+      ["prospects", null, [["", "all"], ["high-fit", "highFit"], ["needs-research", "needsResearch"], ["needs-contact", "needsContact"], ["scoring", "scoring"]]],
+      ["research"], ["contacts"],
+      ["outreach", n.pendingOut, [["drafts", "drafts"], ["approval", "needsApproval"], ["sent", "sent"], ["follow-ups", "followUps"]]],
+      ["replies", n.replyAttn, [["", "all"], ["positive", "positive"], ["neutral", "neutral"], ["negative", "negative"], ["attention", "needsAttention"]], "warn"],
+      ...(ap ? [["appointments", null, [["upcoming", "upcoming"], ["qualified", "qualified"], ["held", "held"]], null, L(ap.label)]] : []),
+      ["outcomes"], ["analytics"], ["reports"],
+    ] },
+    { sec: "secSystem", items: [["integrations"], ["automation"], ["audit"], ["settings"]] },
+  ];
+}
+function navClient() {
+  const c = C(); const n = counts(); const ap = c.config.appointments;
+  return [{ sec: "secClient", items: [["overview"], ["attention", n.attention], ["outcomes"], ...(ap ? [["appointments", null, null, null, L(ap.label)]] : []), ["recommendations", n.pendingRec], ["reports"]] }];
+}
+
+function renderSide() {
+  const groups = S.view === "client" ? navClient() : navOperator();
+  let h = `<div class="brand"><b>${esc(t("product"))}</b><span>${esc(t("tagline"))}</span></div>`;
+  for (const g of groups) {
+    h += `<nav class="nav nav-group" aria-label="${esc(t(g.sec))}"><div class="nav-title">${esc(t(g.sec))}</div>`;
+    for (const [route, badge, subs, badgeKind, label] of g.items) {
+      const on = S.route === route;
+      h += `<a href="#${route}" class="${on && !S.sub ? "on" : on ? "on" : ""}" ${on ? 'aria-current="page"' : ""}>${icon(route)}<span>${esc(label || t(route))}</span>${badge ? `<span class="badge ${badgeKind || ""}">${badge}</span>` : ""}</a>`;
+      if (subs && on) {
+        h += `<div class="sub">` + subs.map(([sub, key]) => `<a href="#${route}${sub ? "." + sub : ""}" class="${S.sub === sub ? "on" : ""}">${esc(t(key))}</a>`).join("") + `</div>`;
+      }
+    }
+    h += `</nav>`;
+  }
+  h += `<div class="side-foot"><span class="demo-flag">● ${esc(t("demo"))}</span><span>${esc(S.lang === "ar" ? "محاكاة على المحرك الفعلي · سجلات وهمية" : "Simulated on the real engine · fictional records")}</span></div>`;
+  document.getElementById("side").innerHTML = h;
+}
+
+function renderCtx() {
+  const c = C(); const cfg = c.config;
+  const clientOpts = DATA.clients.map((cl) => `<option value="${esc(cl.id)}" ${cl.id === S.clientId ? "selected" : ""}>${esc(cl.name)}</option>`).join("");
+  const campOpts = clientCampaigns(S.clientId).map((x) => `<option value="${esc(x.config.id)}" ${x.config.id === cfg.id ? "selected" : ""}>${esc(L(x.config.name))}${x.config.status !== "active" ? ` (${esc(t("status_" + x.config.status))})` : ""}</option>`).join("");
+  document.getElementById("ctx").innerHTML = `
+    <button class="menu-btn" type="button" data-act="menu" aria-label="${esc(t("menu"))}">☰</button>
+    <div class="picker"><label for="pickClient">${esc(t("client"))}</label><select id="pickClient">${clientOpts}</select></div>
+    <span class="arrow">${S.lang === "ar" ? "←" : "→"}</span>
+    <div class="picker"><label for="pickCampaign">${esc(t("campaign"))}</label><select id="pickCampaign">${campOpts}</select></div>
+    <span class="arrow">${S.lang === "ar" ? "←" : "→"}</span>
+    <span class="outcome-pill" title="${esc(t("outcome"))}">${icon("outcomes")}${esc(outcomePlural())}</span>
+    <div class="ctx-tools">
+      <div class="seg" role="group" aria-label="View"><button type="button" data-act="view" data-v="client" aria-pressed="${S.view === "client"}">${esc(t("viewClient"))}</button><button type="button" data-act="view" data-v="operator" aria-pressed="${S.view === "operator"}">${esc(t("viewOperator"))}</button></div>
+      <div class="seg" role="group" aria-label="Language"><button type="button" data-act="lang" data-v="ar" aria-pressed="${S.lang === "ar"}">ع</button><button type="button" data-act="lang" data-v="en" aria-pressed="${S.lang === "en"}">EN</button></div>
+    </div>`;
+  document.getElementById("pickClient").onchange = (e) => { S.clientId = e.target.value; S.campaignId = null; S.filters = {}; persist(); render(); };
+  document.getElementById("pickCampaign").onchange = (e) => { S.campaignId = e.target.value; S.filters = {}; persist(); render(); };
+  document.getElementById("demoBanner").textContent = t("demoBanner");
+}
+
+/* =========================================================== charts */
+const svgEl = (tag, attrs = {}) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
+function niceTicks(max, n = 4) { if (max <= 0) return [0]; const raw = max / n, mag = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 5, 10].map((m) => m * mag).find((m) => m >= raw); const out = []; for (let v = 0; v <= max + 1e-9; v += step) out.push(Math.round(v * 100) / 100); return out; }
+function lineChart(host, series, target, days) {
+  const W = 680, H = 220, P = { l: 34, r: 14, t: 12, b: 26 };
+  const max = Math.max(target || 0, ...series, 1) * 1.05;
+  const x = (i) => P.l + (i / Math.max(1, days.length - 1)) * (W - P.l - P.r);
+  const y = (v) => H - P.b - (v / max) * (H - P.t - P.b);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": t("trend") });
+  for (const tk of niceTicks(max)) { svg.append(svgEl("line", { x1: P.l, x2: W - P.r, y1: y(tk), y2: y(tk), stroke: "var(--line)", "stroke-width": 1 })); const tx = svgEl("text", { x: P.l - 8, y: y(tk) + 4, "text-anchor": "end" }); tx.textContent = tk; svg.append(tx); }
+  [0, Math.floor((days.length - 1) / 2), days.length - 1].forEach((i) => { const tx = svgEl("text", { x: x(i), y: H - 6, "text-anchor": i === 0 ? "start" : i === days.length - 1 ? "end" : "middle" }); tx.textContent = fmtDate(days[i] + "T12:00:00Z"); svg.append(tx); });
+  if (target) svg.append(svgEl("line", { x1: x(0), y1: y(0), x2: x(days.length - 1), y2: y(target), stroke: "var(--pace)", "stroke-width": 2, "stroke-dasharray": "5 5" }));
+  const pts = series.map((v, i) => `${x(i)},${y(v)}`);
+  svg.append(svgEl("path", { d: `M${x(0)},${y(0)} L${pts.join(" L")} L${x(series.length - 1)},${y(0)} Z`, fill: "var(--accent)", "fill-opacity": 0.1 }));
+  svg.append(svgEl("path", { d: `M${pts.join(" L")}`, fill: "none", stroke: "var(--accent)", "stroke-width": 2, "stroke-linejoin": "round" }));
+  const last = series.length - 1;
+  svg.append(svgEl("circle", { cx: x(last), cy: y(series[last]), r: 5, fill: "var(--accent)", stroke: "var(--surface)", "stroke-width": 2 }));
+  const cross = svgEl("line", { y1: P.t, y2: H - P.b, stroke: "var(--ink-3)", "stroke-width": 1, visibility: "hidden" });
+  const dot = svgEl("circle", { r: 4, fill: "var(--accent)", stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" });
+  const hit = svgEl("rect", { x: P.l, y: P.t, width: W - P.l - P.r, height: H - P.t - P.b, fill: "transparent" });
+  svg.append(cross, dot, hit);
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true;
+  host.replaceChildren(svg, tip);
+  hit.addEventListener("pointermove", (ev) => {
+    const r = svg.getBoundingClientRect(); const px = ((ev.clientX - r.left) / r.width) * W;
+    const i = Math.max(0, Math.min(last, Math.round(((px - P.l) / (W - P.l - P.r)) * (days.length - 1))));
+    for (const el of [cross]) { el.setAttribute("x1", x(i)); el.setAttribute("x2", x(i)); el.setAttribute("visibility", "visible"); }
+    dot.setAttribute("cx", x(i)); dot.setAttribute("cy", y(series[i])); dot.setAttribute("visibility", "visible");
+    const pace = target ? Math.round((target * i) / (days.length - 1) * 10) / 10 : null;
+    tip.textContent = `${fmtDate(days[i] + "T12:00:00Z", { day: "numeric", month: "long" })} · ${series[i]}${pace != null ? ` · ${S.lang === "ar" ? "الوتيرة" : "pace"} ${pace}` : ""}`;
+    tip.style.left = (x(i) / W) * r.width + "px"; tip.style.top = (y(series[i]) / H) * r.height + "px"; tip.hidden = false;
+  });
+  hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); });
+}
+function barChart(host, values, days, label) {
+  const W = 1000, H = 150, P = { l: 30, r: 6, t: 8, b: 22 };
+  const max = Math.max(...values, 1) * 1.1; const bw = (W - P.l - P.r) / values.length;
+  const y = (v) => H - P.b - (v / max) * (H - P.t - P.b);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": label });
+  for (const tk of niceTicks(max, 3)) { svg.append(svgEl("line", { x1: P.l, x2: W - P.r, y1: y(tk), y2: y(tk), stroke: "var(--line)", "stroke-width": 1 })); const tx = svgEl("text", { x: P.l - 6, y: y(tk) + 4, "text-anchor": "end" }); tx.textContent = tk; svg.append(tx); }
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true;
+  values.forEach((v, i) => {
+    const h = Math.max(0, H - P.b - y(v));
+    const bar = svgEl("rect", { x: P.l + i * bw + 1, y: y(v), width: Math.max(1, bw - 2), height: h, rx: Math.min(3, h / 2), fill: "var(--accent)" });
+    const hit = svgEl("rect", { x: P.l + i * bw, y: P.t, width: bw, height: H - P.t - P.b, fill: "transparent" });
+    hit.addEventListener("pointerenter", () => { const r = svg.getBoundingClientRect(); tip.textContent = `${fmtDate(days[i] + "T12:00:00Z", { day: "numeric", month: "long" })} · ${v}`; tip.style.left = ((P.l + i * bw + bw / 2) / W) * r.width + "px"; tip.style.top = (y(v) / H) * r.height + "px"; tip.hidden = false; bar.setAttribute("fill", "var(--accent-ink)"); });
+    hit.addEventListener("pointerleave", () => { tip.hidden = true; bar.setAttribute("fill", "var(--accent)"); });
+    svg.append(bar, hit);
+  });
+  [0, Math.floor(values.length / 2), values.length - 1].forEach((i) => { const tx = svgEl("text", { x: P.l + i * bw + bw / 2, y: H - 5, "text-anchor": i === 0 ? "start" : i === values.length - 1 ? "end" : "middle" }); tx.textContent = fmtDate(days[i] + "T12:00:00Z"); svg.append(tx); });
+  host.replaceChildren(svg, tip);
+}
+const hbars = (rows, fmt = (v) => fmtNum(v)) => {
+  const max = Math.max(1, ...rows.map((r) => r.v));
+  return `<div class="hbars">${rows.map((r) => `<div class="hbar"><span>${esc(r.label)}</span><div class="track" title="${esc(r.title || "")}"><i style="width:${(r.v / max) * 100}%"></i></div><span class="num">${esc(fmt(r.v, r))}</span></div>`).join("") || `<div class="empty">${esc(t("noItems"))}</div>`}</div>`;
+};
+
+/* =========================================================== shared bits */
+function funnelReach(c = C()) {
+  const stages = c.config.funnel; const P = c.prospects;
+  const idx = new Map(stages.map((s, i) => [s.key, i]));
+  const lostKey = stages.find((s) => s.milestone === "lost")?.key;
+  const counted = c.outcomes.filter((o) => o.counted).length;
+  return stages.filter((s) => s.key !== lostKey).map((s) => {
+    let n;
+    if (s.milestone === "outcome") n = counted;
+    else if (s.milestone) n = P.filter((p) => p.milestones[s.milestone]).length;
+    else n = P.filter((p) => p.stage !== lostKey && idx.get(p.stage) >= idx.get(s.key)).length;
+    return { key: s.key, label: L(s.label), n, isOutcome: s.milestone === "outcome" };
+  }).concat(lostKey ? [{ key: lostKey, label: L(stages.find((s) => s.key === lostKey).label), n: P.filter((p) => p.stage === lostKey).length, lost: true }] : []);
+}
+function funnelHtml(c = C()) {
+  const rows = funnelReach(c); const max = Math.max(1, ...rows.map((r) => r.n));
+  let h = `<div class="funnel">`;
+  rows.forEach((r, i) => {
+    if (r.lost) h += `<hr style="border:0;border-top:1px dashed var(--line);margin:6px 0">`;
+    h += `<div class="fstage ${r.isOutcome ? "out" : ""} ${r.lost ? "lost" : ""}"><span class="name">${esc(r.label)}</span><div class="bar"><i style="width:${(r.n / max) * 100}%"></i></div><span class="count num">${fmtNum(r.n)}</span></div>`;
+    const nx = rows[i + 1];
+    if (nx && !nx.lost && !r.lost && r.n) h += `<div class="frate">↓ <span class="num">${pct(nx.n / r.n)}</span> ${esc(t("toNext"))}</div>`;
+  });
+  return h + `</div>`;
+}
+const scoreBar = (p) => p.score == null ? `<span class="muted">—</span>` : `<span class="scorebar ${p.tier || ""}"><span class="t"><i style="width:${(p.score / (p.scoreMax || 100)) * 100}%"></i></span><span class="num tiny">${p.score}/${p.scoreMax}</span></span>`;
+const rsChip = (s) => `<span class="chip ${s === "complete" ? "good" : s === "needs_review" ? "warn" : s === "researching" ? "accent" : ""}">${esc(t("rs_" + s))}</span>`;
+const csChip = (s) => `<span class="chip ${s === "found" ? "good" : s === "not_found" ? "crit" : s === "needs_contact" ? "warn" : ""}">${esc(t("cs_" + s))}</span>`;
+const stageLabel = (key) => L(C().config.funnel.find((s) => s.key === key)?.label ?? key);
+const whyFit = (p) => p.breakdown.filter((b) => b.category === "fit").sort((a, b) => b.weight - a.weight).map((b) => L(b.label));
+const whyNow = (p) => p.breakdown.filter((b) => b.category === "timing").map((b) => L(b.label));
+const confHtml = (c, thr = 0.85) => c == null ? "" : `<span class="conf ${c < thr ? "low" : ""}"><span class="t"><i style="width:${c * 100}%"></i></span><span class="num tiny">${Math.round(c * 100)}%</span></span>`;
+const intentChip = (key) => { const i = X().intents.get(key); if (!i) return ""; const cls = i.sentiment === "positive" ? "good" : i.sentiment === "negative" ? "crit" : ""; return `<span class="chip ${cls}">${esc(L(i.label))}</span>`; };
+const pageHead = (title, desc, extra = "") => `<div class="page-head"><div style="display:grid;gap:4px"><div class="crumbs">${esc(clientName(S.clientId))} · ${esc(L(C().config.name))} · ${esc(outcomePlural())}</div><h1>${esc(title)}</h1>${desc ? `<p>${esc(desc)}</p>` : ""}</div>${extra}</div>`;
+const tabs = (route, items) => `<div class="tabs" role="tablist">${items.map(([sub, label, n]) => `<a href="#${route}${sub ? "." + sub : ""}" class="${S.sub === sub ? "on" : ""}" role="tab" aria-selected="${S.sub === sub}">${esc(label)}${n != null ? `<span class="n">${fmtNum(n)}</span>` : ""}</a>`).join("")}</div>`;
+const isDraft = () => C().config.status !== "active" && !C().prospects.length;
+const draftNotice = () => `<div class="empty">${esc(t("draftCampaign"))}</div>`;
+const prospectLink = (id, text) => `<a href="#" data-act="prospect" data-id="${esc(id)}">${esc(text)}</a>`;
+const who = (p) => p ? (p.company ? `${p.company}` : p.contact) : "—";
+
+/* =========================================================== pages */
+function pageOverview() {
+  const c = C(); const cfg = c.config; const r = c.report;
+  const days = c.daily.map((d) => d.day); let acc = 0; const cum = c.daily.map((d) => (acc += d.outcomes));
+  const last7 = c.daily.slice(-7).reduce((a, d) => a + d.outcomes, 0);
+  const target = cfg.outcome.target; const achieved = r.outcome.achieved;
+  const remaining = Math.max(0, (target || 0) - achieved);
+  const weeksLeft = last7 ? Math.ceil(remaining / last7) : null;
+  const n = counts();
+  const reach = Object.fromEntries(funnelReach().map((s) => [s.key, s.n]));
+  const P = c.prospects;
+  const eventStages = cfg.funnel.filter((s) => s.onEvent);
+  const kpis = [
+    [t("discovered"), P.length], [t("researched"), P.filter((p) => p.milestones.researched).length], [t("highFit"), P.filter((p) => p.milestones.fit).length],
+    [t("contactsFound"), P.filter((p) => p.milestones.fit && p.contactStatus === "found").length], [t("outreachSent"), r.activity.messagesSent],
+    [t("repliesN"), c.replies.length], [t("positiveN"), r.activity.positiveReplies],
+    ...eventStages.map((s) => [L(s.label), reach[s.key] ?? 0]), [outcomePlural(), achieved, true],
+  ];
+  const isClient = S.view === "client";
+  const since = fmtDate(cfg.period?.start, { day: "numeric", month: "long", year: "numeric" });
+  const recent7 = (pred) => P.filter(pred).length;
+  const weekAgo = new Date(AS_OF - 7 * 864e5).toISOString();
+  const did = [
+    [S.lang === "ar" ? "عميلاً محتملاً اكتُشف" : "prospects discovered", recent7((p) => p.createdAt >= weekAgo)],
+    [S.lang === "ar" ? "تمت دراستهم بمصادر" : "researched with sources", recent7((p) => (p.milestones.researched || "") >= weekAgo)],
+    [S.lang === "ar" ? "رسالة أُرسلت" : "messages sent", c.daily.slice(-7).reduce((a, d) => a + d.sent, 0)],
+    [S.lang === "ar" ? "رداً صُنّف" : "replies classified", c.daily.slice(-7).reduce((a, d) => a + d.replies, 0)],
+    [outcomePlural(), last7],
+  ];
+  const upcomingAppts = c.appointments.filter((a) => a.status === "scheduled" && a.startsAt > DATA.generatedAt).length;
+  const next = [
+    [S.lang === "ar" ? "رسالة تنتظر اعتمادك" : "messages waiting for your approval", n.pendingOut, "#outreach.approval"],
+    [S.lang === "ar" ? "متابعة مجهّزة كمسودة" : "follow-ups drafted, due soon", c.drafts.length, "#outreach.drafts"],
+    [S.lang === "ar" ? "إرسال مجدول (ساعات الهدوء / الحدود)" : "sends scheduled (quiet hours / rate limits)", c.outreach.filter((a) => a.status === "scheduled").length, "#outreach.scheduled"],
+    [S.lang === "ar" ? "عميل محتمل في طابور البحث" : "prospects queued for research", P.filter((p) => ["needs_research", "researching"].includes(p.researchStatus)).length, "#research.needs_research"],
+    ...(cfg.appointments ? [[S.lang === "ar" ? `${L(cfg.appointments.singular)} قادم` : `upcoming ${cfg.appointments.label.toLowerCase()}`, upcomingAppts, "#appointments.upcoming"]] : []),
+    [S.lang === "ar" ? "توصية تنتظر قرارك" : "recommendations awaiting a decision", n.pendingRec, "#recommendations"],
+  ];
+  const list = (rows, linkable) => `<div class="hbars">${rows.map(([label, v, href]) => `<div style="display:flex;gap:10px;align-items:baseline;justify-content:space-between;border-bottom:1px dashed var(--line);padding-block:5px"><span>${linkable && href && v && !isClient ? `<a href="${href}">${esc(label)}</a>` : esc(label)}</span><b class="num">${fmtNum(v)}</b></div>`).join("")}</div>`;
+
+  const cost = cfg.budget && achieved ? money(Math.round(cfg.budget.amount / achieved), cfg.budget.currency) : t("notConfigured");
+  return `
+  ${pageHead(t("overview"), isClient ? (S.lang === "ar" ? "هدفك، تقدمك، ونتائجك — دون تفاصيل التشغيل." : "Your goal, progress and results — without the operational detail.") : (S.lang === "ar" ? "ماذا يحدث في هذه الحملة الآن؟" : "What is happening with this acquisition campaign?"))}
+  <section class="panel"><div class="ctx-card">
+    <div><span>${esc(t("client"))}</span><b>${esc(clientName(S.clientId))}</b></div>
+    <div><span>${esc(t("campaign"))}</span><b>${esc(L(cfg.name))}</b></div>
+    <div><span>${esc(t("outcome"))}</span><b>${esc(outcomePlural())}</b></div>
+    <div><span>${esc(t("goal"))}</span><b><span class="num">${target ?? "—"}</span> ${esc(unit(C(), target))}</b></div>
+    <div><span>${esc(t("progress"))}</span><b class="num">${achieved} / ${target ?? "—"} · ${r.outcome.progressPct ?? 0}%</b></div>
+    <div><span>${esc(t("period"))}</span><b>${esc(since)} — ${esc(fmtDate(DATA.asOf + "T12:00:00Z", { day: "numeric", month: "long" }))}</b></div>
+    <div><span>${esc(t("automation"))}</span><b>${esc(t("level_" + cfg.autonomy.level))}</b></div>
+  </div></section>
+  ${isDraft() ? draftNotice() : `
+  <section class="grid g-hero">
+    <article class="panel">
+      <div class="panel-head"><h2>${esc(t("goal"))}: ${esc(outcomePlural())}</h2><span class="chip accent">${esc(t("level_" + cfg.autonomy.level))}</span></div>
+      <div class="goal-figure"><span class="big num">${achieved}</span><span class="of">${esc(t("of"))} ${target} ${esc(unit(C(), target))}</span></div>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${r.outcome.progressPct}"><i style="width:${Math.min(100, r.outcome.progressPct || 0)}%"></i></div>
+      <p class="small" style="color:var(--ink-2)">${S.lang === "ar"
+        ? `تحقق <b class="num">${r.outcome.progressPct}%</b> من الهدف.${weeksLeft ? ` بوتيرة آخر 7 أيام (<span class="num">${last7}</span>) يكتمل الهدف خلال <b class="num">${weeksLeft}</b> أسابيع تقريباً.` : ""}`
+        : `<b class="num">${r.outcome.progressPct}%</b> of goal reached.${weeksLeft ? ` At the last 7 days' pace (<span class="num">${last7}</span>) the goal is about <b class="num">${weeksLeft}</b> weeks away.` : ""}`}</p>
+      <div class="facts">
+        ${r.outcome.value ? `<div class="fact"><b class="num">${money(r.outcome.value.amount, r.outcome.value.currency)}</b><span>${esc(t("value"))}</span></div>` : ""}
+        <div class="fact"><b class="num">${last7}</b><span>${esc(t("last7"))}</span></div>
+        <div class="fact"><b class="num">${remaining}</b><span>${esc(t("remaining"))}</span></div>
+        <div class="fact"><b class="num">${esc(cost)}</b><span>${esc(t("costPer"))}</span></div>
+      </div>
+      <div class="legend"><span><i></i>${esc(outcomePlural())} (${esc(t("cumulative"))})</span>${target ? `<span><i class="pace"></i>${esc(t("paceLine"))}</span>` : ""}</div>
+      <div class="chart" data-chart="trend"></div>
+    </article>
+    <article class="panel">
+      <div class="panel-head"><h2>${esc(t("attention"))}</h2><span class="num" style="font-family:var(--font-display);font-size:1.5rem;font-weight:700">${n.attention}</span></div>
+      <p class="small muted">${esc(S.lang === "ar" ? "المحرك يعمل باستمرار. هذه فقط القرارات التي تنتظر شخصاً." : "The engine runs continuously. These are the only decisions waiting on a person.")}</p>
+      ${attentionList(4)}
+      <a href="#attention" class="small">${esc(S.lang === "ar" ? "عرض الكل" : "View all")} ${S.lang === "ar" ? "←" : "→"}</a>
+    </article>
+  </section>
+  <section class="kpis">${kpis.map(([l, v, hl]) => `<div class="kpi ${hl ? "hl" : ""}"><b class="num">${fmtNum(v)}</b><span>${esc(l)}</span></div>`).join("")}</section>
+  <section class="grid g2">
+    <article class="panel"><div class="panel-head"><h2>${esc(t("funnel"))}</h2><span class="small muted">${esc(t("funnelNote"))}</span></div>${funnelHtml()}</article>
+    <div class="grid" style="gap:18px">
+      <article class="panel"><h2>${esc(t("didTitle"))}</h2>${list(did)}</article>
+      ${isClient ? `<article class="panel"><h2>${esc(t("recommendations"))}</h2>${recList(true)}</article>` : `<article class="panel"><h2>${esc(t("nextTitle"))}</h2>${list(next, true)}</article>`}
+    </div>
+  </section>
+  ${isClient ? "" : `<section class="panel"><div class="panel-head"><h2>${esc(t("activity"))}</h2><span class="small muted">${esc(t("sentPerDay"))}</span></div><div class="chart" data-chart="sent"></div></section>`}`}`;
+}
+
+function attentionList(limit) {
+  const c = C(); const x = X(); const items = [];
+  for (const a of c.outreach.filter((a) => a.status === "pending_approval")) items.push({ kind: "approval", a });
+  for (const r of c.recommendations.filter((r) => r.status === "open")) items.push({ kind: "rec", r });
+  for (const e of c.exceptions.filter((e) => e.status === "open")) items.push({ kind: "exc", e });
+  const open = items.filter((i) => !S.decided[i.a?.id || i.r?.id || i.e?.id]);
+  const shown = (limit ? open.slice(0, limit) : items);
+  if (!shown.length) return `<div class="empty">${esc(S.lang === "ar" ? "لا شيء ينتظرك الآن. المحرك يعمل." : "Nothing is waiting on you. The engine is running.")}</div>`;
+  return `<div class="list">${shown.map((i) => i.kind === "approval" ? messageCard(i.a, limit) : i.kind === "rec" ? `<div class="item s-approval"><div class="item-top"><b>${esc(t("recommendations"))}</b><span class="chip accent">${esc(t("approval"))}</span></div><p class="small">${esc(recSummary(i.r))}</p>${limit ? "" : decideButtons(i.r.id, "rec")}</div>` : excCard(i.e, limit)).join("")}</div>`;
+}
+
+function decideButtons(id, kind) {
+  const d = S.decided[id];
+  if (d) return `<div class="small" style="color:var(--${d === "approve" || d === "resolve" ? "good" : "warn"}-ink)">${d === "approve" ? "✓ " + esc(t("approvedToast")) : d === "resolve" ? "✓ " + esc(t("resolvedToast")) : "✕ " + esc(t("rejectedToast"))}</div>`;
+  if (kind === "exc") return `<div class="actions"><button class="btn" type="button" data-act="decide" data-id="${esc(id)}" data-d="resolve">${esc(S.lang === "ar" ? "تمت المراجعة، استأنف" : "Reviewed — resume")}</button></div>`;
+  return `<div class="actions"><button class="btn primary" type="button" data-act="decide" data-id="${esc(id)}" data-d="approve">${esc(kind === "rec" ? (S.lang === "ar" ? "طبّق التوصية" : "Apply") : t("approve"))}</button><button class="btn" type="button" data-act="decide" data-id="${esc(id)}" data-d="reject">${esc(kind === "rec" ? (S.lang === "ar" ? "تجاهل" : "Dismiss") : t("reject"))}</button>${kind === "msg" ? `<button class="btn ghost" type="button" data-act="toast" data-msg="${esc(t("preview"))}">${esc(t("edit"))}</button>` : ""}</div>`;
+}
+
+function messageCard(a, compact) {
+  const p = X().P.get(a.prospectId); const typeLabel = { send_message: S.lang === "ar" ? "تواصل أول" : "First touch", follow_up: S.lang === "ar" ? "متابعة" : "Follow-up", respond: S.lang === "ar" ? "رد على رسالة" : "Reply", conversion_step: S.lang === "ar" ? "خطوة التحويل" : "Conversion step" }[a.type] || a.type;
+  const statusChip = { pending_approval: ["accent", t("needsApproval")], approved: ["good", t("approved")], scheduled: ["", t("scheduled")], succeeded: ["good", t("sent")], rejected: ["crit", S.lang === "ar" ? "مرفوضة" : "Rejected"], blocked: ["warn", S.lang === "ar" ? "أوقفتها السياسات" : "Blocked by policy"], draft: ["outline", t("drafts")] }[a.status] || ["", a.status];
+  const low = a.confidence < 0.85;
+  return `<div class="item ${a.status === "pending_approval" ? "s-approval" : a.status === "succeeded" ? "s-good" : ""} ${S.decided[a.id] ? "done" : ""}">
+    <div class="item-top"><b>${p ? prospectLink(p.id, `${p.contact} · ${p.company || ""}`) : ""}</b><span class="chip ${statusChip[0]}">${esc(statusChip[1])}</span></div>
+    <div class="meta"><span>${esc(typeLabel)}${a.step ? " · " + esc(stepLabel(a.step)) : ""}</span><span>${esc(L(a.channel))}</span>${p ? `<span>${esc(p.title || "")}</span><span>${esc(t("stage"))}: ${esc(stageLabel(p.stage))}</span>` : ""}<span>${esc(t("confidence"))} ${confHtml(a.confidence)}</span>${a.variant ? `<span>${esc(t("personalization"))}: ${esc(variantLabel(`${a.template}:${a.variant}`))}</span>` : ""}${a.dueAt ? `<span>${esc(t("whenDue"))}: ${esc(fmtDT(a.dueAt))}</span>` : a.executedAt ? `<span>${esc(fmtDT(a.executedAt))}</span>` : a.runAfter ? `<span>${esc(t("whenDue"))}: ${esc(fmtDT(a.runAfter))}</span>` : ""}</div>
+    ${compact ? "" : `<div class="msg ltr">${a.subject ? `<span class="subj">${esc(a.subject)}</span>` : ""}${esc(a.body)}</div>`}
+    ${low && a.status === "pending_approval" ? `<div class="small" style="color:var(--warn-ink)">▲ ${esc(S.lang === "ar" ? "ثقة أقل من حد الأتمتة — يحتاج نظرة قبل الإرسال" : "Below the automation threshold — needs a look before sending")}</div>` : ""}
+    ${a.status === "pending_approval" && !compact ? decideButtons(a.id, "msg") : ""}
+    ${a.error && ["rejected", "blocked"].includes(a.status) ? `<div class="small muted">${esc(a.error)}</div>` : ""}
+  </div>`;
+}
+
+function excCard(e, compact) {
+  const p = X().P.get(e.prospectId);
+  const reason = e.kind === "low_confidence" ? (S.lang === "ar" ? "رد غير واضح — لم يستطع المحرك تصنيفه بثقة" : "Unclear reply — the engine couldn't classify it confidently") : e.kind === "action_failed" ? (S.lang === "ar" ? "فشل إجراء بعد إعادة المحاولة" : "Action failed after retries") : L(e.reason);
+  return `<div class="item s-${e.severity === "high" ? "high" : "medium"} ${S.decided[e.id] || e.status === "resolved" ? "done" : ""}">
+    <div class="item-top"><b>${esc(reason)}</b><span class="tiny muted">${esc(fmtDT(e.at))}</span></div>
+    <div class="meta"><span class="chip ${e.severity === "high" ? "crit" : "warn"}">▲ ${esc(e.severity === "high" ? (S.lang === "ar" ? "عاجل" : "High") : e.severity === "low" ? (S.lang === "ar" ? "منخفض" : "Low") : (S.lang === "ar" ? "متوسط" : "Medium"))}</span>${p ? `<span>${prospectLink(p.id, `${p.contact} · ${p.company || ""}`)}</span>` : ""}${e.status === "resolved" ? `<span class="chip good">${esc(S.lang === "ar" ? "تمت معالجته" : "Resolved")}</span>` : ""}</div>
+    ${!compact && e.status === "open" ? decideButtons(e.id, "exc") : ""}
+  </div>`;
+}
+
+function recSummary(r) {
+  const ev = r.evidence || {};
+  const rate = (a) => (a && a.sent ? Math.round(((a.positive + 2 * a.outcomes) / a.sent) * 1000) / 10 : 0);
+  if (r.change?.op === "disable_variant") {
+    const tk = r.change.templateKey; const b = ev.best, w = ev.worst;
+    return S.lang === "ar" ? `إيقاف «${variantLabel(`${tk}:${w.key}`)}» (${rate(w)}% من ${w.sent} رسالة) والاعتماد على «${variantLabel(`${tk}:${b.key}`)}» (${rate(b)}% من ${b.sent}).`
+      : `Retire "${variantLabel(`${tk}:${w.key}`)}" (${rate(w)}% of ${w.sent} sends) in favour of "${variantLabel(`${tk}:${b.key}`)}" (${rate(b)}% of ${b.sent}).`;
+  }
+  if (r.change?.op === "raise_min_score") {
+    const tier = C().config.scoring.tiers.find((x) => x.key === ev.tier);
+    return S.lang === "ar" ? `«${L(tier?.label ?? ev.tier)}» لم تُنتج ردوداً إيجابية من ${ev.sent} عميلاً تم التواصل معهم — ركّز على تقييم ${r.change.value} فأعلى.`
+      : `"${tier?.label ?? ev.tier}" produced no positive replies from ${ev.sent} contacted prospects — focus on scores of ${r.change.value}+.`;
+  }
+  return r.summary;
+}
+function recList(compact) {
+  const recs = C().recommendations.filter((r) => r.status === "open" || S.decided[r.id]);
+  if (!recs.length) return `<div class="empty">${esc(S.lang === "ar" ? "لا توجد توصيات مفتوحة." : "No open recommendations.")}</div>`;
+  return `<div class="list">${recs.map((r) => `<div class="item s-approval ${S.decided[r.id] ? "done" : ""}"><p>${esc(recSummary(r))}</p>${compact ? "" : `<p class="small muted">${esc(S.lang === "ar" ? "في الوضع الحالي لا يطبق المحرك التغيير إلا بموافقتك. في التشغيل المستقل يطبقه تلقائياً ويسجله." : "At the current automation level the engine applies this only with your approval. Fully autonomous, it applies and logs it.")}</p>`}${decideButtons(r.id, "rec")}</div>`).join("")}</div>`;
+}
+
+function pageAttention() {
+  return `${pageHead(t("attention"), S.lang === "ar" ? "الموافقات المعلّقة، التوصيات، والحالات التي أحالها المحرك إلى شخص." : "Pending approvals, recommendations and cases the engine escalated to a person.")}
+  ${isDraft() ? draftNotice() : `<section class="panel">${attentionList(0)}</section>`}`;
+}
+function pageRecommendations() {
+  return `${pageHead(t("recommendations"), S.lang === "ar" ? "ما تعلّمه المحرك من النتائج، مع الأرقام التي بنى عليها." : "What the engine learned from results, with the numbers behind it.")}
+  ${isDraft() ? draftNotice() : `<section class="panel">${recList(false)}</section>`}`;
+}
+
+function pageCampaigns() {
+  const rows = DATA.clients.map((cl) => {
+    const cs = clientCampaigns(cl.id);
+    return `<section class="panel"><div class="panel-head"><h2>${esc(cl.name)}</h2><span class="small muted">${esc(cl.industry || "")}</span></div>
+    <div class="grid g3">${cs.map((x) => {
+      const cfg = x.config; const pctv = x.report.outcome.progressPct || 0;
+      return `<a href="#overview" data-act="pick" data-client="${esc(cl.id)}" data-campaign="${esc(cfg.id)}" style="text-decoration:none;color:inherit" class="item ${cfg.id === C().config.id ? "s-approval" : ""}">
+        <div class="item-top"><b>${esc(L(cfg.name))}</b><span class="chip ${cfg.status === "active" ? "good" : ""}">${esc(t("status_" + cfg.status))}</span></div>
+        <div class="meta"><span>${esc(t("outcome"))}: ${esc(PLURAL[S.lang][cfg.outcome.label] ?? cfg.outcome.label)}</span><span>${esc(t("level_" + cfg.autonomy.level))}</span></div>
+        <div class="goal-figure"><span class="num" style="font-size:1.6rem;font-weight:700">${x.report.outcome.achieved}</span><span class="of small">/ ${cfg.outcome.target ?? "—"}</span></div>
+        <div class="progress"><i style="width:${Math.min(100, pctv)}%"></i></div>
+        <p class="small muted">${esc(cfg.description || "")}</p></a>`;
+    }).join("")}</div></section>`;
+  }).join("");
+  return `${pageHead(t("campaigns"), S.lang === "ar" ? "كل عميل يشغّل حملة أو أكثر، ولكل حملة نتيجة واحدة. حملة جديدة = ملف إعدادات جديد، دون تغيير في المحرك." : "Each client runs one or more campaigns; each campaign has one outcome. A new campaign is a new configuration file — no engine changes.")}${rows}
+  <div class="note">${esc(S.lang === "ar" ? "الهيكل: العميل ← الحملة ← النتيجة ← الشريحة المستهدفة ← الحسابات ← جهات الاتصال ← البحث ← التقييم ← التخصيص ← التواصل ← الردود ← التأهيل ← النتيجة ← التعلّم" : "Structure: Client → Campaign → Outcome → ICP → Accounts → Contacts → Research → Scoring → Personalization → Outreach → Replies → Qualification → Outcome → Learning")}</div>`;
+}
+
+function prospectFilterBase(sub) {
+  const P = C().prospects;
+  const by = {
+    "": () => true, "high-fit": (p) => p.tier === "a", "needs-research": (p) => ["needs_research", "researching", "needs_review"].includes(p.researchStatus),
+    "needs-contact": (p) => ["needs_contact", "finding", "not_found"].includes(p.contactStatus), contacted: (p) => p.milestones.contacted, replied: (p) => p.milestones.replied, converted: (p) => p.status === "converted",
+  };
+  return P.filter(by[sub] || by[""]);
+}
+function pageProspects() {
+  if (S.sub === "scoring") return pageScoring();
+  const c = C(); const f = S.filters;
+  const base = prospectFilterBase(S.sub);
+  const uniq = (fn) => [...new Set(c.prospects.map(fn).filter(Boolean))].sort();
+  let rows = base.filter((p) =>
+    (!f.q || `${p.company} ${p.contact} ${p.title}`.toLowerCase().includes(f.q.toLowerCase())) &&
+    (!f.min || (p.score ?? -1) >= Number(f.min)) && (!f.sector || p.sector === f.sector) && (!f.city || p.city === f.city) &&
+    (!f.stage || p.stage === f.stage) && (!f.rs || p.researchStatus === f.rs) && (!f.cs || p.contactStatus === f.cs));
+  rows = rows.sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.lastActivity.localeCompare(a.lastActivity));
+  const sel = (key, label, opts) => `<label>${esc(label)}<select data-filter="${key}"><option value="">${esc(t("any"))}</option>${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[key] === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>`;
+  const subs = [["", t("all")], ["high-fit", t("highFit")], ["needs-research", t("needsResearch")], ["needs-contact", t("needsContact")], ["contacted", t("contacted")], ["replied", t("replied")], ["converted", t("converted")]];
+  return `${pageHead(t("prospects"), S.lang === "ar" ? "كل عميل محتمل اكتشفه المحرك لهذه الحملة: لماذا يناسب، لماذا الآن، وأين وصل." : "Every prospect the engine found for this campaign: why they fit, why now, and where they are.", `<a class="btn" href="#prospects.scoring">${esc(t("scoring"))}</a>`)}
+  ${isDraft() ? draftNotice() : `
+  ${tabs("prospects", subs.map(([s, l]) => [s, l, prospectFilterBase(s).length]))}
+  <div class="filters">
+    <label>${esc(t("search"))}<input type="search" data-filter="q" value="${esc(f.q || "")}" placeholder="${esc(t("company"))}…"></label>
+    <label>${esc(t("minScore"))}<input type="number" min="0" max="${c.config.scoring.max}" data-filter="min" value="${esc(f.min || "")}" style="width:90px"></label>
+    ${sel("sector", t("sector"), uniq((p) => p.sector).map((v) => [v, L(v)]))}
+    ${sel("city", t("geography"), uniq((p) => p.city).map((v) => [v, L(v)]))}
+    ${sel("stage", t("stage"), c.config.funnel.map((s) => [s.key, L(s.label)]))}
+    ${sel("rs", t("researchStatus"), ["needs_research", "researching", "complete", "needs_review"].map((v) => [v, t("rs_" + v)]))}
+    ${sel("cs", t("contactStatus"), ["found", "needs_contact", "finding", "not_found"].map((v) => [v, t("cs_" + v)]))}
+    <span class="small muted" style="align-self:center">${fmtNum(rows.length)} ${esc(t("rows"))}</span>
+  </div>
+  <div class="table-wrap"><table><thead><tr>
+    <th>${esc(t("company"))}</th><th>${esc(t("contact"))}</th><th>${esc(t("fit"))}</th><th>${esc(t("sector"))}</th><th>${esc(t("location"))}</th><th>${esc(t("whyFit"))}</th><th>${esc(t("whyNow"))}</th><th>${esc(t("researchStatus"))}</th><th>${esc(t("contactStatus"))}</th><th>${esc(t("stage"))}</th><th>${esc(t("lastActivity"))}</th>
+  </tr></thead><tbody>${rows.slice(0, S.limit).map((p) => `<tr class="click" data-act="prospect" data-id="${esc(p.id)}">
+    <td><b>${esc(p.company || "—")}</b><span class="sub">${esc(p.employees ? `${p.employees} ${S.lang === "ar" ? "موظف" : "staff"}` : "")}</span></td>
+    <td>${esc(p.contact)}<span class="sub">${esc(p.title || "")}</span></td>
+    <td class="nowrap">${scoreBar(p)}</td><td>${esc(L(p.sector))}</td><td class="nowrap">${esc(L(p.city))}</td>
+    <td>${esc(whyFit(p).slice(0, 2).join(SEP()))}</td><td>${esc(whyNow(p).join(SEP())) || '<span class="muted">—</span>'}</td>
+    <td>${rsChip(p.researchStatus)}</td><td>${csChip(p.contactStatus)}</td><td class="nowrap">${esc(stageLabel(p.stage))}</td><td class="nowrap muted">${esc(ago(p.lastActivity))}</td>
+  </tr>`).join("") || `<tr><td colspan="11"><div class="empty">${esc(t("noItems"))}</div></td></tr>`}</tbody></table></div>
+  ${rows.length > S.limit ? `<button class="btn" type="button" data-act="more">${esc(t("showMore"))} (${fmtNum(rows.length - S.limit)})</button>` : ""}`}`;
+}
+
+function pageScoring() {
+  const c = C(); const sc = c.config.scoring; const P = c.prospects.filter((p) => p.score != null);
+  const converted = new Set(c.outcomes.filter((o) => o.counted).map((o) => o.prospectId));
+  const contacted = P.filter((p) => p.milestones.contacted);
+  const rows = sc.signals.map((s) => {
+    const withS = contacted.filter((p) => p.breakdown.some((b) => b.key === s.key)); const without = contacted.filter((p) => !p.breakdown.some((b) => b.key === s.key));
+    const rate = (arr) => (arr.length ? arr.filter((p) => converted.has(p.id)).length / arr.length : null);
+    return { s, share: P.length ? P.filter((p) => p.breakdown.some((b) => b.key === s.key)).length / P.length : 0, rWith: rate(withS), rWithout: rate(without), nWith: withS.length };
+  });
+  const buckets = new Map(); const step = sc.max > 100 ? 20 : 10;
+  for (const p of P) { const b = Math.min(Math.floor(p.score / step) * step, Math.floor(sc.max / step) * step); buckets.set(b, (buckets.get(b) || 0) + 1); }
+  const hist = [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([b, v]) => ({ label: `${b}–${Math.min(sc.max, b + step - 1)}`, v }));
+  return `${pageHead(t("scoring"), S.lang === "ar" ? "نموذج التقييم خاص بهذه الحملة ومعرّف في إعداداتها — لا شيء منه مثبّت في المحرك." : "This campaign's own scoring model, defined in its configuration — nothing here is hard-coded in the engine.", `<a class="btn" href="#prospects">${esc(t("prospects"))}</a>`)}
+  ${tabs("prospects", [["", t("all")], ["high-fit", t("highFit")], ["needs-research", t("needsResearch")], ["needs-contact", t("needsContact")], ["scoring", t("scoring")]])}
+  <section class="grid g2">
+    <article class="panel"><div class="panel-head"><h2>${esc(S.lang === "ar" ? "المعايير والأوزان" : "Criteria & weights")}</h2><span class="chip accent num">${esc(S.lang === "ar" ? "المجموع" : "Total")} ${sc.max}</span></div>
+      <div class="table-wrap"><table><thead><tr><th>${esc(S.lang === "ar" ? "المعيار" : "Criterion")}</th><th>${esc(S.lang === "ar" ? "النقاط" : "Points")}</th><th>${esc(S.lang === "ar" ? "النوع" : "Kind")}</th><th>${esc(S.lang === "ar" ? "يقرأ من" : "Reads")}</th></tr></thead><tbody>
+      ${sc.signals.map((s) => `<tr><td>${esc(L(s.label))}</td><td class="num">${s.weight > 0 ? "+" : ""}${s.weight}</td><td>${esc(s.category === "timing" ? t("whyNow") : t("whyFit"))}</td><td class="tiny ltr muted">${esc((s.reads || []).join(", "))}</td></tr>`).join("")}
+      <tr><td><b>${esc(S.lang === "ar" ? "المجموع" : "Total")}</b></td><td class="num"><b>${sc.max}</b></td><td colspan="2"></td></tr></tbody></table></div>
+      <div class="meta">${sc.tiers.map((x) => `<span class="chip">${esc(L(x.label))} ≥ <span class="num">${x.min}</span></span>`).join("")}<span class="chip accent">${esc(S.lang === "ar" ? "حد التواصل" : "Outreach threshold")} ≥ <span class="num">${sc.minScore}</span></span></div>
+    </article>
+    <article class="panel"><h2>${esc(S.lang === "ar" ? "توزيع التقييمات" : "Score distribution")}</h2>${hbars(hist)}
+      <p class="small muted">${esc(S.lang === "ar" ? `${P.length} عميلاً محتملاً مُقيَّماً. التقييم يعتمد فقط على معلومات لها مصدر.` : `${P.length} scored prospects. Scores use sourced facts only.`)}</p></article>
+  </section>
+  <section class="panel"><h2>${esc(S.lang === "ar" ? `أي المعايير تتنبأ فعلاً بـ${outcomePlural()}؟` : `Which criteria actually predict ${outcomePlural()}?`)}</h2>
+    <div class="table-wrap"><table><thead><tr><th>${esc(S.lang === "ar" ? "المعيار" : "Criterion")}</th><th>${esc(S.lang === "ar" ? "نسبة من يملكه" : "Share of prospects")}</th><th>${esc(S.lang === "ar" ? "التحويل مع المعيار" : "Conversion with")}</th><th>${esc(S.lang === "ar" ? "التحويل بدونه" : "Conversion without")}</th></tr></thead><tbody>
+    ${rows.map((r) => `<tr><td>${esc(L(r.s.label))}</td><td class="num">${pct(r.share)}</td><td class="num">${pct(r.rWith)} <span class="muted tiny">(n=${r.nWith})</span></td><td class="num">${pct(r.rWithout)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small muted">${esc(S.lang === "ar" ? "التحويل = نسبة من تم التواصل معهم وحققوا النتيجة. يستخدمه المحرك لاقتراح تعديل الأوزان، والقرار لك." : "Conversion = share of contacted prospects that reached the outcome. The engine uses this to suggest weight changes; you decide.")}</p>
+  </section>`;
+}
+
+function pageResearch() {
+  const c = C(); const subs = ["needs_research", "researching", "complete", "needs_review"];
+  const sub = subs.includes(S.sub) ? S.sub : "needs_review";
+  const list = c.prospects.filter((p) => p.researchStatus === sub).sort((a, b) => b.lastActivity.localeCompare(a.lastActivity));
+  const readers = (key) => c.config.scoring.signals.filter((s) => (s.reads || []).includes(`research.${key}`));
+  const angle = (p) => { const nowS = whyNow(p); const fitS = whyFit(p); if (nowS.length) return (S.lang === "ar" ? "ابدأ بالتوقيت: " : "Lead with timing: ") + nowS[0]; if (fitS.length) return (S.lang === "ar" ? "ابدأ بـ: " : "Lead with: ") + fitS[0]; return "—"; };
+  const card = (p) => `<div class="item ${p.researchStatus === "needs_review" ? "s-medium" : p.researchStatus === "complete" ? "s-good" : ""}">
+    <div class="item-top"><b>${prospectLink(p.id, p.company || p.contact)}</b><span>${rsChip(p.researchStatus)} ${p.researchConfidence != null ? `<span class="tiny muted">${esc(t("confidence"))} ${confHtml(p.researchConfidence, c.config.researchMinConfidence)}</span>` : ""}</span></div>
+    <div class="meta"><span>${esc(p.contact)} · ${esc(p.title || "")}</span><span>${esc(L(p.city))}</span><span>${scoreBar(p)}</span></div>
+    ${p.signals.length ? `<div class="signals">${p.signals.map((s) => `<div class="signal"><span><b>${esc(keyLabel(s.key))}:</b> ${esc(fmtVal(s.value))}</span><span class="tiny muted">${readers(s.key).map((r) => `+${r.weight} ${L(r.label)}`).join(SEP()) || ""}</span><span class="src">${esc(t("source"))}: ${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.source)}</a>` : esc(s.source)} · ${Math.round(s.confidence * 100)}%</span></div>`).join("")}</div>` : ""}
+    ${p.rejected.length ? `<div class="small" style="color:var(--warn-ink)">▲ ${esc(t("noSource"))}: ${esc(p.rejected.map(keyLabel).join(SEP()))}</div>` : ""}
+    ${p.missing.length ? `<div class="small" style="color:var(--warn-ink)">▲ ${esc(t("missingReq"))}: ${esc(p.missing.map(keyLabel).join(SEP()))}</div>` : ""}
+    ${p.signals.length ? `<div class="small"><b>${esc(t("angle"))}:</b> ${esc(angle(p))}</div>` : ""}
+  </div>`;
+  return `${pageHead(t("research"), t("researchRule"))}
+  ${isDraft() ? draftNotice() : `
+  ${tabs("research", subs.map((s) => [s, t("rs_" + s), c.prospects.filter((p) => p.researchStatus === s).length]))}
+  <section class="grid g2">
+    <article class="panel"><h2>${esc(S.lang === "ar" ? "أسئلة البحث لهذه الحملة" : "Research questions for this campaign")}</h2>
+      <div class="list">${c.config.research.map((q) => `<div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-block:5px"><span>${esc(L(q.prompt))}</span>${q.required ? `<span class="chip accent">${esc(S.lang === "ar" ? "مطلوب" : "Required")}</span>` : `<span class="chip">${esc(S.lang === "ar" ? "اختياري" : "Optional")}</span>`}</div>`).join("")}</div></article>
+    <article class="panel"><h2>${esc(S.lang === "ar" ? "قاعدة عدم الاختلاق" : "No-fabrication rule")}</h2><p class="small">${esc(t("researchRule"))}</p>
+      <div class="kpis">${[["complete", "good"], ["needs_review", "warn"]].map(([s]) => `<div class="kpi"><b class="num">${c.prospects.filter((p) => p.researchStatus === s).length}</b><span>${esc(t("rs_" + s))}</span></div>`).join("")}<div class="kpi"><b class="num">${c.prospects.reduce((a, p) => a + p.rejected.length, 0)}</b><span>${esc(S.lang === "ar" ? "ادعاءات بلا مصدر تم تجاهلها" : "Unsourced claims discarded")}</span></div></div></article>
+  </section>
+  <section class="list">${list.slice(0, S.limit).map(card).join("") || `<div class="empty">${esc(t("noItems"))}</div>`}</section>
+  ${list.length > S.limit ? `<button class="btn" type="button" data-act="more">${esc(t("showMore"))} (${fmtNum(list.length - S.limit)})</button>` : ""}`}`;
+}
+
+function pageContacts() {
+  const c = C(); const subs = [["", t("all")], ["needs", t("needsContact")], ["not_found", t("cs_not_found")], ["opted_out", S.lang === "ar" ? "طلبوا الإيقاف" : "Opted out"]];
+  const optedOut = (p) => p.lastIntent === "unsubscribe";
+  const pred = { "": () => true, needs: (p) => ["needs_contact", "finding"].includes(p.contactStatus), not_found: (p) => p.contactStatus === "not_found", opted_out: optedOut }[S.sub] || (() => true);
+  const rows = c.prospects.filter(pred);
+  return `${pageHead(t("contacts"), S.lang === "ar" ? "من يمكن الوصول إليه وعبر أي قناة. أي جهة اتصال يجدها المحرك تُحفظ مع مصدرها، ومن يطلب الإيقاف لا يُتواصل معه مجدداً." : "Who can be reached and on which channel. Contacts the engine finds are stored with their source; anyone who opts out is never contacted again.")}
+  ${isDraft() ? draftNotice() : `${tabs("contacts", subs.map(([s, l]) => [s, l, c.prospects.filter({ "": () => true, needs: (p) => ["needs_contact", "finding"].includes(p.contactStatus), not_found: (p) => p.contactStatus === "not_found", opted_out: optedOut }[s]).length]))}
+  <div class="table-wrap"><table><thead><tr><th>${esc(t("contact"))}</th><th>${esc(t("role"))}</th><th>${esc(t("company"))}</th><th>${esc(t("channel"))}</th><th>${esc(t("source"))}</th><th>${esc(t("contactStatus"))}</th><th>${esc(t("stage"))}</th></tr></thead><tbody>
+  ${rows.slice(0, S.limit).map((p) => `<tr class="click" data-act="prospect" data-id="${esc(p.id)}"><td><b>${esc(p.contact)}</b></td><td>${esc(p.title || "—")}</td><td>${esc(p.company || "—")}</td><td>${p.channels.map((ch) => `<span class="chip outline">${esc(L(ch))}</span>`).join(" ") || '<span class="muted">—</span>'}</td><td class="small">${esc(p.handleSource || (S.lang === "ar" ? "مصدر الاكتشاف" : "Discovery source"))}</td><td>${optedOut(p) ? `<span class="chip crit">${esc(S.lang === "ar" ? "طلب الإيقاف" : "Opted out")}</span>` : csChip(p.contactStatus)}</td><td class="nowrap">${esc(stageLabel(p.stage))}</td></tr>`).join("") || `<tr><td colspan="7"><div class="empty">${esc(t("noItems"))}</div></td></tr>`}
+  </tbody></table></div>${rows.length > S.limit ? `<button class="btn" type="button" data-act="more">${esc(t("showMore"))}</button>` : ""}`}`;
+}
+
+function pageOutreach() {
+  const c = C(); const O = c.outreach;
+  const touch = (a) => ["send_message", "follow_up"].includes(a.type);
+  const completed = c.prospects.filter((p) => p.milestones.contacted && (p.status === "exhausted" || p.milestones.replied));
+  const views = {
+    drafts: c.drafts.map((d) => ({ ...d, id: "draft_" + d.prospectId, type: "follow_up", status: "draft", template: "follow_up", variant: d.variant })),
+    approval: O.filter((a) => a.status === "pending_approval"), approved: O.filter((a) => a.status === "approved"), scheduled: O.filter((a) => a.status === "scheduled"),
+    sent: O.filter((a) => a.status === "succeeded").sort((a, b) => (b.executedAt || "").localeCompare(a.executedAt || "")),
+    "follow-ups": O.filter((a) => a.type === "follow_up").sort((a, b) => (b.executedAt || b.createdAt).localeCompare(a.executedAt || a.createdAt)),
+  };
+  const sub = S.sub && (views[S.sub] || S.sub === "completed") ? S.sub : "approval";
+  const cfg = c.config;
+  const tabsList = [["drafts", t("drafts"), views.drafts.length], ["approval", t("needsApproval"), views.approval.length], ["approved", t("approved"), views.approved.length], ["scheduled", t("scheduled"), views.scheduled.length], ["sent", t("sent"), views.sent.length], ["follow-ups", t("followUps"), views["follow-ups"].length], ["completed", t("completed"), completed.length]];
+  S.sub = sub;
+  const body = sub === "completed"
+    ? `<div class="table-wrap"><table><thead><tr><th>${esc(t("company"))}</th><th>${esc(t("contact"))}</th><th>${esc(S.lang === "ar" ? "الرسائل" : "Touches")}</th><th>${esc(S.lang === "ar" ? "النتيجة" : "Result")}</th><th>${esc(t("stage"))}</th></tr></thead><tbody>${completed.slice(0, S.limit).map((p) => `<tr class="click" data-act="prospect" data-id="${esc(p.id)}"><td>${esc(p.company || "—")}</td><td>${esc(p.contact)}</td><td class="num">${p.touches}</td><td>${p.lastIntent ? intentChip(p.lastIntent) : `<span class="chip">${esc(S.lang === "ar" ? "لا رد — انتهى التسلسل" : "No reply — sequence finished")}</span>`}</td><td>${esc(stageLabel(p.stage))}</td></tr>`).join("")}</tbody></table></div>`
+    : `<div class="list">${views[sub].slice(0, S.limit).map((a) => messageCard(a, false)).join("") || `<div class="empty">${esc(t("noItems"))}</div>`}</div>${views[sub].length > S.limit ? `<button class="btn" type="button" data-act="more">${esc(t("showMore"))}</button>` : ""}`;
+  return `${pageHead(t("outreach"), S.lang === "ar" ? `البريد ولينكدإن، بحد أقصى ${cfg.constraints.maxTouches} رسائل لكل شخص. في هذه المرحلة يعتمد شخص كل رسالة قبل إرسالها.` : `Email and LinkedIn, at most ${cfg.constraints.maxTouches} touches per person. At this stage a person approves every message before it is sent.`)}
+  ${isDraft() ? draftNotice() : `${tabs("outreach", tabsList)}
+  <div class="note">${esc(S.lang === "ar" ? `التسلسل: ${cfg.sequence.map((s) => `${stepLabel(s.key)} (${s.channel === "auto" ? "أفضل قناة متاحة" : L(s.channel)}، اليوم ${s.dayOffset})`).join(" ← ")}. ساعات الهدوء ${cfg.constraints.quietHours ? `${cfg.constraints.quietHours.startHour}:00–${cfg.constraints.quietHours.endHour}:00` : "—"}.` : `Sequence: ${cfg.sequence.map((s) => `${stepLabel(s.key)} (${s.channel === "auto" ? "best available channel" : s.channel}, day ${s.dayOffset})`).join(" → ")}. Quiet hours ${cfg.constraints.quietHours ? `${cfg.constraints.quietHours.startHour}:00–${cfg.constraints.quietHours.endHour}:00` : "—"}.`)}</div>
+  ${body}`}`;
+}
+
+function replyCard(r) {
+  const c = C(); const x = X(); const p = x.P.get(r.prospectId); const i = x.intents.get(r.intent);
+  const na = r.nextAction; const sugg = na?.actionId ? x.outreachById.get(na.actionId) : null;
+  const naLabel = { respond: S.lang === "ar" ? "رد روتيني مقترح" : "Routine reply proposed", conversion_step: S.lang === "ar" ? "إرسال خطوة التحويل" : "Send the conversion step", escalate: t("escalated"), wait: S.lang === "ar" ? "إعادة التأهيل وانتظار الخطوة التالية" : "Re-qualify and wait", stop: S.lang === "ar" ? "إيقاف التواصل" : "Stop outreach" }[na?.kind] || "—";
+  const low = r.confidence != null && r.confidence < c.config.minClassificationConfidence;
+  return `<div class="item ${na?.kind === "escalate" ? "s-medium" : i?.sentiment === "positive" ? "s-good" : ""}">
+    <div class="item-top"><b>${p ? prospectLink(p.id, `${p.contact} · ${p.company || ""}`) : ""}</b><span class="tiny muted">${esc(fmtDT(r.at))} · ${esc(L(r.channel))}</span></div>
+    <div class="msg in ${/[؀-ۿ]/.test(r.body) ? "" : "ltr"}">${esc(r.body)}</div>
+    <div class="meta"><span>${esc(t("classification"))}: ${intentChip(r.intent)}</span><span>${esc(t("confidence"))} ${confHtml(r.confidence, c.config.minClassificationConfidence)}</span>${low ? `<span class="chip warn">▲ ${esc(S.lang === "ar" ? "ثقة منخفضة — أُحيل لشخص" : "Low confidence — escalated")}</span>` : ""}<span>${esc(t("nextAction"))}: <b>${esc(naLabel)}</b></span>${sugg ? `<span class="chip ${sugg.status === "succeeded" ? "good" : sugg.status === "pending_approval" ? "accent" : ""}">${esc(sugg.status === "succeeded" ? t("sent") : sugg.status === "pending_approval" ? t("needsApproval") : sugg.status)}</span>` : ""}</div>
+    ${(() => { const e = c.exceptions.find((x) => x.prospectId === r.prospectId && x.status === "open"); return na?.kind === "escalate" && e ? decideButtons(e.id, "exc") : ""; })()}
+    ${sugg ? `<div><div class="tiny muted" style="margin-bottom:4px">${esc(t("suggested"))}</div><div class="msg ltr">${esc(sugg.body)}</div>${sugg.status === "pending_approval" ? decideButtons(sugg.id, "msg") : ""}</div>` : na?.kind === "escalate" ? `<div class="small" style="color:var(--warn-ink)">${esc(L(na.summary.split("; ")[0]).startsWith("reply intent unclear") ? (S.lang === "ar" ? "لم يستطع المحرك تحديد نية الرد بثقة كافية." : "The engine couldn't determine the intent confidently.") : L(na.summary.split("; ")[0]))}</div>` : ""}
+  </div>`;
+}
+function pageReplies() {
+  const c = C(); const x = X();
+  const sent = (r) => x.intents.get(r.intent)?.sentiment;
+  const openP = new Set(c.exceptions.filter((e) => e.status === "open" && !S.decided[e.id]).map((e) => e.prospectId));
+  const pred = { "": () => true, positive: (r) => sent(r) === "positive", neutral: (r) => sent(r) === "neutral", negative: (r) => sent(r) === "negative", attention: (r) => r.nextAction?.kind === "escalate" && openP.has(r.prospectId) };
+  const sub = pred[S.sub] ? S.sub : "";
+  const list = c.replies.filter(pred[sub]).sort((a, b) => b.at.localeCompare(a.at));
+  const byIntent = c.config.intents.map((i) => ({ label: L(i.label), v: c.replies.filter((r) => r.intent === i.key).length }));
+  return `${pageHead(t("replies"), S.lang === "ar" ? "كل رد يُصنَّف تلقائياً مع درجة الثقة والإجراء التالي. الردود غير الواضحة تُحال إلى شخص." : "Every reply is classified with a confidence score and a next action. Unclear replies go to a person.")}
+  ${isDraft() ? draftNotice() : `${tabs("replies", [["", t("all")], ["positive", t("positive")], ["neutral", t("neutral")], ["negative", t("negative")], ["attention", t("needsAttention")]].map(([s, l]) => [s, l, c.replies.filter(pred[s]).length]))}
+  <section class="grid g-hero"><div class="list">${list.slice(0, S.limit).map(replyCard).join("") || `<div class="empty">${esc(t("noItems"))}</div>`}${list.length > S.limit ? `<button class="btn" type="button" data-act="more">${esc(t("showMore"))}</button>` : ""}</div>
+  <article class="panel"><h2>${esc(S.lang === "ar" ? "توزيع التصنيفات" : "Classification mix")}</h2>${hbars(byIntent)}<p class="small muted">${esc(S.lang === "ar" ? `أقل من ${Math.round(c.config.minClassificationConfidence * 100)}% ثقة ⇐ إحالة إلى شخص.` : `Below ${Math.round(c.config.minClassificationConfidence * 100)}% confidence ⇒ escalated to a person.`)}</p></article></section>`}`;
+}
+
+function pageAppointments() {
+  const c = C(); const ap = c.config.appointments;
+  if (!ap) return `${pageHead(t("outcomes"))}<div class="empty">—</div>`;
+  const now = DATA.generatedAt;
+  const pred = { upcoming: (a) => a.status === "scheduled" && (a.startsAt || "") >= now, qualified: (a) => a.qualifiedAtBooking, held: (a) => a.status === "held", cancelled: (a) => a.status === "cancelled", no_show: (a) => a.status === "no_show" };
+  const sub = pred[S.sub] ? S.sub : "upcoming"; S.sub = sub;
+  const list = c.appointments.filter(pred[sub]).sort((a, b) => (sub === "upcoming" ? 1 : -1) * (a.startsAt || "").localeCompare(b.startsAt || ""));
+  const x = X();
+  const statusChip = { scheduled: ["accent", t("scheduled")], held: ["good", t("held")], cancelled: ["crit", t("cancelled")], no_show: ["warn", t("noShow")] };
+  const card = (a) => { const p = x.P.get(a.prospectId); const b = a.brief; return `<div class="item ${a.status === "held" ? "s-good" : a.status === "scheduled" ? "s-approval" : "s-medium"}">
+    <div class="item-top"><b>${p ? prospectLink(p.id, p.company || p.contact) : ""}</b><span><span class="chip ${statusChip[a.status][0]}">${esc(statusChip[a.status][1])}</span> ${a.qualifiedAtBooking ? `<span class="chip good">✓ ${esc(t("qualified"))}</span>` : `<span class="chip warn">${esc(S.lang === "ar" ? "غير مؤهَّل عند الحجز" : "Not qualified at booking")}</span>`}</span></div>
+    <div class="meta"><span>${esc(p?.contact)} · ${esc(p?.title || "")}</span><span>${esc(t("date"))}: <b>${esc(fmtDT(a.startsAt))}</b></span><span>${scoreBar(p || {})}</span></div>
+    <details><summary class="small" style="cursor:pointer;color:var(--accent-ink)">${esc(t("meetingBrief"))}</summary><div class="grid g2" style="margin-top:10px;gap:12px">
+      <div><div class="tiny muted">${esc(t("whyFit"))}</div><div class="small">${esc(b.whyFit.map((w) => `${L(w.label)} (+${w.weight})`).join(SEP()) || "—")}</div>
+      <div class="tiny muted" style="margin-top:6px">${esc(t("whyNow"))}</div><div class="small">${esc(b.whyNow.map((w) => L(w.label)).join(SEP()) || "—")}</div>
+      <div class="tiny muted" style="margin-top:6px">${esc(t("qualReasons"))}</div><div class="small">✓ ${esc(b.qualification.met.map(L).join(SEP()) || "—")}${b.qualification.missing.length ? `<br><span class="muted">✕ ${esc(b.qualification.missing.map(L).join(SEP()))}</span>` : ""}</div></div>
+      <div><div class="tiny muted">${esc(t("signals"))} · ${esc(t("sourceLinks"))}</div><div class="signals">${b.signals.map((s) => `<div class="signal"><span>${esc(keyLabel(s.key))}: ${esc(fmtVal(s.value))}</span><span></span><span class="src">${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.source)}</a>` : esc(s.source)}</span></div>`).join("") || "—"}</div></div>
+    </div>${b.conversation.length ? `<div class="tiny muted" style="margin-top:10px">${esc(S.lang === "ar" ? "آخر المحادثة" : "Conversation so far")}</div>${b.conversation.map((m) => `<div class="msg ${m.direction === "inbound" ? "in" : ""} ${/[؀-ۿ]/.test(m.body) ? "" : "ltr"}" style="margin-top:6px">${esc(m.body)}</div>`).join("")}` : ""}</details>
+  </div>`; };
+  return `${pageHead(L(ap.label), S.lang === "ar" ? `كل ${L(ap.singular)} يأتي مع ملخص تحضير مبني فقط على معلومات لها مصدر.` : `Every ${ap.singular.toLowerCase()} comes with a brief built only from sourced facts.`)}
+  ${isDraft() ? draftNotice() : `${tabs("appointments", [["upcoming", t("upcoming")], ["qualified", t("qualified")], ["held", t("held")], ["cancelled", t("cancelled")], ["no_show", t("noShow")]].map(([s, l]) => [s, l, c.appointments.filter(pred[s]).length]))}
+  <section class="list">${list.map(card).join("") || `<div class="empty">${esc(t("noItems"))}</div>`}</section>`}`;
+}
+
+function pageOutcomes() {
+  const c = C(); const r = c.report; const cfg = c.config;
+  const days = c.daily.map((d) => d.day); let acc = 0; const cum = c.daily.map((d) => (acc += d.outcomes));
+  const x = X(); const counted = c.outcomes.filter((o) => o.counted).sort((a, b) => b.at.localeCompare(a.at));
+  const contacted = c.prospects.filter((p) => p.milestones.contacted).length;
+  const byChannel = {}, byStep = {}, byAngle = {}, byPersona = {};
+  for (const o of counted) { const s = o.source || {}; byChannel[s.channel] = (byChannel[s.channel] || 0) + 1; if (s.stepKey) byStep[s.stepKey] = (byStep[s.stepKey] || 0) + 1; if (s.templateKey) byAngle[`${s.templateKey}:${s.variantKey}`] = (byAngle[`${s.templateKey}:${s.variantKey}`] || 0) + 1; if (o.persona) byPersona[o.persona] = (byPersona[o.persona] || 0) + 1; }
+  const toRows = (obj, lab) => Object.entries(obj).filter(([k]) => k !== "undefined").sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ label: lab(k), v }));
+  const cost = cfg.budget && counted.length ? money(Math.round(cfg.budget.amount / counted.length), cfg.budget.currency) : null;
+  return `${pageHead(outcomePlural(), S.lang === "ar" ? `تعريف النتيجة لهذه الحملة: ${outcomeLabel()}. التعريف جزء من إعدادات الحملة، ويمكن لأي حملة أن تعرّف نتيجتها الخاصة.` : `This campaign's outcome: ${cfg.outcome.label}. It is defined in the campaign configuration; any campaign can define its own outcome.`)}
+  ${isDraft() ? draftNotice() : `
+  <section class="kpis">
+    <div class="kpi"><b class="num">${cfg.outcome.target ?? "—"}</b><span>${esc(t("target"))}</span></div>
+    <div class="kpi hl"><b class="num">${counted.length}</b><span>${esc(S.lang === "ar" ? "المحقق" : "Current")}</span></div>
+    <div class="kpi"><b class="num">${r.outcome.progressPct ?? 0}%</b><span>${esc(t("progress"))}</span></div>
+    <div class="kpi"><b class="num">${pct(contacted ? counted.length / contacted : null)}</b><span>${esc(t("conversionRate"))} <span class="tiny">(${esc(S.lang === "ar" ? "من تم التواصل معهم" : "of contacted")})</span></span></div>
+    ${r.outcome.value ? `<div class="kpi"><b class="num">${money(r.outcome.value.amount, r.outcome.value.currency)}</b><span>${esc(t("value"))}</span></div>` : ""}
+    <div class="kpi"><b class="num">${cost ? esc(cost) : esc(t("notConfigured"))}</b><span>${esc(t("costPer"))}${cfg.budget ? ` <span class="tiny">(${esc(S.lang === "ar" ? "ميزانية تجريبية" : "demo budget")})</span>` : ""}</span></div>
+  </section>
+  <section class="grid g-hero">
+    <article class="panel"><div class="panel-head"><h2>${esc(t("trend"))}</h2><div class="legend"><span><i></i>${esc(t("cumulative"))}</span>${cfg.outcome.target ? `<span><i class="pace"></i>${esc(t("paceLine"))}</span>` : ""}</div></div><div class="chart" data-chart="trend"></div>
+      <details><summary class="small" style="cursor:pointer;color:var(--accent-ink)">${esc(t("tableView"))}</summary><div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>${esc(t("date"))}</th><th>${esc(outcomePlural())}</th><th>${esc(t("cumulative"))}</th></tr></thead><tbody>${c.daily.map((d, i) => `<tr><td>${esc(fmtDate(d.day + "T12:00:00Z"))}</td><td class="num">${d.outcomes}</td><td class="num">${cum[i]}</td></tr>`).join("")}</tbody></table></div></details></article>
+    <article class="panel"><h2>${esc(t("bySource"))}</h2>${hbars(toRows(byStep, stepLabel))}<h3 style="margin-top:6px">${esc(t("channel"))}</h3>${hbars(toRows(byChannel, L))}<h3 style="margin-top:6px">${esc(S.lang === "ar" ? "نوع الشخص" : "Persona")}</h3>${hbars(toRows(byPersona, L))}</article>
+  </section>
+  <section class="grid g2">
+    <article class="panel"><h2>${esc(t("pipeline"))}</h2>${funnelHtml()}</article>
+    <article class="panel"><h2>${esc(t("recent"))}</h2><div class="table-wrap"><table><thead><tr><th>${esc(t("date"))}</th><th>${esc(t("company"))}</th><th>${esc(t("contact"))}</th>${r.outcome.value ? `<th>${esc(t("value"))}</th>` : ""}<th>${esc(t("bySource"))}</th></tr></thead><tbody>
+    ${counted.slice(0, 10).map((o) => { const p = x.P.get(o.prospectId); return `<tr class="click" data-act="prospect" data-id="${esc(o.prospectId)}"><td class="nowrap">${esc(fmtDate(o.at))}</td><td>${esc(p?.company || "—")}</td><td>${esc(p?.contact)}<span class="sub">${esc(p?.title || "")}</span></td>${r.outcome.value ? `<td class="num">${money(o.value, r.outcome.value.currency)}</td>` : ""}<td class="small">${esc(stepLabel(o.source?.stepKey))} · ${esc(L(o.source?.channel))}</td></tr>`; }).join("") || `<tr><td colspan="5"><div class="empty">${esc(t("noItems"))}</div></td></tr>`}</tbody></table></div></article>
+  </section>`}`;
+}
+
+function pageAnalytics() {
+  const c = C(); const dims = c.analytics;
+  if (isDraft()) return `${pageHead(t("analytics"))}${draftNotice()}`;
+  const nameOf = (b) => ({ channel: t("channel"), step: S.lang === "ar" ? "خطوة التواصل" : "Sequence step", angle: S.lang === "ar" ? "زاوية الرسالة" : "Message angle" })[b.key] ?? L(b.label);
+  const valOf = (b, v) => b.key === "step" ? stepLabel(v) : b.key === "angle" ? variantLabel(v) : b.key === "tier" ? L(c.config.scoring.tiers.find((x) => x.key === v)?.label ?? v) : L(v);
+  const q = (b) => S.lang === "ar" ? `أي ${nameOf(b)} يُنتج أكثر ${outcomePlural()} لكل تواصل؟` : `Which ${nameOf(b).toLowerCase()} produces the most ${outcomePlural().toLowerCase()} per contact?`;
+  const card = (b) => {
+    const rows = b.rows.filter((r) => r.contacted > 0).slice(0, 8);
+    const best = [...rows].sort((a, z) => z.outcomeRate - a.outcomeRate)[0];
+    return `<article class="panel"><h3>${esc(q(b))}</h3>
+    ${rows.length ? `<div class="hbars">${rows.map((r) => `<div class="hbar"><span>${esc(valOf(b, r.value))}</span><div class="track" title="${esc(`${r.outcomes}/${r.contacted}`)}"><i style="width:${(r.outcomeRate / Math.max(...rows.map((x) => x.outcomeRate), 0.0001)) * 100}%"></i></div><span class="num tiny">${pct(r.outcomeRate)} <span class="muted">${r.outcomes}/${r.contacted}</span></span></div>`).join("")}</div>
+    ${best && best.outcomes ? `<p class="small"><b>${esc(S.lang === "ar" ? "الخلاصة:" : "Answer:")}</b> ${esc(valOf(b, best.value))} — ${pct(best.outcomeRate)} ${esc(S.lang === "ar" ? `(${best.outcomes} من ${best.contacted})` : `(${best.outcomes} of ${best.contacted})`)}${best.contacted < 15 ? ` <span class="muted">${esc(S.lang === "ar" ? "· عينة صغيرة" : "· small sample")}</span>` : ""}</p>` : ""}` : `<div class="empty">${esc(t("noItems"))}</div>`}</article>`;
+  };
+  const camps = DATA.campaigns.filter((x) => x.prospects.length);
+  return `${pageHead(t("analytics"), S.lang === "ar" ? "كل رسم يجيب عن سؤال عمل واحد. المقياس: نسبة من تم التواصل معهم وحققوا النتيجة." : "Every chart answers one business question. Metric: share of contacted prospects that reached the outcome.")}
+  <section class="grid g2">${dims.map(card).join("")}</section>
+  <section class="panel"><h2>${esc(S.lang === "ar" ? "مقارنة الحملات" : "Campaign comparison")}</h2><div class="table-wrap"><table><thead><tr><th>${esc(t("client"))}</th><th>${esc(t("campaign"))}</th><th>${esc(t("outcome"))}</th><th>${esc(t("contacted"))}</th><th>${esc(t("positiveN"))}</th><th>${esc(S.lang === "ar" ? "النتائج" : "Outcomes")}</th><th>${esc(t("conversionRate"))}</th></tr></thead><tbody>
+  ${camps.map((x) => { const ct = x.prospects.filter((p) => p.milestones.contacted).length; const o = x.outcomes.filter((y) => y.counted).length; return `<tr><td>${esc(clientName(x.clientId))}</td><td>${esc(L(x.config.name))}</td><td>${esc(PLURAL[S.lang][x.config.outcome.label] ?? x.config.outcome.label)}</td><td class="num">${ct}</td><td class="num">${x.report.activity.positiveReplies}</td><td class="num">${o}</td><td class="num">${pct(ct ? o / ct : null)}</td></tr>`; }).join("")}</tbody></table></div>
+  <p class="small muted">${esc(S.lang === "ar" ? "النتائج تختلف في تعريفها بين الحملات (مشترك، اجتماع، عميل محتمل)، لذا تُقارن نسب التحويل لا الأعداد." : "Outcomes differ by campaign (subscriber, meeting, lead), so compare conversion rates, not counts.")}</p></section>`;
+}
+
+function pageReports() {
+  const c = C(); const r = c.report; const cfg = c.config;
+  if (isDraft()) return `${pageHead(t("reports"))}${draftNotice()}`;
+  const counted = c.outcomes.filter((o) => o.counted).length; const contacted = c.prospects.filter((p) => p.milestones.contacted).length;
+  const topStep = Object.entries(r.attribution.byStep).sort((a, b) => b[1] - a[1])[0];
+  const topChannel = Object.entries(r.attribution.byChannel).sort((a, b) => b[1] - a[1])[0];
+  const openRecs = c.recommendations.filter((x) => x.status === "open");
+  const ar = S.lang === "ar";
+  const summary = ar
+    ? `خلال سبتمبر اكتشف المحرك ${r.activity.prospects} عميلاً محتملاً لحملة «${L(cfg.name)}»، ودرسهم بمصادر موثقة، وتواصل مع ${contacted} منهم. النتيجة: ${counted} ${outcomePlural()} من هدف ${cfg.outcome.target} (${r.outcome.progressPct}%).${topStep ? ` أكثر خطوة جلبت نتائج: ${stepLabel(topStep[0])} (${topStep[1]}).` : ""}${topChannel ? ` القناة الأقوى: ${L(topChannel[0])}.` : ""}`
+    : `In September the engine discovered ${r.activity.prospects} prospects for "${cfg.name}", researched them with cited sources and contacted ${contacted}. Result: ${counted} ${outcomePlural()} of a ${cfg.outcome.target} goal (${r.outcome.progressPct}%).${topStep ? ` The step that produced the most results: ${stepLabel(topStep[0])} (${topStep[1]}).` : ""}${topChannel ? ` Strongest channel: ${topChannel[0]}.` : ""}`;
+  return `${pageHead(t("reports"), ar ? "التقرير الذي يراه العميل: النتيجة، التقدم، النتائج، مصدرها، والتوصيات." : "The report the client sees: outcome, progress, results, attribution and recommendations.", `<button class="btn primary" type="button" data-act="toast" data-msg="${esc(t("preview"))}">${esc(t("share"))}</button>`)}
+  <article class="panel" style="max-width:860px">
+    <div class="panel-head"><h2>${esc(t("reportTitle"))} · ${esc(fmtDate(DATA.asOf + "T12:00:00Z", { month: "long", year: "numeric" }))}</h2><span class="chip warn">${esc(t("demo"))}</span></div>
+    <div class="ctx-card"><div><span>${esc(t("client"))}</span><b>${esc(clientName(S.clientId))}</b></div><div><span>${esc(t("campaign"))}</span><b>${esc(L(cfg.name))}</b></div><div><span>${esc(t("outcome"))}</span><b>${esc(outcomePlural())}</b></div></div>
+    <p style="max-width:68ch">${esc(summary)}</p>
+    <div class="kpis"><div class="kpi hl"><b class="num">${counted} / ${cfg.outcome.target}</b><span>${esc(outcomePlural())}</span></div>${r.outcome.value ? `<div class="kpi"><b class="num">${money(r.outcome.value.amount, r.outcome.value.currency)}</b><span>${esc(t("value"))}</span></div>` : ""}<div class="kpi"><b class="num">${contacted}</b><span>${esc(t("contacted"))}</span></div><div class="kpi"><b class="num">${r.activity.positiveReplies}</b><span>${esc(t("positiveN"))}</span></div></div>
+    <h3>${esc(t("pipeline"))}</h3>${funnelHtml()}
+    <h3>${esc(t("recommendations"))}</h3>${openRecs.length ? `<ul class="small">${openRecs.map((x) => `<li>${esc(recSummary(x))}</li>`).join("")}</ul>` : `<p class="small muted">—</p>`}
+    <h3>${esc(ar ? "الشهر القادم" : "Next month")}</h3><p class="small">${esc(ar ? `الاستمرار حتى الوصول إلى ${cfg.outcome.target} ${outcomePlural()}، مع التركيز على ما أثبت فعاليته أعلاه. أي تغيير في مستوى الأتمتة يتم بموافقتك.` : `Continue toward ${cfg.outcome.target} ${outcomePlural()}, focusing on what worked above. Any change to the automation level happens with your approval.`)}</p>
+  </article>`;
+}
+
+function pageIntegrations() {
+  const c = C(); const ig = c.config.integrations; const ar = S.lang === "ar";
+  const rows = [
+    [ar ? "اكتشاف العملاء المحتملين" : "Prospect discovery", ig.discovery, "ProspectSource", ar ? "مثل Apollo أو Clay أو استيراد من CRM" : "e.g. Apollo, Clay or a CRM import"],
+    [ar ? "البحث" : "Research", ig.research, "ResearchProvider", ar ? "يجب أن يعيد مصدراً لكل معلومة" : "Must return a source for every fact"],
+    [ar ? "إيجاد جهة الاتصال" : "Contact finding", ig.contactFinder || "—", "ContactFinder", ar ? "كل جهة اتصال مع مصدرها" : "Every handle with its source"],
+    ...ig.channels.map((ch) => [ar ? `قناة: ${L(ch)}` : `Channel: ${ch}`, ch, "ChannelSender", ar ? "إرسال واستقبال الرسائل" : "Send and receive messages"]),
+    [ar ? "تصنيف الردود" : "Reply classification", "keyword", "ReplyClassifier", ar ? "يمكن استبداله بنموذج لغوي يعيد ثقة معايرة" : "Swappable for an LLM returning calibrated confidence"],
+    [ar ? "أحداث النتيجة" : "Outcome events", "webhooks", "recordEvent()", ar ? "دفع، حجز موعد، تأكيد عميل محتمل…" : "Payment, booking, lead verification…"],
+  ];
+  return `${pageHead(t("integrations"), ar ? "المحرك لا يعرف أي مزود بعينه؛ كل تكامل منفذ (adapter) يُسجَّل حسب الحملة. في هذا العرض كل التكاملات تجريبية وغير متصلة." : "The engine knows no specific vendor; every integration is an adapter registered per campaign. In this demo all integrations are simulated and not connected.")}
+  <div class="table-wrap"><table><thead><tr><th>${esc(ar ? "الوظيفة" : "Function")}</th><th>${esc(ar ? "المنفذ المضبوط" : "Configured adapter")}</th><th>${esc(ar ? "الواجهة" : "Port")}</th><th>${esc(ar ? "ملاحظة" : "Note")}</th><th>${esc(ar ? "الحالة" : "Status")}</th></tr></thead><tbody>
+  ${rows.map(([f, a, port, note]) => `<tr><td>${esc(f)}</td><td class="ltr">${esc(a)}</td><td class="ltr tiny">${esc(port)}</td><td class="small">${esc(note)}</td><td><span class="chip warn">${esc(ar ? "تجريبي — غير متصل" : "Demo — not connected")}</span></td></tr>`).join("")}</tbody></table></div>`;
+}
+
+function pageAutomation() {
+  const c = C(); const cfg = c.config; const modes = cfg.autonomy.modes; const ar = S.lang === "ar"; const k = cfg.constraints;
+  const guard = [
+    [ar ? "الصلاحيات" : "Permissions", ar ? "المحرك ينفّذ فقط الإجراءات المسموحة للحملة؛ الاعتماد لأصحاب دور «معتمِد» من نفس العميل؛ تغيير الأتمتة للمدير فقط." : "The engine may only take actions allowed for the campaign; approvals need an approver of the same client; automation changes need an admin."],
+    [ar ? "السياسات" : "Policies", ar ? "قوائم الإيقاف، الموافقة على القناة، احترام طلبات الإيقاف، الحملة يجب أن تكون نشطة." : "Suppression lists, channel consent, opt-outs honoured, campaign must be active."],
+    [ar ? "قيود الحملة" : "Campaign constraints", ar ? `حد ${k.maxTouches} رسائل لكل شخص، ${k.minHoursBetweenTouches} ساعة بين الرسائل، ساعات هدوء ${k.quietHours ? `${k.quietHours.startHour}:00–${k.quietHours.endHour}:00` : "—"}.` : `Max ${k.maxTouches} touches per person, ${k.minHoursBetweenTouches}h between touches, quiet hours ${k.quietHours ? `${k.quietHours.startHour}:00–${k.quietHours.endHour}:00` : "—"}.`],
+    [ar ? "حدود المعدل" : "Rate limits", (k.rateLimits || []).map((r) => `${r.action.map((a) => WORKFLOWS.find(([w]) => w === a)?.[1][S.lang].split(" (")[0] ?? a).join(" + ")}${r.channel ? ` · ${L(r.channel)}` : ""}: ${r.perHour ? `${r.perHour}${ar ? "/ساعة" : "/h"} ` : ""}${r.perDay ? `${r.perDay}${ar ? "/يوم" : "/day"}` : ""}`).join(" · ") || "—"],
+    [ar ? "حدود الثقة" : "Confidence thresholds", ar ? "تحت الحد يذهب الإجراء للموافقة البشرية حتى في الوضع التلقائي." : "Below the threshold an action goes to human approval, even in autonomous mode."],
+    [ar ? "إعادة المحاولة" : "Retries", ar ? `${k.retry?.maxAttempts ?? 3} محاولات مع مهلة متزايدة للأخطاء المؤقتة.` : `${k.retry?.maxAttempts ?? 3} attempts with growing backoff for transient errors.`],
+    [ar ? "الفشل" : "Failures", ar ? "الفشل النهائي يوقف العميل المحتمل ويرفع استثناءً لشخص." : "A final failure pauses the prospect and raises an exception for a person."],
+    [ar ? "الإحالة" : "Escalation", cfg.escalation.map((e) => L(e.reason)).join(" · ") || "—"],
+    [ar ? "سجل التدقيق" : "Audit log", ar ? "كل اقتراح وقرار وتنفيذ وإعادة محاولة وفشل مسجّل." : "Every proposal, decision, execution, retry and failure is recorded."],
+  ];
+  return `${pageHead(t("automation"), ar ? "الانتقال من الموافقة البشرية إلى الأتمتة المساعَدة ثم التشغيل المستقل هو تغيير في الإعدادات، لا إعادة بناء. في مرحلة التجربة تبقى الموافقة البشرية مفعّلة." : "Moving from human approval to assisted to autonomous is a configuration change, not a rewrite. During the MVP, human approval stays on.")}
+  <section class="panel"><div class="levels">${["human_approval", "assisted", "autonomous"].map((l, i) => `${i ? `<span class="muted">${ar ? "←" : "→"}</span>` : ""}<span class="lvl ${cfg.autonomy.level === l ? "on" : ""}">${esc(t("level_" + l))}</span>`).join("")}</div>
+    <p class="small muted">${esc(ar ? "الإجراءات الداخلية (بحث، تقييم، تأهيل) تلقائية دائماً. ما يراه الشخص الآخر (رسائل، ردود، حجز) يحتاج موافقة في هذه المرحلة." : "Internal actions (research, scoring, qualification) always run on their own. Anything another person sees (messages, replies, booking) needs approval at this stage.")}</p></section>
+  <section class="panel"><h2>${esc(t("workflow"))}</h2><div class="table-wrap"><table><thead><tr><th>${esc(t("workflow"))}</th><th>${esc(t("risk"))}</th><th>${esc(t("mode"))}</th><th>${esc(t("threshold"))}</th><th></th></tr></thead><tbody>
+  ${WORKFLOWS.map(([key, lab]) => { const m = modes[key]; if (!m) return ""; return `<tr><td>${esc(lab[S.lang])}</td><td><span class="chip">${esc(t("risk_" + m.risk))}</span></td><td><span class="chip ${m.mode === "autonomous" ? "good" : m.mode === "approval" ? "accent" : "crit"}">${esc(t("mode_" + m.mode))}</span></td><td class="num">${m.mode === "autonomous" && m.minConfidence > 0 ? Math.round(m.minConfidence * 100) + "%" : "—"}</td><td><button class="btn" type="button" data-act="toast" data-msg="${esc(ar ? "تغيير الأتمتة للمدير فقط ويُسجَّل في التدقيق (معاينة)" : "Automation changes are admin-only and audited (preview)")}" ${m.risk === "internal" ? "disabled" : ""}>${esc(ar ? "تغيير" : "Change")}</button></td></tr>`; }).join("")}
+  <tr><td>${esc(ar ? "تتبع النتائج" : "Outcome tracking")}</td><td><span class="chip">${esc(ar ? "نظام" : "System")}</span></td><td><span class="chip good">${esc(t("mode_autonomous"))}</span></td><td>—</td><td></td></tr></tbody></table></div></section>
+  <section class="panel"><h2>${esc(t("guardrails"))}</h2><div class="grid g3" style="gap:12px">${guard.map(([h, d]) => `<div class="item"><b>${esc(h)}</b><p class="small" style="color:var(--ink-2)">${esc(d)}</p></div>`).join("")}</div></section>`;
+}
+
+const auditText = (e) => {
+  const ar = S.lang === "ar"; const d = e.detail || {}; const p = X().P.get(e.prospectId); const pn = p ? who(p) : "";
+  const T = {
+    "research.completed": ar ? `بحث ${pn}: ${d.signals} إشارة بمصادر${d.rejectedUnsourced?.length ? `، ${d.rejectedUnsourced.length} بلا مصدر تم تجاهلها` : ""}` : `Researched ${pn}: ${d.signals} sourced signals${d.rejectedUnsourced?.length ? `, ${d.rejectedUnsourced.length} unsourced discarded` : ""}`,
+    "score.changed": ar ? `تقييم ${pn}: ${d.from ?? "—"} ← ${d.to}/${d.max}` : `Scored ${pn}: ${d.from ?? "—"} → ${d.to}/${d.max}`,
+    "contact.lookup": ar ? `البحث عن جهة اتصال لـ${pn}: ${t("cs_" + d.status)}` : `Contact lookup for ${pn}: ${t("cs_" + d.status)}`,
+    "action.proposed": ar ? `اقتراح إجراء (${d.type}) لـ${pn || "الحملة"}` : `Proposed ${d.type} for ${pn || "the campaign"}`,
+    "action.pending_approval": ar ? `بانتظار الموافقة: ${pn}` : `Waiting for approval: ${pn}`,
+    "action.approved": ar ? `اعتمده شخص: ${pn}` : `Approved by a person: ${pn}`, "action.auto_approved": ar ? `نُفّذ تلقائياً: ${pn || "الحملة"}` : `Auto-approved: ${pn || "campaign"}`,
+    "action.rejected": ar ? `رفضه شخص: ${pn} — ${d.reason}` : `Rejected: ${pn} — ${d.reason}`, "action.succeeded": ar ? `تم التنفيذ: ${pn || "الحملة"}` : `Executed: ${pn || "campaign"}`,
+    "action.deferred": ar ? `تأجيل: ${d.reason}` : `Deferred: ${d.reason}`, "action.blocked": ar ? `أوقفته السياسات: ${d.reason}` : `Blocked: ${d.reason}`,
+    "reply.classified": ar ? `تصنيف رد ${pn}: ${L(X().intents.get(d.intent)?.label)} (${Math.round(d.confidence * 100)}%)` : `Classified reply from ${pn}: ${X().intents.get(d.intent)?.label} (${Math.round(d.confidence * 100)}%)`,
+    "qualification.changed": ar ? `تأهيل ${pn}: ${d.qualified ? "مؤهَّل" : "غير مؤهَّل"}` : `Qualification of ${pn}: ${d.qualified ? "qualified" : "not qualified"}`,
+    "outcome.achieved": ar ? `نتيجة محققة: ${pn}` : `Outcome achieved: ${pn}`, "event.recorded": ar ? `حدث: ${d.type} · ${pn}` : `Event: ${d.type} · ${pn}`,
+    "stage.changed": ar ? `${pn}: ${stageLabel(d.from)} ← ${stageLabel(d.to)}` : `${pn}: ${stageLabel(d.from)} → ${stageLabel(d.to)}`,
+    "exception.raised": ar ? `استثناء: ${L(d.reason)}` : `Exception: ${d.reason}`, "exception.resolved": ar ? `عولج استثناء` : `Exception resolved`,
+    "sequence.step_skipped": ar ? `تخطي خطوة ${stepLabel(d.step)} لـ${pn} (قناة غير متاحة)` : `Skipped ${stepLabel(d.step)} for ${pn} (${d.reason})`,
+  };
+  if (e.event.startsWith("appointment.")) return (ar ? `${L(C().config.appointments?.singular || "")}: ${t({ scheduled: "scheduled", held: "held", cancelled: "cancelled", no_show: "noShow" }[e.event.split(".")[1]])} · ${pn}` : `${C().config.appointments?.singular}: ${e.event.split(".")[1]} · ${pn}`);
+  return T[e.event] ?? e.event;
+};
+function pageAudit() {
+  const c = C(); const ar = S.lang === "ar"; const cat = S.auditCat;
+  const catOf = (ev) => Object.entries(AUDIT_CAT).find(([, evs]) => evs.includes(ev) || evs.some((x) => ev.startsWith(x.split(".")[0] + ".") && x.endsWith(".*")))?.[0] ?? (ev.startsWith("appointment.") ? "meetings" : "sending");
+  const totals = {}; for (const [ev, n] of Object.entries(c.auditCounts)) { const k = catOf(ev); totals[k] = (totals[k] || 0) + n; }
+  const list = c.audit.filter((e) => !cat || catOf(e.event) === cat);
+  return `${pageHead(t("audit"), ar ? "كل ما يفعله المحرك أو الأشخاص مسجّل. هذا السجل هو أساس الثقة عندما يعمل المحرك باستقلالية." : "Everything the engine or a person does is recorded. This log is what makes autonomous operation trustworthy.")}
+  ${isDraft() ? draftNotice() : `<section class="kpis">${Object.keys(AUDIT_CAT).map((k) => `<a href="#" data-act="auditcat" data-cat="${k}" class="kpi ${cat === k ? "hl" : ""}" style="text-decoration:none;color:inherit"><b class="num">${fmtNum(totals[k] || 0)}</b><span>${esc(AUDIT_CAT_LABEL[S.lang][k])}</span></a>`).join("")}</section>
+  <section class="panel"><div class="panel-head"><h2>${esc(ar ? "أحدث الأحداث" : "Latest events")}${cat ? ` · ${esc(AUDIT_CAT_LABEL[S.lang][cat])}` : ""}</h2>${cat ? `<a href="#" data-act="auditcat" data-cat="">${esc(t("all"))}</a>` : ""}</div>
+  <div class="timeline">${list.slice(0, 120).map((e) => `<div class="tl"><span class="when num">${esc(fmtDT(e.at))}</span><span class="dot ${e.actor === "user" ? "h" : e.actor === "system" ? "s" : ""}"></span><div class="what"><span class="chip outline tiny">${esc(t("actor_" + e.actor))}</span> ${e.prospectId ? `<a href="#" data-act="prospect" data-id="${esc(e.prospectId)}">${esc(auditText(e))}</a>` : esc(auditText(e))}</div></div>`).join("") || `<div class="empty">${esc(t("noItems"))}</div>`}</div>
+  <p class="small muted">${esc(ar ? `يعرض آخر ${Math.min(120, list.length)} حدثاً من ${fmtNum(Object.values(c.auditCounts).reduce((a, b) => a + b, 0))} في سجل هذه الحملة.` : `Showing the latest ${Math.min(120, list.length)} of ${fmtNum(Object.values(c.auditCounts).reduce((a, b) => a + b, 0))} events in this campaign's log.`)}</p></section>`}`;
+}
+
+function pageSettings() {
+  const cfg = C().config; const ar = S.lang === "ar";
+  const row = (k, v) => `<div style="display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:10px;border-bottom:1px dashed var(--line);padding-block:7px"><span class="muted small">${esc(k)}</span><span>${v}</span></div>`;
+  return `${pageHead(t("settings"), ar ? "إعدادات الحملة كما هي معرّفة في ملفها. أي تغيير يمر بمراجعة الإعدادات ثم يُطبَّق دون تعديل المحرك." : "The campaign's configuration as defined in its file. Changes go through config review and apply without engine changes.")}
+  <section class="grid g2">
+    <article class="panel"><h2>${esc(ar ? "الحملة والنتيجة" : "Campaign & outcome")}</h2>
+      ${row(t("campaign"), esc(L(cfg.name)))}${row(ar ? "الحالة" : "Status", esc(t("status_" + cfg.status)))}${row(t("outcome"), esc(outcomePlural()))}${row(t("target"), `<span class="num">${cfg.outcome.target ?? "—"}</span>`)}
+      ${row(ar ? "يشترط التأهيل" : "Requires qualification", esc(cfg.outcome.requiresQualification ? (ar ? "نعم" : "Yes") : (ar ? "لا" : "No")))}${row(ar ? "المنطقة الزمنية" : "Timezone", `<span class="ltr">${esc(cfg.timezone)}</span>`)}
+      ${row(ar ? "الميزانية" : "Budget", cfg.budget ? `<span class="num">${money(cfg.budget.amount, cfg.budget.currency)}</span> / ${esc(cfg.budget.period)} <span class="chip warn">${esc(t("demo"))}</span>` : esc(t("notConfigured")))}</article>
+    <article class="panel"><h2>${esc(ar ? "الشريحة المستهدفة والعرض" : "ICP & offer")}</h2>
+      ${row(ar ? "الشريحة" : "ICP", `<span class="ltr small">${esc(cfg.icp || "—")}</span>`)}${row(ar ? "الشخصيات" : "Personas", esc(cfg.personas.map((p) => L(p.label)).join(SEP())))}
+      ${row(ar ? "السوق" : "Market", `<span class="ltr small">${esc([...(cfg.market.geographies || []), ...(cfg.market.segments || [])].join(", "))}</span>`)}${row(ar ? "العرض" : "Offer", `<span class="ltr small">${esc(cfg.offer.valueProposition)}</span>`)}${row(ar ? "الدعوة" : "Call to action", `<span class="ltr small">${esc(cfg.offer.callToAction)}</span>`)}</article>
+    <article class="panel"><h2>${esc(ar ? "التأهيل" : "Qualification")}</h2>${cfg.qualification.map((q) => row(L(q.label), q.required ? `<span class="chip accent">${esc(ar ? "مطلوب" : "Required")}</span>` : `<span class="chip">${esc(ar ? "اختياري" : "Optional")}</span>`)).join("")}</article>
+    <article class="panel"><h2>${esc(t("funnel"))}</h2>${cfg.funnel.map((s) => row(L(s.label), `<span class="small muted ltr">${esc(s.milestone ? `milestone: ${s.milestone}` : "on business event")}</span>`)).join("")}</article>
+  </section>`;
+}
+
+/* prospect drawer */
+function drawer(id) {
+  const c = C(); const x = X(); const p = x.P.get(id); if (!p) return "";
+  const ar = S.lang === "ar";
+  const thread = [...(x.sentBy.get(id) || []).map((a) => ({ at: a.executedAt, dir: "out", body: a.body, subject: a.subject, channel: a.channel, step: a.step })), ...(x.repliesBy.get(id) || []).map((r) => ({ at: r.at, dir: "in", body: r.body, intent: r.intent, channel: r.channel }))].sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+  const appt = c.appointments.filter((a) => a.prospectId === id);
+  const out = c.outcomes.find((o) => o.prospectId === id && o.counted);
+  return `<div class="scrim" data-act="close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(p.company || p.contact)}">
+    <div class="drawer-head"><div><div class="crumbs">${esc(t("prospects"))}</div><h2>${esc(p.company || p.contact)}</h2><div class="meta"><span>${esc(p.contact)} · ${esc(p.title || "")}</span><span>${esc(L(p.city))}</span>${p.employees ? `<span class="num">${p.employees} ${esc(ar ? "موظف" : "staff")}</span>` : ""}</div></div><button class="btn" type="button" data-act="close" aria-label="Close">✕</button></div>
+    <div class="meta"><span class="chip accent">${esc(stageLabel(p.stage))}</span>${rsChip(p.researchStatus)}${csChip(p.contactStatus)}${out ? `<span class="chip good">✓ ${esc(outcomeLabel())}</span>` : ""}${p.parkedReason ? `<span class="chip">${esc(p.parkedReason === "no_contact" ? (ar ? "متوقف: لا جهة اتصال" : "Parked: no contact") : p.parkedReason)}</span>` : ""}${p.status === "parked" && !p.parkedReason ? `<span class="chip">${esc(ar ? "تحت حد التواصل" : "Below outreach threshold")}</span>` : ""}</div>
+    <section class="panel"><div class="panel-head"><h3>${esc(t("score"))}</h3>${scoreBar(p)}</div>
+      ${p.breakdown.length ? `<div class="hbars">${p.breakdown.map((b) => `<div class="hbar"><span>${esc(L(b.label))}${b.category === "timing" ? ` <span class="chip tiny">${esc(t("whyNow"))}</span>` : ""}</span><div class="track"><i style="width:${(b.weight / Math.max(...c.config.scoring.signals.map((s) => s.weight))) * 100}%"></i></div><span class="num">+${b.weight}</span></div>`).join("")}</div>` : `<p class="small muted">—</p>`}
+      ${(() => { const missingSig = c.config.scoring.signals.filter((s) => !p.breakdown.some((b) => b.key === s.key)); return missingSig.length ? `<p class="tiny muted">${esc(ar ? "لم يتحقق: " : "Not met: ")}${esc(missingSig.map((s) => `${L(s.label)} (${s.weight})`).join(SEP()))}</p>` : ""; })()}</section>
+    <section class="panel"><h3>${esc(t("research"))}</h3>${p.signals.length ? `<div class="signals">${p.signals.map((s) => `<div class="signal"><span><b>${esc(keyLabel(s.key))}:</b> ${esc(fmtVal(s.value))}</span><span class="tiny num">${Math.round(s.confidence * 100)}%</span><span class="src">${esc(t("source"))}: ${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.source)}</a>` : esc(s.source)}</span></div>`).join("")}</div>` : `<p class="small muted">—</p>`}
+      ${p.rejected.length ? `<p class="small" style="color:var(--warn-ink)">▲ ${esc(t("noSource"))}: ${esc(p.rejected.map(keyLabel).join(SEP()))}</p>` : ""}</section>
+    ${p.qualification ? `<section class="panel"><h3>${esc(t("qualReasons"))}</h3><p class="small">✓ ${esc(p.qualification.met.map((k) => L(c.config.qualification.find((q) => q.key === k)?.label ?? k)).join(SEP()) || "—")}</p>${p.qualification.missing.length ? `<p class="small muted">✕ ${esc(p.qualification.missing.map((k) => L(c.config.qualification.find((q) => q.key === k)?.label ?? k)).join(SEP()))}</p>` : ""}</section>` : ""}
+    ${appt.length ? `<section class="panel"><h3>${esc(L(c.config.appointments.label))}</h3>${appt.map((a) => `<p class="small">${esc(fmtDT(a.startsAt))} · ${esc(t({ scheduled: "scheduled", held: "held", cancelled: "cancelled", no_show: "noShow" }[a.status]))}</p>`).join("")}</section>` : ""}
+    <section class="panel"><h3>${esc(ar ? "المحادثة" : "Conversation")}</h3>${thread.length ? thread.map((m) => `<div><div class="tiny muted">${esc(fmtDT(m.at))} · ${esc(L(m.channel))}${m.step ? ` · ${esc(stepLabel(m.step))}` : ""}${m.intent ? ` · ${intentChip(m.intent)}` : ""}</div><div class="msg ${m.dir === "in" ? "in" : ""} ${/[؀-ۿ]/.test(m.body || "") ? "" : "ltr"}">${m.subject ? `<span class="subj">${esc(m.subject)}</span>` : ""}${esc(m.body)}</div></div>`).join("") : `<p class="small muted">${esc(ar ? "لم يُتواصل معه بعد." : "Not contacted yet.")}</p>`}</section>
+  </aside>`;
+}
+
+/* =========================================================== router */
+const PAGES = { overview: pageOverview, campaigns: pageCampaigns, prospects: pageProspects, research: pageResearch, contacts: pageContacts, outreach: pageOutreach, replies: pageReplies, appointments: pageAppointments, outcomes: pageOutcomes, analytics: pageAnalytics, reports: pageReports, integrations: pageIntegrations, automation: pageAutomation, audit: pageAudit, settings: pageSettings, attention: pageAttention, recommendations: pageRecommendations };
+const CLIENT_PAGES = new Set(["overview", "attention", "outcomes", "appointments", "recommendations", "reports"]);
+function parseHash() {
+  const h = (location.hash || "#overview").slice(1); const [route, ...rest] = h.split(".");
+  S.route = PAGES[route] ? route : "overview"; S.sub = rest.join(".");
+  if (S.view === "client" && !CLIENT_PAGES.has(S.route)) { S.route = "overview"; S.sub = ""; }
+  if (S.route === "appointments" && !C().config.appointments) { S.route = "overview"; S.sub = ""; }
+}
+function render() {
+  document.documentElement.lang = S.lang; document.documentElement.dir = S.lang === "ar" ? "rtl" : "ltr";
+  document.title = `${clientName(S.clientId)} · ${L(C().config.name)} — ${t("product")}`;
+  parseHash();
+  renderSide(); renderCtx();
+  const page = document.getElementById("page");
+  page.innerHTML = PAGES[S.route]();
+  const c = C(); const days = c.daily.map((d) => d.day); let acc = 0; const cum = c.daily.map((d) => (acc += d.outcomes));
+  page.querySelectorAll('[data-chart="trend"]').forEach((el) => lineChart(el, cum, c.config.outcome.target, days));
+  page.querySelectorAll('[data-chart="sent"]').forEach((el) => barChart(el, c.daily.map((d) => d.sent), days, t("sentPerDay")));
+  document.getElementById("overlay").innerHTML = S.drawer ? drawer(S.drawer) : "";
+  document.getElementById("app").classList.remove("nav-open");
+}
+function toast(msg) { const el = document.getElementById("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (el.hidden = true), 2600); }
+
+window.addEventListener("hashchange", () => { S.limit = 50; S.drawer = null; render(); document.getElementById("page").focus({ preventScroll: true }); window.scrollTo(0, 0); });
+document.addEventListener("click", (ev) => {
+  const el = ev.target.closest("[data-act]"); if (!el) return;
+  const act = el.dataset.act;
+  if (["prospect", "close", "auditcat", "pick"].includes(act) || el.tagName === "A") { if (act !== "pick") ev.preventDefault(); }
+  if (act === "menu") return document.getElementById("app").classList.toggle("nav-open");
+  if (act === "view") { S.view = el.dataset.v; persist(); if (S.view === "client" && !CLIENT_PAGES.has(S.route)) location.hash = "#overview"; render(); return; }
+  if (act === "lang") { S.lang = el.dataset.v; persist(); render(); return; }
+  if (act === "prospect") { S.drawer = el.dataset.id; render(); return; }
+  if (act === "close") { S.drawer = null; render(); return; }
+  if (act === "more") { S.limit += 50; render(); return; }
+  if (act === "auditcat") { S.auditCat = el.dataset.cat; render(); return; }
+  if (act === "pick") { S.clientId = el.dataset.client; S.campaignId = el.dataset.campaign; persist(); render(); return; }
+  if (act === "decide") { S.decided[el.dataset.id] = el.dataset.d; toast(el.dataset.d === "approve" ? t("approvedToast") : el.dataset.d === "resolve" ? t("resolvedToast") : t("rejectedToast")); render(); return; }
+  if (act === "toast") { toast(el.dataset.msg); return; }
+});
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && S.drawer) { S.drawer = null; render(); } });
+document.addEventListener("input", (ev) => {
+  const el = ev.target.closest("[data-filter]"); if (!el) return;
+  S.filters[el.dataset.filter] = el.value; S.limit = 50;
+  const pos = el.selectionStart; const key = el.dataset.filter; render();
+  const again = document.querySelector(`[data-filter="${key}"]`); if (again && again.tagName === "INPUT") { again.focus(); try { again.setSelectionRange(pos, pos); } catch {} }
+});
+render();
+</script>
