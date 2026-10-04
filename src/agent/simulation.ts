@@ -15,6 +15,8 @@ import { snapshotCampaign } from "./snapshot.js";
  */
 
 const FIRST = ["Sara", "Khalid", "Noura", "Faisal", "Reem", "Omar", "Lama", "Abdullah", "Hessa", "Turki", "Maha", "Yousef", "Dana", "Fahad", "Rana", "Saad"];
+/** Arabic spelling of the fictional first names, so "رسالة سارة" finds Sara. */
+const FIRST_AR: Record<string, string> = { Sara: "سارة", Khalid: "خالد", Noura: "نورة", Faisal: "فيصل", Reem: "ريم", Omar: "عمر", Lama: "لمى", Abdullah: "عبدالله", Hessa: "حصة", Turki: "تركي", Maha: "مها", Yousef: "يوسف", Dana: "دانة", Fahad: "فهد", Rana: "رنا", Saad: "سعد" };
 const LAST = ["Al Harbi", "Al Mansoori", "Al Qahtani", "Al Suwaidi", "Al Otaibi", "Al Falasi", "Al Shamsi", "Al Ghamdi", "Al Nuaimi", "Haddad"];
 const SOURCES = [
   { source: "Company website", path: "/about", confidence: 0.9 },
@@ -45,7 +47,9 @@ export function simulatedProspects(plan: CampaignPlan, cfg: CampaignConfig, know
     return reg?.cities.length ? reg.cities.map((c) => c.key) : [country];
   };
   const questions = cfg.research.questions;
-  const titles = arch.titles.en.length ? [...arch.titles.en, "Account Manager", "Analyst"] : ["Owner"];
+  const titles = arch.titles.en.length ? arch.titles.en : ["Owner"];
+  // Mostly decision makers, with some who aren't — the agent flags those.
+  const pickTitle = () => (r.chance(0.85) ? r.pick(titles) : r.pick(["Account Manager", "Analyst"]));
   const sizeMin = arch.size?.min ?? 10;
   const sizeMax = arch.size?.max ?? sizeMin * 20;
   const nameA = arch.namePool?.a.length ? arch.namePool.a : ["Nova", "Summit", "Orbit", "Cedar"];
@@ -75,7 +79,7 @@ export function simulatedProspects(plan: CampaignPlan, cfg: CampaignConfig, know
       return {
         contact: {
           firstName: fn, lastName: ln, country, city, handles, consents: ["email"],
-          attributes: { ...attrs, budget: budgets.length ? r.pick(budgets) : undefined, _sources: sources },
+          attributes: { ...attrs, budget: budgets.length ? r.pick(budgets) : undefined, firstNameAr: FIRST_AR[fn], _sources: sources },
         },
       };
     }
@@ -89,7 +93,7 @@ export function simulatedProspects(plan: CampaignPlan, cfg: CampaignConfig, know
     const employees = r.chance(0.85) ? Math.round(sizeMin + r.next() * (sizeMax - sizeMin)) : Math.round(sizeMax * (2 + r.next() * 3));
     return {
       account: { name, domain: dom, industry: arch.industry ?? "general", country, city, employees, attributes: { ...attrs, _sources: sources } },
-      contact: { firstName: fn, lastName: ln, title: r.pick(titles), country, city, handles, attributes: findable ? { _findable: findable } : {} },
+      contact: { firstName: fn, lastName: ln, title: pickTitle(), country, city, handles, attributes: { firstNameAr: FIRST_AR[fn], ...(findable ? { _findable: findable } : {}) } },
     };
   });
 }

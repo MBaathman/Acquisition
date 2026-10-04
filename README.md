@@ -44,7 +44,14 @@ npm run server     # backend API on :8787 (rules only; set ANTHROPIC_API_KEY for
 "ابدأ البحث"
 "ورني وش لقيت"
 "جهز التواصل لكن لا ترسل أي شيء بدون موافقتي"
+"خل الرسائل أقصر وأكثر مباشرة"
+"اعتمد الرسائل اللي تقييمها فوق 85"
+"استبعد شركات دبي"
 ```
+
+After a run the agent workspace shows the actual work — every prospect with
+why it was picked (sourced), the agent's reservations and the proposed message —
+and you approve, exclude or rewrite in place, by button or in the chat.
 
 Chat is the primary interface. Each message becomes structured intents; the
 agent plans, runs the engine, reports, and asks for approval only before

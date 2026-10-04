@@ -1,6 +1,7 @@
 import type { AutonomyLevel } from "../config/actions.js";
 import type { Locale } from "../config/builder.js";
 import { extractGoal, normalize, type CampaignPlan, type PlanChanges, type PlannerContext } from "./planner.js";
+import type { ReviewFilter, ReviewPolicy, RewriteInstruction } from "./review.js";
 
 /**
  * Every user message becomes structured intents. Deterministic rules over the
@@ -21,6 +22,11 @@ export type AgentIntent =
   | { type: "resume" }
   | { type: "prepare_outreach" }
   | { type: "query"; topic: QueryTopic }
+  | { type: "review_approve"; filter: ReviewFilter }
+  | { type: "review_exclude"; filter: ReviewFilter }
+  | { type: "review_restore"; filter: ReviewFilter }
+  | { type: "review_rewrite"; filter: ReviewFilter; rewrite: RewriteInstruction }
+  | { type: "review_policy"; policy: ReviewPolicy }
   | { type: "unknown" };
 
 export interface ParseContext {
@@ -30,6 +36,78 @@ export interface ParseContext {
   running?: boolean;
   /** A change is waiting for the user's yes/no. */
   pending?: boolean;
+  /** Drafted messages are in review: names the user may refer to ("رسالة سارة", "Oasis"). */
+  review?: { names: string[] };
+  /** The message was written about one review item (its card's own composer). */
+  target?: string;
+}
+
+// ---------------------------------------------------------------------------
+// The review queue: "اعتمد الرسائل اللي تقييمها فوق 85", "استبعد شركات دبي", "خل الرسائل أقصر"
+
+function reviewFilterIn(t: string, raw: string, ctx: ParseContext): ReviewFilter {
+  const f: ReviewFilter = {};
+  if (ctx.target) f.ids = [ctx.target];
+  // Whole words only: "مها" must not match inside "تقييمها".
+  const names = (ctx.review?.names ?? []).filter((n) => normalize(n).length >= 3 && word(normalize(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(t));
+  if (names.length) f.names = [...new Set(names)];
+  const m = marketsIn(t, ctx.planner);
+  if (m.cities.length) f.cities = m.cities;
+  const above = t.match(/(?:فوق|اكثر من|اعلي من|above|over|at least|>=?)\s*(\d+)/);
+  const below = t.match(/(?:اقل من|تحت|below|under|<)\s*(\d+)(?!\s*(?:عملاء|عميل|client))/);
+  const scoreWord = has(t, /تقييم|درج|score|fit|ملاءم/);
+  if (above && (scoreWord || Number(above[1]) > 20)) f.minScore = Number(above[1]);
+  if (below && scoreWord) f.maxScore = Number(below[1]);
+  const top = t.match(/(?:اول|first|top)\s*(\d+)/);
+  if (top) f.top = Number(top[1]);
+  if (has(t, /(?:وكالات|شركات|جهات|agencies|companies)\s+(?:ال)?(?:كبيره|كبري|large|big)|(?:large|big)\s+(?:agencies|companies)/)) f.large = true;
+  const few = t.match(/اقل من\s*(\d+)\s*(?:عملاء|عميل)|(?:fewer|less) than\s*(\d+)\s*clients?/);
+  if (few) f.lacksSignal = "عملاء|client";
+  if (has(t, /(?:عليها|فيها) تحفظ|المتحفظ|تحتاج تعديل|flagged|needs? edit/)) f.status = ["needs_edit"];
+  if (has(t, /الكل|كلها|كلهم|جميع|كل الرسائل|everything|all/)) f.all = true;
+  void raw;
+  return f;
+}
+
+/** Finds a term in the original text, keeping its spelling ("Meta", not "meta"). */
+function originalTerm(raw: string, term: string): string {
+  const i = raw.toLowerCase().indexOf(term.toLowerCase());
+  return i >= 0 ? raw.slice(i, i + term.length) : term;
+}
+
+function rewriteIn(t: string, raw: string): RewriteInstruction {
+  const r: RewriteInstruction = {};
+  if (has(t, /اقصر|مختصر|اختصر|قصيره|shorter|concise|brief/)) r.short = true;
+  if (has(t, /مباشر|direct|to the point/)) r.direct = true;
+  if (has(t, /بالعربي|بالعربيه|in arabic/)) r.language = "ar";
+  else if (has(t, /بالانجليزي|بالانجليزيه|in english/)) r.language = "en";
+  const avoid = t.match(/(?:و?لا تذكر|بدون ذكر|شيل ذكر|احذف ذكر|don'?t mention|do not mention|without mentioning)\s+(\S+)/);
+  if (avoid) r.avoid = [originalTerm(raw, avoid[1]!)];
+  const mention = t.match(/(?:^|\s)و?(?:اذكر|ركز علي|mention|and mention)\s+(\S+)/);
+  if (mention && !avoid) r.mention = [originalTerm(raw, mention[1]!)];
+  return r;
+}
+
+function policyChange(t: string): ReviewPolicy | undefined {
+  const auto = t.match(/(?:اعتمد|وافق|approve)\S*\s+(?:تلقائيا|اوتوماتيك|automatically)\D*(\d+)|auto.?approve\D*(\d+)/);
+  if (auto) return { mode: "auto", autoAbove: Number(auto[1] ?? auto[2]) };
+  if (has(t, /اوافق علي كل رساله|خلني اوافق|موافقتي علي كل رساله|approve every message|manual approval|الموافقه يدوي/)) return { mode: "manual" };
+  return undefined;
+}
+
+function reviewIntents(t: string, raw: string, ctx: ParseContext): AgentIntent[] {
+  const out: AgentIntent[] = [];
+  const policy = policyChange(t);
+  if (policy) out.push({ type: "review_policy", policy });
+  const filter = reviewFilterIn(t, raw, ctx);
+  const rewrite = rewriteIn(t, raw);
+  const rewriting = Object.keys(rewrite).length > 0 || has(t, /(?:^|\s)(?:عدل|عدلها|غير|اكتب|rewrite|edit|change)\s*(?:ال)?(?:رساله|رسائل|ها|message|messages)?/);
+  const isAuto = policy?.mode === "auto";
+  if (!isAuto && has(t, /(?:^|\s)(?:اعتمد|اعتمدها|اعتمدهم|وافق علي|approve)(?:\s|$)/)) out.push({ type: "review_approve", filter });
+  else if (has(t, /(?:^|\s)(?:استبعد|استبعدها|احذف|شيل|exclude|remove|drop)(?:\s|$)/) && !rewrite.avoid) out.push({ type: "review_exclude", filter });
+  else if (has(t, /(?:^|\s)(?:رجع|ارجع|رجعها|restore|bring back)(?:\s|$)/)) out.push({ type: "review_restore", filter });
+  else if (rewriting && (ctx.target || Object.keys(rewrite).length || has(t, /رساله|رسائل|الرسائل|message/))) out.push({ type: "review_rewrite", filter, rewrite });
+  return out;
 }
 
 const has = (t: string, ...patterns: RegExp[]) => patterns.some((p) => p.test(t));
@@ -172,7 +250,13 @@ export function parseMessage(raw: string, ctx: ParseContext): AgentIntent[] {
     }
   }
 
+  // A yes/no to a pending plan change wins over everything else.
+  if (ctx.pending && has(t, /^(?:نعم|ايه|ايوه|تمام|موافق|اعتمد|اعتمده|اعتمد التعديل|ok|yes|approve|confirm)$/)) return [{ type: "confirm" }];
+  if (ctx.pending && has(t, /^(?:لا|الغ|الغيه|cancel|no|رفض)$/)) return [{ type: "reject" }];
+
   const out: AgentIntent[] = [];
+  const review = ctx.review || ctx.target ? reviewIntents(t, raw, ctx) : [];
+  out.push(...review);
   const answer = ctx.plan && ctx.plan.questions.length ? answerFor(t, ctx.plan, ctx.planner) : undefined;
   if (answer) out.push({ type: "answer", ...answer });
 
@@ -182,6 +266,12 @@ export function parseMessage(raw: string, ctx: ParseContext): AgentIntent[] {
   if (answer?.questionId === "goal") delete changes.goal;
   if (answer?.questionId === "region_focus") delete changes.cities;
   if (answer?.questionId === "company_size") { delete changes.sizeMin; delete changes.sizeMax; }
+  // Words that select messages ("شركات دبي", "فوق 85", "أقل من 3 عملاء") are filters here, not plan changes.
+  if (review.some((i) => i.type !== "review_policy")) {
+    for (const k of ["countries", "cities", "goal", "minClients", "threshold", "sizeMin", "sizeMax"] as const) delete changes[k];
+  }
+  if (review.some((i) => i.type === "review_policy" && i.policy.mode === "auto")) delete changes.autonomy;
+  if (ctx.target) for (const k of Object.keys(changes) as (keyof PlanChanges)[]) delete changes[k];
   if (Object.keys(changes).length) out.push({ type: "update_plan", changes });
 
   if (has(t, /جهز (?:ال)?تواصل|جهز (?:ال)?رسائل|اكتب (?:ال)?رسائل|prepare (?:the )?outreach|draft (?:the )?messages|prepare (?:the )?messages/)) out.push({ type: "prepare_outreach" });

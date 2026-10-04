@@ -153,7 +153,8 @@ export interface CampaignPlan {
   strategy: {
     threshold: number;
     maxScore: number;
-    signals: { label: string; points: number; timing: boolean }[];
+    /** Scoring signals in plan order (criterion_1, criterion_2...), with the label in both languages for messages. */
+    signals: { label: string; labels: Record<Locale, string>; points: number; timing: boolean }[];
     channels: string[];
     touches: number;
     waitDays: number;
@@ -503,16 +504,18 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
     }
   };
   const sizeText = (sizeMin !== undefined || sizeMax !== undefined) ? `${sizeMin ?? 1}–${sizeMax ?? "∞"}` : "";
-  const labelOf = (s: KnowledgeSignal) => {
-    let l = s.label[loc];
+  const labelOf = (s: KnowledgeSignal, lang: Locale = loc) => {
+    let l = s.label[lang];
     if (s.param === "minClients") l = fill(l, { n: String(minClients ?? s.paramDefault ?? 3) });
     if (s.check === "size" && sizeText && (sizeMin !== arch.size?.min || sizeMax !== arch.size?.max)) l = l.replace(/\(?\d+\s*[–-]\s*\d+\)?|\(\d+\+\s*[^)]*\)/, `(${sizeText})`);
     return l;
   };
   const signals = arch.signals.filter((s) => !(s.check === "size" && sizeMin === undefined && sizeMax === undefined));
   const criteria: CampaignDraft["qualification"]["criteria"] = signals.map((s) => ({ label: labelOf(s), points: s.points, timing: s.timing, check: checkFor(s) }));
+  const bilingual: Record<Locale, string>[] = signals.map((s) => ({ ar: labelOf(s, "ar"), en: labelOf(s, "en") }));
   if (minClients !== undefined && !arch.signals.some((s) => s.param === "minClients")) {
     criteria.push({ label: fill(kb.defaults.minClientsLabel?.[loc] ?? "{n}+", { n: String(minClients) }), points: 15 });
+    bilingual.push({ ar: fill(kb.defaults.minClientsLabel?.ar ?? "{n}+", { n: String(minClients) }), en: fill(kb.defaults.minClientsLabel?.en ?? "{n}+", { n: String(minClients) }) });
   }
   const maxScore = criteria.reduce((sum, c) => sum + c.points, 0);
   const threshold = Math.max(1, Math.min(maxScore, ch.threshold ?? round5(maxScore * 0.75)));
@@ -628,7 +631,7 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
     strategy: {
       threshold,
       maxScore,
-      signals: criteria.map((c) => ({ label: c.label, points: c.points, timing: Boolean(c.timing) })),
+      signals: criteria.map((c, i) => ({ label: c.label, labels: bilingual[i] ?? { ar: c.label, en: c.label }, points: c.points, timing: Boolean(c.timing) })),
       channels: channelList.map((c) => CHANNEL_NAMES[c]?.[loc] ?? c),
       channelKeys: channelList,
       touches: channels.touches,

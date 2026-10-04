@@ -553,6 +553,63 @@ pre.code { background: var(--surface-2); border-radius: 8px; padding: 12px; font
   .turn.agent .turn-body { padding: 10px 12px; }
   .now .activity { display: none; }
 }
+/* ---------- agent workspace: the work list */
+.ws-summary { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 12px; }
+.ws-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ws-did h2 { font-size: 1.15rem; margin-bottom: 4px; }
+.ws-did p { margin: 0; color: var(--ink-2); }
+.ws-stats { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: .82rem; color: var(--ink-3); }
+.ws-stats b { font-size: 1.05rem; color: var(--ink); margin-inline-end: 4px; }
+.ws-needs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; background: var(--warn-soft); border-radius: 10px; padding: 10px 12px; }
+.ws-needs.clear { background: var(--good-soft); }
+.ws-needs > div { display: grid; gap: 2px; align-content: start; }
+.ws-policy { border-inline-start: 1px solid rgb(0 0 0 / .08); padding-inline-start: 12px; }
+.rv-panel { display: grid; gap: 10px; scroll-margin-top: 80px; }
+.rv-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.rv-top h2 { font-size: 1.05rem; }
+.rv-done { display: grid; gap: 2px; background: var(--good-soft); color: var(--good-ink); border-radius: 10px; padding: 10px 12px; }
+.rv-filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.rv-tab { flex: none; font: inherit; font-size: .84rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 6px 12px; cursor: pointer; min-height: 36px; }
+.rv-tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.rv-tab .num { opacity: .75; margin-inline-start: 2px; }
+.rv-list { display: grid; gap: 10px; }
+.rv-card { background: var(--surface); border: 1px solid var(--line); border-inline-start: 4px solid var(--accent); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.rv-card.s-approved { border-inline-start-color: var(--good); }
+.rv-card.s-needs_edit { border-inline-start-color: var(--warn-ink); }
+.rv-card.s-excluded { border-inline-start-color: var(--line); opacity: .65; }
+.rv-head { display: flex; align-items: center; gap: 6px; }
+.rv-score { margin-inline-start: auto; color: var(--accent-ink); }
+.rv-score b { font-size: 1.15rem; } .rv-score small { color: var(--ink-3); }
+.rv-who { display: grid; gap: 1px; }
+.rv-who b { font-size: 1.02rem; } .rv-who span { font-size: .84rem; color: var(--ink-3); }
+.rv-why b { font-size: .82rem; color: var(--ink-2); }
+.rv-why ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; }
+.rv-why li { display: flex; justify-content: space-between; gap: 10px; font-size: .88rem; }
+.rv-why li small { color: var(--ink-3); flex: none; font-size: .74rem; }
+.rv-flag { background: var(--warn-soft); color: var(--warn-ink); border-radius: 8px; padding: 6px 10px; font-size: .84rem; }
+.rv-msg, .rv-edit { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; }
+.rv-msg p, .rv-edit p { margin: 0; white-space: pre-line; line-height: 1.7; }
+.rv-edit { background: var(--accent-soft); }
+.rv-subj { font-size: .9rem; }
+.rv-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.rv-actions .btn { min-height: 40px; }
+.rv-composer { display: grid; gap: 6px; }
+.rv-composer label { font-weight: 600; font-size: .9rem; }
+.rv-composer textarea { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; resize: none; padding: 6px 8px; }
+.rv-composer textarea:focus { outline: none; }
+.ws-chat { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.turn.user .about { display: block; opacity: .85; margin-bottom: 2px; }
+.ws-aside { gap: 8px; }
+.ws-links { display: flex; gap: 12px; font-size: .84rem; }
+.linkish { font: inherit; background: none; border: 0; padding: 0; color: var(--accent-ink); cursor: pointer; }
+@media (max-width: 1000px) { .chat-layout.ws .now { order: 1; } }
+@media (max-width: 640px) {
+  .ws-needs { grid-template-columns: minmax(0, 1fr); }
+  .ws-policy { border-inline-start: 0; padding-inline-start: 0; border-top: 1px solid rgb(0 0 0 / .08); padding-top: 8px; }
+  .rv-actions .btn { flex: 1 1 auto; }
+  .rv-why li { flex-direction: column; gap: 0; }
+  .rv-top .btn { width: 100%; }
+}
 </style>
 
 <div class="app" id="app">
@@ -881,7 +938,10 @@ function runCampaign(run) {
   let o = userObjs.get(run.id);
   if (!o) {
     const summary = AcqEngine.summarizeCampaign(run.cfg);
-    o = { ...run.snapshot, clientId: run.clientId, config: summary, isUser: true, simulated: true, launchedAt: run.launchedAt, run };
+    // Decisions made in the agent workspace are what the operational pages show.
+    const rv = new Map((run.review || []).map((i) => [i.id, i]));
+    const outreach = run.snapshot.outreach.map((a) => { const i = rv.get(a.id); if (!i) return a; return { ...a, body: i.body, subject: i.subject, status: i.status === "approved" ? "approved" : i.status === "excluded" ? "rejected" : a.status }; });
+    o = { ...run.snapshot, outreach, clientId: run.clientId, config: summary, isUser: true, simulated: true, launchedAt: run.launchedAt, run };
     userObjs.set(run.id, o);
   }
   return o;
@@ -904,11 +964,12 @@ async function chatStart(text) {
   } catch (e) { toast(tr("تعذّر فهم الطلب — جرّب صياغة أخرى", "Couldn't understand that — try rephrasing")); }
   S.chatBusy = false; S.pendingText = null; render(); scrollThread();
 }
-async function chatSend(text) {
+async function chatSend(text, opts = {}) {
   text = String(text || "").trim(); const conv = curConv(); if (!text || !conv || S.chatBusy) return;
   S.chatBusy = true; S.pendingText = text; S.composer = ""; S.editMode = false; renderPage(); scrollThread();
   try {
-    const { conversation } = await agent().send(conv.id, text);
+    const { conversation } = await agent().send(conv.id, text, opts);
+    if (opts.reviewItemId) S.cardEdit = null;
     WS.agent.convId = conversation.id; S.animate = conversation.messages.at(-1)?.id;
     if (conversation.campaignId) { const r = runOf(conversation.campaignId); if (r) { S.clientId = r.clientId; S.campaignId = r.id; persist(); } }
     saveWS();
@@ -1008,14 +1069,14 @@ function cardHtml(card, msg, conv, isLast) {
     }
     case "prospects": return `<div class="card-list"><b>${esc(card.title)}</b>${card.items.map((it) => `<button type="button" class="pr-row" data-act="prospect" data-id="${esc(it.id)}"><span class="pr-main"><b>${esc(it.name)}</b><small>${esc(it.sub)}</small><span class="pr-why">${it.reasons.map((r) => `<em class="chip accent">${esc(L(r))}</em>`).join("")}</span></span>${it.score != null ? `<span class="pr-score num">${it.score}<small>/${it.max ?? 100}</small></span>` : ""}</button>`).join("") || `<p class="small muted">${esc(tr("لا شيء بعد.", "Nothing yet."))}</p>`}</div>`;
     case "bullets": return `<ul class="card-bullets">${card.items.map((x) => `<li>${esc(L(x))}</li>`).join("")}</ul>`;
-    case "actions": return `<div class="card-actions">${card.actions.map((a) => a.route ? `<a class="btn lg ${a.primary ? "primary" : ""}" href="#${a.route}">${esc(a.label)}</a>` : a.edit ? `<button type="button" class="btn lg" data-act="editPlan">${esc(a.label)}</button>` : `<button type="button" class="btn lg ${a.primary ? "primary" : ""}" data-act="say" data-v="${esc(a.say)}">${esc(a.label)}</button>`).join("")}</div>`;
+    case "actions": return `<div class="card-actions">${card.actions.map((a) => a.route === "review" ? `<button type="button" class="btn lg ${a.primary ? "primary" : ""}" data-act="scrollReview">${esc(a.label)}</button>` : a.route ? `<a class="btn lg ${a.primary ? "primary" : ""}" href="#${a.route}">${esc(a.label)}</a>` : a.edit ? `<button type="button" class="btn lg" data-act="editPlan">${esc(a.label)}</button>` : `<button type="button" class="btn lg ${a.primary ? "primary" : ""}" data-act="say" data-v="${esc(a.say)}">${esc(a.label)}</button>`).join("")}</div>`;
   }
   return "";
 }
 /** Agent text: lines, with "• " lines grouped into a list. */
 const textHtml = (text) => (text ? text.split("\n").map((l) => (l.startsWith("• ") ? `<li>${esc(l.slice(2))}</li>` : `<p>${esc(l)}</p>`)).join("").replace(/(<li>.*?<\/li>)+/g, (x) => `<ul class="bul">${x}</ul>`) : "");
 function messageHtml(m, conv, isLast) {
-  if (m.role === "user") return `<div class="turn user"><div class="turn-body"><p>${esc(m.text)}</p>${m.understoodBy === "llm" ? `<span class="tiny">${esc(tr("فُهمت بمساعدة النموذج", "understood with the model"))}</span>` : ""}</div></div>`;
+  if (m.role === "user") return `<div class="turn user"><div class="turn-body">${m.target ? `<span class="tiny about">${esc(tr(`بخصوص ${m.target.label}`, `About ${m.target.label}`))}</span>` : ""}<p>${esc(m.text)}</p>${m.understoodBy === "llm" ? `<span class="tiny">${esc(tr("فُهمت بمساعدة النموذج", "understood with the model"))}</span>` : ""}</div></div>`;
   const cards = m.cards || [];
   const head = cards.some((c) => c.kind === "text") ? "" : textHtml(m.text);
   return `<div class="turn agent"><span class="avatar" aria-hidden="true">✦</span><div class="turn-body">${head}${cards.map((c) => cardHtml(c, m, conv, isLast)).join("")}</div></div>`;
@@ -1052,23 +1113,133 @@ function nowPanel(conv) {
     <p class="small">${esc(tr("الهدف", "Goal"))}: ${esc(p ? goalText(p.understanding) : `${c.config.outcome.target ?? "—"} ${outcomePlural(c)}`)}</p>
     <h3 class="now-title">${esc(tr("وش قاعد يسوي المحرك الآن؟", "What is the engine doing now?"))}</h3>
     ${statusTiles(k)}
-    ${k.messagesReady || pendingChanges ? `<a class="btn primary lg block" href="#approvals">${esc(tr(`يحتاج منك: ${k.messagesReady + pendingChanges} موافقة`, `Needs you: ${k.messagesReady + pendingChanges} approvals`))}</a>` : ""}
+    ${k.messagesReady || pendingChanges ? `<a class="btn primary lg block" href="#agent" data-act="scrollReview">${esc(tr(`يحتاج منك: ${k.messagesReady + pendingChanges} موافقة`, `Needs you: ${k.messagesReady + pendingChanges} approvals`))}</a>` : ""}
     ${activity.length ? `<details class="activity" open><summary>${esc(tr("نشاط الوكيل", "Agent activity"))}</summary><ul>${activity.map((a) => `<li class="${a.kind}"><span>${esc(a.text)}</span><time>${esc(hhmm(a.at))}</time></li>`).join("")}</ul></details>` : ""}
   </aside>`;
 }
-function composerHtml(conv) {
+function composerHtml(conv, reviewing = false) {
   const running = Boolean(conv?.campaignId);
-  const chips = running
+  const chips = reviewing
+    ? [tr("خل الرسائل أقصر وأكثر مباشرة", "Make the messages shorter and more direct"), tr("اعتمد الرسائل اللي تقييمها فوق 85", "Approve messages scoring above 85"), tr("استبعد شركات دبي", "Exclude Dubai companies"), tr("لا تذكر Meta", "Don't mention Meta"), tr("ليش اخترت هذي الجهات؟", "Why these?")]
+    : running
     ? [tr("وش لقيت؟", "What did you find?"), tr("ورني أفضل الفرص", "Best opportunities"), tr("ليش اخترت هذي الجهات؟", "Why these?"), tr("كم شركة عندك؟", "How many so far?")]
     : [tr("ابدأ البحث", "Start"), tr("خلها السعودية", "Make it Saudi Arabia"), tr("استخدم البريد فقط", "Email only"), tr("خل الرسائل بالعربي", "Messages in Arabic")];
   return `<form class="composer ${S.editMode ? "editing" : ""}" data-form="chat">
     ${S.editMode ? `<div class="composer-title"><b>${esc(tr("عدّل أي شيء في الخطة", "Change anything in the plan"))}</b><button type="button" class="btn ghost small" data-act="editCancel">${esc(tr("إغلاق", "Close"))}</button></div>` : `<div class="chips-row">${chips.map((x) => `<button type="button" class="chip-btn" data-act="say" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>`}
     <div class="composer-row">
-      <textarea id="composerInput" rows="${S.editMode ? 3 : 1}" maxlength="800" aria-label="${esc(tr("رسالتك للوكيل", "Your message to the agent"))}" placeholder="${esc(S.editMode ? tr("مثلاً: خل السوق السعودية بدل الإمارات، واستهدف الوكالات اللي عندها 5 عملاء أو أكثر", "e.g. Saudi Arabia instead of the UAE, and agencies with 5+ clients") : running ? tr("وش تبي تعرف أو تغيّر؟ مثلاً: ركّز أكثر على وكالات دبي…", "What do you want to know or change? e.g. focus more on Dubai agencies…") : tr("اكتب ردك أو أي تعديل…", "Reply or ask for any change…"))}">${esc(S.composer || "")}</textarea>
+      <textarea id="composerInput" rows="${S.editMode ? 3 : 1}" maxlength="800" aria-label="${esc(tr("رسالتك للوكيل", "Your message to the agent"))}" placeholder="${esc(reviewing && !S.editMode ? tr("وش تبي أعدل؟ مثلاً: خل كل الرسائل أقصر، أو اعتمد أول 10…", "What should I change? e.g. make all messages shorter, or approve the first 10…") : S.editMode ? tr("مثلاً: خل السوق السعودية بدل الإمارات، واستهدف الوكالات اللي عندها 5 عملاء أو أكثر", "e.g. Saudi Arabia instead of the UAE, and agencies with 5+ clients") : running ? tr("وش تبي تعرف أو تغيّر؟ مثلاً: ركّز أكثر على وكالات دبي…", "What do you want to know or change? e.g. focus more on Dubai agencies…") : tr("اكتب ردك أو أي تعديل…", "Reply or ask for any change…"))}">${esc(S.composer || "")}</textarea>
       <button class="btn primary send" type="submit" ${S.chatBusy ? "disabled" : ""} aria-label="${esc(tr("إرسال", "Send"))}">${esc(tr("إرسال", "Send"))} ↑</button>
     </div>
   </form>`;
 }
+/* --------------------------------------------------------------- agent workspace: the work itself
+   Order: what the agent did → what it needs from you → the work list (each
+   prospect with why, sources and the message) → chat to steer it → activity.
+   Buttons act directly; anything broader is said in the chat and applied to
+   the whole list by the agent. Nothing here navigates away. */
+const msgsTxt = (n) => (S.lang === "ar" ? (n === 1 ? "رسالة واحدة" : AcqEngine.countOf("ar", n, "رسالة", "رسائل")) : `${n} message${n === 1 ? "" : "s"}`);
+const orgsTxt = (n) => (S.lang === "ar" ? AcqEngine.countOf("ar", n, "جهة", "جهات") : `${n} prospect${n === 1 ? "" : "s"}`);
+const RV_STATUS = {
+  ready: ["جاهزة للمراجعة", "Ready for review", "accent"],
+  approved: ["معتمدة", "Approved", "good"],
+  needs_edit: ["تحتاج تعديل", "Needs a look", "warn"],
+  excluded: ["مستبعدة", "Excluded", "outline"],
+};
+const rvCounts = (items) => {
+  const by = (s) => items.filter((i) => i.status === s).length;
+  return { total: items.length, ready: by("ready"), approved: by("approved"), needsEdit: by("needs_edit"), excluded: by("excluded"), pending: by("ready") + by("needs_edit") };
+};
+async function reviewDo(action, ids, announce = false) {
+  const conv = curConv(); const run = conv?.campaignId && runOf(conv.campaignId); if (!run) return;
+  await agent().reviewAction(run.id, action, ids, { announce });
+  S.cardEdit = null; render();
+}
+function workSummary(run, conv) {
+  const p = planOf(conv); const k = run.counts; const rc = rvCounts(run.review);
+  const paused = run.status === "paused";
+  const policy = run.reviewPolicy?.mode === "auto" ? tr(`تلقائية للرسائل بدرجة ${run.reviewPolicy.autoAbove}+ بلا تحفظات`, `Automatic for clean messages scoring ${run.reviewPolicy.autoAbove}+`) : tr("يدوية — كل رسالة بموافقتك", "Manual — you approve every message");
+  return `<section class="ws-summary">
+    <div class="ws-head"><div><b>${esc(run.clientName)}</b><span class="small muted"> · ${esc(tr("الهدف", "Goal"))}: ${esc(p ? goalText(p.understanding) : "")}</span></div><span class="state ${paused ? "paused" : "on"}">● ${esc(paused ? tr("متوقفة", "Paused") : tr("يعمل", "Running"))}</span></div>
+    <div class="ws-did">
+      <h2>${esc(tr("خلصت البحث والتخصيص.", "Research and personalization are done."))}</h2>
+      <p>${esc(tr(`وجدت ${orgsTxt(k.fit)} مناسبة من ${k.discovered}، وجهزت ${msgsTxt(rc.total)}. ما أرسلت أي شيء.`, `I found ${orgsTxt(k.fit)} that fit out of ${k.discovered} and drafted ${msgsTxt(rc.total)}. Nothing has been sent.`))}</p>
+      <div class="ws-stats"><span><b class="num">${k.discovered}</b>${esc(tr("اكتشفت", "found"))}</span><span><b class="num">${k.researched}</b>${esc(tr("درست", "researched"))}</span><span><b class="num">${k.fit}</b>${esc(tr("مؤهلة", "qualified"))}</span><span><b class="num">${k.contactsFound}</b>${esc(tr("جهات اتصال", "contacts"))}</span></div>
+    </div>
+    <div class="ws-needs ${rc.pending ? "" : "clear"}">
+      <div><b>${esc(rc.pending ? tr(`يحتاج منك: مراجعة ${msgsTxt(rc.pending)}`, `Needs you: review ${msgsTxt(rc.pending)}`) : rc.approved ? tr(`✓ ${msgsTxt(rc.approved)} معتمدة — جاهزة للإرسال`, `✓ ${msgsTxt(rc.approved)} approved — ready to send`) : tr("لا شيء ينتظرك الآن", "Nothing is waiting for you"))}</b>
+      ${rc.needsEdit ? `<span class="small">${esc(tr(`في ${msgsTxt(rc.needsEdit)} عندي تحفظ عليها.`, `I have reservations about ${msgsTxt(rc.needsEdit)}.`))}</span>` : ""}</div>
+      <div class="ws-policy"><span class="tiny muted">${esc(tr("الموافقة", "Approval"))}</span><b>${esc(policy)}</b><span class="tiny muted">${esc(tr("غيّرها بكلامك، مثلاً: «اعتمد تلقائياً الرسائل اللي فوق 90»", "Change it by saying e.g. “auto-approve messages above 90”"))}</span></div>
+    </div>
+  </section>`;
+}
+function reviewCard(i, run) {
+  const [ar, en, tone] = RV_STATUS[i.status];
+  const reasons = i.reasons.slice(0, 4);
+  const more = i.reasons.length - reasons.length;
+  const editing = S.cardEdit === i.id;
+  const actions = i.status === "excluded"
+    ? `<button type="button" class="btn" data-act="rv" data-v="restore" data-id="${esc(i.id)}">${esc(tr("إرجاع للمراجعة", "Restore"))}</button>`
+    : `<button type="button" class="btn" data-act="rvEdit" data-id="${esc(i.id)}">${esc(tr("تعديل", "Edit"))}</button>
+       ${i.status === "approved" ? "" : `<button type="button" class="btn primary" data-act="rv" data-v="approve" data-id="${esc(i.id)}">${esc(tr("مناسبة", "Looks good"))}</button>`}
+       <button type="button" class="btn ghost" data-act="rv" data-v="exclude" data-id="${esc(i.id)}">${esc(tr("استبعاد", "Exclude"))}</button>`;
+  return `<article class="rv-card s-${i.status}" id="rv-${esc(i.id)}">
+    <div class="rv-head"><span class="chip ${tone}">${i.status === "approved" ? "✓ " : ""}${esc(tr(ar, en))}</span>${i.edited ? `<span class="chip outline">${esc(tr("معدّلة", "Edited"))}</span>` : ""}${i.score != null ? `<span class="rv-score" title="${esc(tr("درجة الملاءمة", "Fit score"))}"><b class="num">${i.score}</b><small>/${i.max ?? 100}</small></span>` : ""}</div>
+    <div class="rv-who"><b>${esc(i.company)}</b><span>${esc([i.person, i.title, i.city].filter(Boolean).join(" · "))}</span></div>
+    <div class="rv-why"><b>${esc(tr("لماذا اخترتها؟", "Why I picked it"))}</b><ul>${reasons.map((r) => `<li><span>✓ ${esc(L(r.label))}</span><small>${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.source)}</a>` : esc(r.source || "")}</small></li>`).join("")}</ul>${more > 0 ? `<span class="tiny muted">${esc(tr(`+${more} أسباب أخرى`, `+${more} more`))}</span>` : ""}
+      ${i.unverified ? `<p class="tiny muted">${esc(tr(`${i.unverified} معلومة بلا مصدر لم أعتمد عليها.`, `${i.unverified} unsourced fact(s) were not used.`))}</p>` : ""}</div>
+    ${i.flags.length && i.status !== "excluded" ? `<div class="rv-flag"><b>${esc(tr("تحفظي:", "My reservation:"))}</b> ${esc(i.flags.join(tr("، ", ", ")))}</div>` : ""}
+    <div class="rv-msg"><span class="tiny muted">${esc(tr("الرسالة المقترحة", "Proposed message"))}${i.channel ? ` · ${esc(L(i.channel))}` : ""}</span>${i.subject ? `<b class="rv-subj">${esc(i.subject)}</b>` : ""}<p dir="auto">${esc(i.body)}</p></div>
+    ${i.pendingEdit ? `<div class="rv-edit"><span class="tiny muted">${esc(tr("التعديل المقترح", "Proposed edit"))}</span><p dir="auto">${esc(i.pendingEdit.body)}</p>${i.pendingEdit.notes.length ? `<p class="tiny">${i.pendingEdit.notes.map(esc).join("<br>")}</p>` : ""}<div class="rv-actions"><button type="button" class="btn primary" data-act="rv" data-v="accept_edit" data-id="${esc(i.id)}">${esc(tr("اعتماد التعديل", "Accept the edit"))}</button><button type="button" class="btn" data-act="rv" data-v="discard_edit" data-id="${esc(i.id)}">${esc(tr("تراجع", "Discard"))}</button></div></div>` : ""}
+    ${editing ? `<form class="rv-composer" data-form="cardEdit" data-id="${esc(i.id)}"><label for="ce-${esc(i.id)}">${esc(tr(`وش تبي أعدل في رسالة ${i.company}؟`, `What should I change in the message to ${i.company}?`))}</label><div class="composer-row"><textarea id="ce-${esc(i.id)}" rows="2" placeholder="${esc(tr("مثلاً: خلها أكثر مباشرة واذكر التقارير", "e.g. more direct, and mention reporting"))}"></textarea><button class="btn primary send" type="submit">${esc(tr("إرسال", "Send"))} ↑</button></div></form>` : ""}
+    ${i.pendingEdit ? "" : `<div class="rv-actions">${actions}</div>`}
+  </article>`;
+}
+function reviewPanel(run) {
+  const items = run.review || [];
+  if (!items.length) return "";
+  const rc = rvCounts(items);
+  const f = S.rvFilter || "";
+  let list = items.filter((i) => (f ? i.status === f : true));
+  if (S.rvTop) list = list.filter((i) => i.status !== "excluded").slice(0, 10);
+  const shown = list.slice(0, S.rvLimit || 8);
+  const tabs = [["", tr("الكل", "All"), rc.total], ["ready", tr("جاهزة", "Ready"), rc.ready], ["approved", tr("معتمدة", "Approved"), rc.approved], ["needs_edit", tr("تحتاج تعديل", "Needs a look"), rc.needsEdit], ["excluded", tr("مستبعدة", "Excluded"), rc.excluded]];
+  return `<section class="rv-panel" id="review">
+    <div class="rv-top">
+      <h2>${esc(rc.pending ? tr(`${msgsTxt(rc.total)} — ${rc.pending} تحتاج مراجعتك`, `${msgsTxt(rc.total)} — ${rc.pending} need your review`) : tr(`✓ ${msgsTxt(rc.approved)} معتمدة`, `✓ ${msgsTxt(rc.approved)} approved`))}</h2>
+      ${rc.ready ? `<button type="button" class="btn primary lg" data-act="rvApproveAll">${esc(tr(`اعتماد الكل (${rc.ready} جاهزة)`, `Approve all (${rc.ready} ready)`))}</button>` : ""}
+    </div>
+    ${!rc.pending && rc.approved ? `<div class="rv-done"><b>${esc(tr("جاهزة للإرسال", "Ready to send"))}</b><span>${esc(tr("نموذج أولي — لم يتم إرسال أي رسالة حقيقية. الإرسال الحقيقي مستقبلاً يحتاج موافقة منفصلة حسب الصلاحيات.", "Prototype — no real message was sent. Real sending will need its own approval, per permissions."))}</span></div>` : ""}
+    <div class="rv-filters" role="tablist">${tabs.map(([v, l, n]) => `<button type="button" role="tab" class="rv-tab ${f === v ? "on" : ""}" aria-selected="${f === v}" data-act="rvFilter" data-v="${v}">${esc(l)} <span class="num">${n}</span></button>`).join("")}<button type="button" class="rv-tab ${S.rvTop ? "on" : ""}" aria-pressed="${Boolean(S.rvTop)}" data-act="rvTop">${esc(tr("أفضل الفرص", "Best opportunities"))}</button></div>
+    <p class="tiny muted">${esc(tr("مرتبة حسب درجة الملاءمة. لتغيير عام قل لي في المحادثة تحت — مثلاً «خل الرسائل أقصر» أو «استبعد شركات دبي».", "Sorted by fit. For a change across the board, tell me below — e.g. “make the messages shorter” or “exclude Dubai companies”."))}</p>
+    <div class="rv-list">${shown.map((i) => reviewCard(i, run)).join("") || `<p class="muted">${esc(tr("لا شيء هنا.", "Nothing here."))}</p>`}</div>
+    ${list.length > shown.length ? `<button type="button" class="btn block" data-act="rvMore">${esc(tr(`عرض المزيد (${list.length - shown.length})`, `Show more (${list.length - shown.length})`))}</button>` : ""}
+  </section>`;
+}
+function workspacePage(conv, run) {
+  const msgs = conv.messages;
+  const recent = S.fullThread ? msgs : msgs.slice(-4);
+  return `<section class="chat-layout ws">
+    <div class="chat">
+      <div class="chat-top"><span class="chip outline">${esc(conv.title)}</span><button type="button" class="btn ghost small" data-act="newGoal">${esc(tr("+ هدف جديد", "+ New goal"))}</button></div>
+      ${workSummary(run, conv)}
+      ${reviewPanel(run)}
+      <section class="ws-chat" aria-label="${esc(tr("المحادثة مع الوكيل", "Conversation with the agent"))}">
+        ${msgs.length > recent.length ? `<button type="button" class="btn ghost small" data-act="fullThread">${esc(tr(`عرض المحادثة كاملة (${msgs.length})`, `Show the whole conversation (${msgs.length})`))}</button>` : ""}
+        <div class="thread" aria-live="polite">${recent.map((m, idx) => messageHtml(m, conv, idx === recent.length - 1)).join("")}
+          ${S.chatBusy && S.pendingText ? messageHtml({ role: "user", text: S.pendingText }, conv) + `<div class="turn agent"><span class="avatar">✦</span><div class="turn-body"><p class="thinking">${esc(tr("أشتغل عليها…", "Working on it…"))}</p></div></div>` : ""}
+          <div class="thread-end"></div></div>
+        ${composerHtml(conv, true)}
+      </section>
+    </div>
+    ${activityPanel(run)}
+  </section>`;
+}
+function activityPanel(run) {
+  const items = run.activity.slice(-10).reverse();
+  return `<aside class="now ws-aside"><details class="activity"><summary>${esc(tr("نشاط الوكيل", "Agent activity"))} <span class="tiny muted">(${run.activity.length})</span></summary><ul>${items.map((a) => `<li class="${a.kind}"><span>${esc(a.text)}</span><time>${esc(hhmm(a.at))}</time></li>`).join("")}</ul></details>
+    <div class="ws-links"><a href="#plan">${esc(tr("الخطة", "Plan"))}</a><button type="button" class="linkish" data-act="advancedOn">${esc(tr("التفاصيل المتقدمة", "Advanced details"))}</button></div></aside>`;
+}
+
 function pageAgent() {
   let conv = curConv();
   const c = C();
@@ -1082,6 +1253,8 @@ function pageAgent() {
     if (S.chatBusy && S.pendingText) return `<section class="chat"><div class="thread">${messageHtml({ role: "user", text: S.pendingText }, null)}<div class="turn agent"><span class="avatar">✦</span><div class="turn-body"><p class="thinking">${esc(tr("أفهم طلبك وأبني الخطة…", "Understanding your goal and building the plan…"))}</p></div></div></div></section>`;
     return c ? `<section class="chat"><p class="muted">${esc(tr("أفتح محادثة الحملة…", "Opening the campaign conversation…"))}</p></section>` : agentHero();
   }
+  const wsRun = conv.campaignId ? runOf(conv.campaignId) : null;
+  if (wsRun && wsRun.review?.length) return workspacePage(conv, wsRun);
   const msgs = conv.messages;
   return `<section class="chat-layout">
     <div class="chat">
@@ -1176,7 +1349,7 @@ function modalHtml() {
       <div class="modal-actions"><button class="btn primary" type="button" data-act="saveProspect">${esc(tr("إضافة", "Add"))}</button><button class="btn" type="button" data-act="closeModal">${esc(tr("إلغاء", "Cancel"))}</button></div>`;
   } else if (m.type === "confirm") {
     body = `<h2 id="mTitle">${esc(m.title)}</h2><p>${esc(m.text)}</p>${m.note ? `<p class="note">${esc(m.note)}</p>` : ""}
-      <div class="modal-actions"><button class="btn primary" type="button" data-act="confirmYes">${esc(m.yes)}</button><button class="btn" type="button" data-act="closeModal">${esc(tr("إلغاء", "Cancel"))}</button></div>`;
+      <div class="modal-actions"><button class="btn primary" type="button" data-act="confirmYes">${esc(m.yes)}</button><button class="btn" type="button" data-act="closeModal">${esc(m.no || tr("إلغاء", "Cancel"))}</button></div>`;
   }
   return `<div class="scrim" data-act="closeModal"></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">${body}</div>`;
 }
@@ -2455,7 +2628,7 @@ function refreshPage() {
   if (id) { const el = document.getElementById(id); if (el) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch {} } }
 }
 function toast(msg) { const el = document.getElementById("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (el.hidden = true), 2800); }
-function confirmBox(title, text, yes, onYes, note) { S.modal = { type: "confirm", title, text, yes, onYes, note }; render(); }
+function confirmBox(title, text, yes, onYes, note, no) { S.modal = { type: "confirm", title, text, yes, onYes, note, no }; render(); }
 function startCampaign() {
   S.menu = false; S.newGoal = true; S.editMode = false; WS.agent.convId = null; saveWS();
   if (location.hash !== "#agent") location.hash = "#agent"; else render();
@@ -2505,6 +2678,25 @@ document.addEventListener("click", (ev) => {
     case "assume": { const p = planOf(curConv()); if (!p) return; p.assumptions = p.assumptions.map((a) => (a.id === el.dataset.id ? { ...a, status: "accepted" } : a)); saveWS(); renderPage(); return; }
     case "assumeEdit": { S.editMode = true; S.composer = tr(`بخصوص «${el.dataset.text}»: `, `About “${el.dataset.text}”: `); renderPage(); const ta = document.getElementById("composerInput"); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } return; }
     case "planDecide": decidePlanChange(el.dataset.id, el.dataset.v === "1"); return;
+    case "rv": { const v = el.dataset.v; reviewDo(v, [el.dataset.id]).then(() => toast(v === "approve" ? tr("اعتُمدت — لن تُرسل فعلياً في النموذج الأولي", "Approved — nothing is really sent in the prototype") : v === "exclude" ? tr("استُبعدت", "Excluded") : v === "accept_edit" ? tr("اعتُمد التعديل", "Edit accepted") : v === "restore" ? tr("رجعت للمراجعة", "Back in review") : tr("تم", "Done"))); return; }
+    case "rvEdit": S.cardEdit = S.cardEdit === el.dataset.id ? null : el.dataset.id; renderPage(); setTimeout(() => document.getElementById(`ce-${el.dataset.id}`)?.focus(), 0); return;
+    case "rvFilter": S.rvFilter = el.dataset.v; S.rvLimit = 8; renderPage(); return;
+    case "rvTop": S.rvTop = !S.rvTop; renderPage(); return;
+    case "rvMore": S.rvLimit = (S.rvLimit || 8) + 8; renderPage(); return;
+    case "fullThread": S.fullThread = true; renderPage(); return;
+    case "advancedOn": S.advanced = true; persist(); render(); return;
+    case "scrollReview": { if (S.route !== "agent") { location.hash = "#agent"; } setTimeout(() => document.getElementById("review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); return; }
+    case "rvApproveAll": {
+      const conv = curConv(); const run = conv?.campaignId && runOf(conv.campaignId); if (!run) return;
+      const ready = run.review.filter((i) => i.status === "ready"); const flagged = run.review.filter((i) => i.status === "needs_edit").length;
+      confirmBox(tr(`اعتماد ${msgsTxt(ready.length)}؟`, `Approve ${msgsTxt(ready.length)}?`),
+        tr("سيتم اعتماد الرسائل للإرسال وفق سياسة الحملة الحالية.", "These messages will be approved for sending under the campaign's current policy.") + (flagged ? " " + tr(`الرسائل التي عندي عليها تحفظ (${flagged}) تبقى للمراجعة.`, `The ${flagged} I have reservations about stay in review.`) : ""),
+        tr(`اعتماد ${msgsTxt(ready.length)}`, `Approve ${msgsTxt(ready.length)}`),
+        () => reviewDo("approve", ready.map((i) => i.id), true),
+        tr("نموذج أولي — الاعتماد يعني «جاهزة للإرسال»، ولن تُرسل أي رسالة حقيقية.", "Prototype — approval means “ready to send”; no real message is sent."),
+        tr("رجوع", "Back"));
+      return;
+    }
 
     case "newProspect": case "newContact": S.menu = false; if (!C()) { toast(tr("أنشئ حملة أولاً", "Create a campaign first")); return; } S.modal = { type: act === "newContact" ? "contact" : "prospect", data: { company: "", contact: "", title: "", email: "", linkedin: "", city: "" } }; render(); setTimeout(() => document.getElementById(act === "newContact" ? "mPerson" : "mCo")?.focus(), 0); return;
     case "closeModal": S.modal = null; render(); return;
@@ -2540,9 +2732,10 @@ document.addEventListener("submit", (ev) => {
   ev.preventDefault();
   if (f.dataset.form === "hero") chatStart(document.getElementById("heroInput")?.value);
   if (f.dataset.form === "chat") chatSend(document.getElementById("composerInput")?.value);
+  if (f.dataset.form === "cardEdit") chatSend(f.querySelector("textarea")?.value, { reviewItemId: f.dataset.id });
 });
 document.addEventListener("keydown", (ev) => {
-  if (["heroInput", "composerInput"].includes(ev.target.id) && ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); ev.target.closest("form")?.requestSubmit(); return; }
+  if ((["heroInput", "composerInput"].includes(ev.target.id) || ev.target.id?.startsWith?.("ce-")) && ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); ev.target.closest("form")?.requestSubmit(); return; }
   if (ev.key === "Escape") { if (S.modal) { S.modal = null; render(); return; } if (S.menu) { S.menu = false; renderCtx(); return; } if (S.drawer) { S.drawer = null; render(); return; } }
   const chip = ev.target.closest?.("[data-chips]");
   if (chip && (ev.key === "Enter" || ev.key === "," || ev.key === "،")) {

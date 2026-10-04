@@ -9,6 +9,7 @@ import { parseMessage, sanitizeIntents, type AgentIntent, type QueryTopic } from
 import { applyAnswer, applyChanges, buildPlan, countOf, diffPlans, planSteps, type CampaignPlan, type PlanChanges, type PlannerContext, type PlanQuestion } from "./planner.js";
 import { understandRequest } from "./plans.js";
 import type { CampaignSnapshot } from "./snapshot.js";
+import { acceptEdit, autoApprove, buildReview, reviewCounts, rewriteItems, selectItems, type OfferText, type ReviewFilter, type ReviewItem, type ReviewPolicy } from "./review.js";
 
 /**
  * The acquisition agent. The user talks; the agent turns each message into
@@ -55,9 +56,15 @@ export interface CampaignRun {
   counts: RunCounts;
   snapshot: CampaignSnapshot;
   activity: ActivityItem[];
+  /** The drafted messages under review — the agent workspace's work list. */
+  review: ReviewItem[];
+  reviewPolicy: ReviewPolicy;
   launchedAt: string;
   updatedAt: string;
 }
+
+/** A button press on the review list (no chat needed). */
+export type ReviewAction = "approve" | "exclude" | "restore" | "accept_edit" | "discard_edit";
 
 export interface AgentApproval {
   id: string;
@@ -82,7 +89,7 @@ export interface ProspectItem {
 }
 
 /** A button: says something on the user's behalf, opens a page, or opens the plan editor (the chat composer in edit mode). */
-export type AgentAction = { label: string; say?: string; route?: "approvals" | "prospects" | "plan" | "overview" | "research"; edit?: boolean; primary?: boolean };
+export type AgentAction = { label: string; say?: string; route?: "review" | "approvals" | "prospects" | "plan" | "overview" | "research"; edit?: boolean; primary?: boolean };
 
 export type AgentCard =
   | { kind: "text"; text: string }
@@ -102,6 +109,8 @@ export interface ConversationMessage {
   at: string;
   text: string;
   intents?: AgentIntent[];
+  /** Written from one review item's own composer. */
+  target?: { id: string; label: string };
   understoodBy?: "rules" | "llm";
   cards?: AgentCard[];
 }
@@ -117,6 +126,8 @@ export interface Conversation {
   messages: ConversationMessage[];
   /** A change to a running campaign waiting for yes/no. */
   pendingApprovalId?: string;
+  /** Messages the user picked for a rewrite before saying how ("عدّل رسالة سارة" → next message says what). */
+  reviewScope?: ReviewFilter;
 }
 
 /** Read-only view of a campaign created outside a conversation (advanced setup, demo data). */
@@ -255,9 +266,13 @@ export class AcquisitionAgent {
   }
 
   /** Handles one user message. Returns the conversation to show (a new one when the user starts a different goal). */
-  async send(conversationId: string, text: string): Promise<{ conversation: Conversation }> {
+  async send(conversationId: string, text: string, opts: { reviewItemId?: string } = {}): Promise<{ conversation: Conversation }> {
     let conv = await this.require(conversationId);
     const userMsg: ConversationMessage = { id: newId("msg"), role: "user", at: this.now(), text };
+    if (opts.reviewItemId && conv.campaignId) {
+      const item = (await this.deps.runs.get(conv.campaignId))?.review.find((i) => i.id === opts.reviewItemId);
+      if (item) userMsg.target = { id: item.id, label: item.company };
+    }
     conv.messages.push(userMsg);
     await this.deps.conversations.put(conv);
     const loc = conv.locale;
@@ -266,7 +281,7 @@ export class AcquisitionAgent {
     const run = conv.campaignId ? await this.deps.runs.get(conv.campaignId) : undefined;
     const view = !plan && conv.campaignId ? await this.deps.campaignView?.(conv.campaignId) : undefined;
 
-    const { intents, understoodBy } = await this.interpret(text, conv, planner, plan, Boolean(run || view));
+    const { intents, understoodBy } = await this.interpret(text, conv, planner, plan, Boolean(run || view), run, userMsg.target?.id);
     userMsg.intents = intents;
     userMsg.understoodBy = understoodBy;
     await this.deps.conversations.put(conv);
@@ -326,8 +341,9 @@ export class AcquisitionAgent {
 
   // -------------------------------------------------------------------------
 
-  private async interpret(text: string, conv: Conversation, planner: PlannerContext, plan: CampaignPlan | undefined, running: boolean) {
-    const ctx = { planner, plan, running, pending: Boolean(conv.pendingApprovalId) };
+  private async interpret(text: string, conv: Conversation, planner: PlannerContext, plan: CampaignPlan | undefined, running: boolean, run?: CampaignRun, target?: string) {
+    const names = (run?.review ?? []).flatMap((i) => [i.company, i.company.split(" ")[0] ?? "", i.person, i.firstName, i.firstNameAr ?? ""]).filter((n) => n.length >= 3);
+    const ctx = { planner, plan, running, pending: Boolean(conv.pendingApprovalId), review: run?.review.length ? { names: [...new Set(names)] } : undefined, target };
     const rules = parseMessage(text, ctx);
     const ai = this.deps.ai;
     const input = {
@@ -487,10 +503,10 @@ export class AcquisitionAgent {
           if (run.status === "paused" && intent.type === "start") return this.handle({ type: "resume" }, conv, r, planner, plan, run, view);
           if (intent.type === "prepare_outreach") {
             r.say(
-              L(loc, `الرسائل جاهزة: ${msgs(loc, run.counts.messagesReady)} تنتظر مراجعتك.`, `Messages are ready: ${run.counts.messagesReady} waiting for your review.`),
+              L(loc, `الرسائل جاهزة في القائمة: ${msgs(loc, run.counts.messagesReady)} تنتظر مراجعتك.`, `The messages are ready in the list: ${msgs(loc, run.counts.messagesReady)} waiting for your review.`),
               plan ? L(loc, `سياسة الحملة: ${planSteps(plan).find((s) => s.key === "approval")!.text}.`, `Campaign policy: ${planSteps(plan).find((s) => s.key === "approval")!.text}.`) : "",
             );
-            r.card({ kind: "actions", actions: [{ label: L(loc, "راجع الرسائل", "Review messages"), route: "approvals", primary: true }] });
+            r.card({ kind: "actions", actions: [{ label: L(loc, "اعرض القائمة", "Show the list"), route: "review", primary: true }] });
           } else {
             r.say(L(loc, "أعمل عليها بالفعل. هذا الوضع الحالي:", "I'm already on it. Here's where things stand:"));
             r.card({ kind: "status", counts: run.counts, status: run.status });
@@ -515,6 +531,12 @@ export class AcquisitionAgent {
       }
       case "query":
         return this.answerQuery(intent.topic, conv, r, plan, run, view);
+      case "review_approve":
+      case "review_exclude":
+      case "review_restore":
+      case "review_rewrite":
+      case "review_policy":
+        return this.handleReview(intent, conv, r, plan, run);
       case "new_goal":
         return;
       case "unknown":
@@ -585,7 +607,7 @@ export class AcquisitionAgent {
       case "approvals": {
         const pendingChanges = run ? await this.deps.approvals.find((a) => a.campaignId === run.id && a.status === "pending") : [];
         r.say(L(loc, `يحتاج موافقتك الآن: ${msgs(loc, k.messagesReady)}${pendingChanges.length ? ` و${pendingChanges.length} تعديل على الخطة` : ""}.`, `Needs your approval now: ${k.messagesReady} messages${pendingChanges.length ? ` and ${pendingChanges.length} plan change(s)` : ""}.`));
-        r.card({ kind: "actions", actions: [{ label: L(loc, "مراجعة", "Review"), route: "approvals", primary: true }] });
+        r.card({ kind: "actions", actions: [{ label: L(loc, "اعرض القائمة", "Show the list"), route: "review", primary: true }] });
         return;
       }
       case "activity":
@@ -617,9 +639,13 @@ export class AcquisitionAgent {
     const counts = countsOf(snapshot);
     plan = { ...plan, status: "approved", assumptions: plan.assumptions.map((a) => (a.status === "proposed" ? { ...a, status: "accepted" as const } : a)) };
     await this.deps.plans.put(plan);
+    const reviewPolicy: ReviewPolicy = { mode: "manual" };
+    const review = buildReview(snapshot, this.offerText(plan), plan.strategy.messageLanguage, { now: this.now(), policy: reviewPolicy, reviewLocale: loc, labels: this.signalLabels(plan) });
+    const rc = reviewCounts(review);
+    counts.messagesReady = rc.pending;
     const run: CampaignRun = {
       id, clientId: plan.understanding.client.id, clientName: plan.understanding.client.name, planId: plan.id, conversationId: conv.id,
-      status: "running", cfg, counts, snapshot, activity: activityFor(plan, counts, this.now()), launchedAt: this.now(), updatedAt: this.now(),
+      status: "running", cfg, counts, snapshot, activity: activityFor(plan, counts, this.now()), review, reviewPolicy, launchedAt: this.now(), updatedAt: this.now(),
     };
     await this.deps.runs.put(run);
     conv.campaignId = id;
@@ -634,17 +660,185 @@ export class AcquisitionAgent {
       { title: L(loc, "بحث بمصادر", "Research with sources"), detail: L(loc, `درست ${counts.researched}`, `Researched ${counts.researched}`) },
       { title: L(loc, "تقييم", "Score"), detail: L(loc, `${counts.fit} تجاوزت ${plan.strategy.threshold} من ${plan.strategy.maxScore}، واستبعدت ${counts.excluded}`, `${counts.fit} scored ${plan.strategy.threshold}+ of ${plan.strategy.maxScore}; ${counts.excluded} excluded`) },
       { title: L(loc, "جهات الاتصال", "Contacts"), detail: L(loc, `${counts.contactsFound} جهة اتصال مناسبة`, `${counts.contactsFound} suitable contacts`) },
-      { title: L(loc, "تخصيص الرسائل", "Personalize"), detail: L(loc, `جهزت ${msgs(loc, counts.messagesReady)}`, `Drafted ${counts.messagesReady} messages`) },
+      { title: L(loc, "تخصيص الرسائل", "Personalize"), detail: L(loc, `جهزت ${msgs(loc, rc.total)}`, `Drafted ${rc.total} messages`) },
     ] });
+    this.workSummary(loc, r, counts.fit, rc, found);
+  }
+
+  /** "خلصت البحث والتخصيص. وجدت 29 جهة مناسبة. جهزت 27 رسالة. في 3 رسائل عندي تحفظ عليها. ما أرسلت أي شيء." */
+  private workSummary(loc: Locale, r: Reply, fit: number, rc: ReturnType<typeof reviewCounts>, found: (n: number) => string = (n) => orgs(loc, n)) {
     r.say(
-      L(loc, `وجدت ${found(counts.discovered)}، ${counts.fit} منها عالية الملاءمة، وجهزت ${msgs(loc, counts.messagesReady)}.`, `I found ${found(counts.discovered)}; ${counts.fit} are a strong fit, and I drafted ${counts.messagesReady} messages.`),
-      plan.strategy.autonomy === "human_approval" ? L(loc, "لن يُرسل أي شيء قبل موافقتك.", "Nothing is sent before you approve.") : planSteps(plan).find((s) => s.key === "approval")!.text,
+      L(loc, "خلصت البحث والتخصيص.", "Research and personalization are done."),
+      L(loc, `وجدت ${found(fit)} مناسبة.`, `I found ${found(fit)} that fit.`),
+      L(loc, `جهزت ${msgs(loc, rc.total)}.`, `I drafted ${msgs(loc, rc.total)}.`),
+      rc.needsEdit ? L(loc, `في ${msgs(loc, rc.needsEdit)} عندي تحفظ عليها.`, `I have reservations about ${msgs(loc, rc.needsEdit)}.`) : "",
+      L(loc, "ما أرسلت أي شيء.", "I haven't sent anything."),
+      L(loc, "راجعها هنا تحت، وإذا تبي تغيير عام قل لي وأنا أعدله على المجموعة.", "Review them right below — and if you want a change across the board, just tell me and I'll apply it to the whole set."),
     );
-    r.card({ kind: "actions", actions: [
-      { label: L(loc, `راجع ${msgs(loc, counts.messagesReady)}`, `Review ${counts.messagesReady} messages`), route: "approvals", primary: true },
-      { label: L(loc, "ورني أفضل الفرص", "Show me the best opportunities"), say: L(loc, "ورني أفضل الفرص", "Show me the best opportunities") },
-      { label: L(loc, "ليش اخترت هذي الجهات؟", "Why these prospects?"), say: L(loc, "ليش اخترت هذي الجهات؟", "Why these prospects?") },
-    ] });
+  }
+
+  /** Scoring signal keys (criterion_N, as the builder names them) → label in both languages. */
+  private signalLabels(plan: CampaignPlan): Record<string, Record<Locale, string>> {
+    return Object.fromEntries(plan.strategy.signals.map((sig, i) => [`criterion_${i + 1}`, sig.labels]));
+  }
+
+  /** The offer as message parts in both languages (value, call to action, link). */
+  private offerText(plan: CampaignPlan): OfferText {
+    const kb = this.deps.planner(plan.locale).knowledge;
+    const preset = this.deps.presets.outcomes.find((o) => o.key === plan.understanding.outcome.preset);
+    const cta = { ar: preset?.conversion.cta.ar ?? "", en: preset?.conversion.cta.en ?? "" };
+    if (plan.extraction.cta) cta[plan.locale] = plan.extraction.cta;
+    return { name: plan.draft.offer.name, value: kb.defaults.offer.valueProposition, cta, link: plan.draft.offer.link };
+  }
+
+  /** Saves a run after a review change: counts follow the queue; activity records what happened. */
+  private async saveReview(run: CampaignRun, note?: string): Promise<CampaignRun> {
+    const rc = reviewCounts(run.review);
+    const updated: CampaignRun = {
+      ...run, counts: { ...run.counts, messagesReady: rc.pending }, updatedAt: this.now(),
+      activity: note ? [...run.activity, { at: this.now(), text: note, kind: rc.pending ? "info" : "done" }] : run.activity,
+    };
+    await this.deps.runs.put(updated);
+    return updated;
+  }
+
+  /** Buttons on the review list: approve / exclude / restore one or many, accept or discard a single rewrite. */
+  async reviewAction(campaignId: string, action: ReviewAction, ids: string[], opts: { announce?: boolean } = {}): Promise<CampaignRun> {
+    const run = await this.deps.runs.get(campaignId);
+    if (!run) throw new Error(`campaign ${campaignId} not found`);
+    const conv = await this.deps.conversations.get(run.conversationId);
+    const loc = conv?.locale ?? "ar";
+    const now = this.now();
+    const items = run.review.filter((i) => ids.includes(i.id));
+    for (const i of items) {
+      if (action === "approve" && i.status !== "excluded") i.status = "approved";
+      if (action === "exclude") i.status = "excluded";
+      if (action === "restore" && i.status === "excluded") i.status = i.flags.length ? "needs_edit" : "ready";
+      if (action === "accept_edit") acceptEdit(i, now);
+      if (action === "discard_edit") i.pendingEdit = undefined;
+      i.updatedAt = now;
+    }
+    const n = items.length;
+    const note =
+      action === "approve" ? L(loc, `اعتمدت ${msgs(loc, n)}.`, `Approved ${msgs(loc, n)}.`)
+      : action === "exclude" ? L(loc, `استبعدت ${orgs(loc, n)}.`, `Excluded ${orgs(loc, n)}.`)
+      : action === "restore" ? L(loc, `رجّعت ${orgs(loc, n)} للمراجعة.`, `Restored ${orgs(loc, n)} to review.`)
+      : action === "accept_edit" ? L(loc, `اعتمدت تعديل رسالة ${items[0]?.company ?? ""}.`, `Accepted the edit for ${items[0]?.company ?? ""}.`)
+      : undefined;
+    const updated = await this.saveReview(run, note);
+    if (opts.announce && conv && note) {
+      const rc = reviewCounts(updated.review);
+      const r = new Reply().say(note, this.remaining(loc, rc));
+      await this.reply(conv, r);
+    }
+    return updated;
+  }
+
+  private remaining(loc: Locale, rc: ReturnType<typeof reviewCounts>) {
+    if (!rc.pending && rc.approved) return L(loc, `✓ ${msgs(loc, rc.approved)} معتمدة — جاهزة للإرسال. ما أرسلت أي شيء (نموذج أولي).`, `✓ ${msgs(loc, rc.approved)} approved — ready to send. Nothing was sent (prototype).`);
+    return rc.pending ? L(loc, `بقيت ${msgs(loc, rc.pending)} تحتاج مراجعة.`, `${msgs(loc, rc.pending)} still need review.`) : "";
+  }
+
+  private async handleReview(intent: Extract<AgentIntent, { type: `review_${string}` }>, conv: Conversation, r: Reply, plan: CampaignPlan | undefined, run: CampaignRun | undefined) {
+    const loc = conv.locale;
+    if (!run || !run.review.length) {
+      r.say(run ? L(loc, "ما عندي رسائل للمراجعة الآن.", "There are no messages to review right now.") : L(loc, "لم أبدأ بعد — قل «ابدأ البحث» وأجهز الرسائل.", "I haven't started yet — say “start” and I'll draft the messages."));
+      return;
+    }
+    const now = this.now();
+    const cityName = (key: string) => this.deps.planner(loc).knowledge.regions.flatMap((x) => x.cities).find((c) => c.key === key)?.name[loc] ?? key;
+    const where = (f: ReviewFilter) => [
+      f.minScore !== undefined ? L(loc, `بدرجة ${f.minScore}+`, `scoring ${f.minScore}+`) : "",
+      f.cities?.length ? L(loc, `في ${f.cities.map(cityName).join("، ")}`, `in ${f.cities.map(cityName).join(", ")}`) : "",
+    ].filter(Boolean).join(" ");
+    switch (intent.type) {
+      case "review_policy": {
+        run.reviewPolicy = intent.policy;
+        if (intent.policy.mode === "manual") {
+          await this.saveReview(run, L(loc, "الموافقة يدوية: كل رسالة تنتظر موافقتك.", "Manual approval: every message waits for you."));
+          r.say(L(loc, "تم. الموافقة يدوية — كل رسالة تنتظر موافقتك.", "Done. Approval is manual — every message waits for you."));
+          return;
+        }
+        const n = autoApprove(run.review, intent.policy, now);
+        const updated = await this.saveReview(run, L(loc, `اعتماد تلقائي للرسائل بدرجة ${intent.policy.autoAbove}+ بلا تحفظات.`, `Auto-approval for clean messages scoring ${intent.policy.autoAbove}+.`));
+        r.say(
+          L(loc, `تم. سأعتمد تلقائياً الرسائل بدرجة ${intent.policy.autoAbove}+ اللي ما عندي عليها تحفظ.`, `Done. I'll auto-approve clean messages scoring ${intent.policy.autoAbove}+.`),
+          L(loc, `اعتمدت الآن ${msgs(loc, n)}.`, `Approved ${msgs(loc, n)} now.`),
+          this.remaining(loc, reviewCounts(updated.review)),
+        );
+        return;
+      }
+      case "review_approve": {
+        const f = intent.filter;
+        const named = Boolean(f.ids?.length || f.names?.length || f.status);
+        const scope = { ...f, status: f.status ?? (named ? (["ready", "needs_edit"] as const).slice() : (["ready"] as const).slice()) };
+        const items = selectItems(run.review, scope);
+        const skipped = named ? 0 : selectItems(run.review, { ...f, status: ["needs_edit"] }).length;
+        for (const i of items) { i.status = "approved"; i.updatedAt = now; }
+        const updated = await this.saveReview(run, items.length ? L(loc, `اعتمدت ${msgs(loc, items.length)}${where(f) ? ` ${where(f)}` : ""}.`, `Approved ${msgs(loc, items.length)}${where(f) ? ` ${where(f)}` : ""}.`) : undefined);
+        if (!items.length) { r.say(L(loc, "ما فيه رسائل جاهزة تطابق هذا.", "No ready messages match that.")); return; }
+        r.say(
+          L(loc, `اعتمدت ${msgs(loc, items.length)}${where(f) ? ` ${where(f)}` : ""}.`, `Approved ${msgs(loc, items.length)}${where(f) ? ` ${where(f)}` : ""}.`),
+          skipped ? L(loc, `تركت ${msgs(loc, skipped)} عندي عليها تحفظ — قل «اعتمد اللي عليها تحفظ» إذا تبيها.`, `I left ${msgs(loc, skipped)} I have reservations about — say “approve the flagged ones” if you want them.`) : "",
+          this.remaining(loc, reviewCounts(updated.review)),
+        );
+        return;
+      }
+      case "review_exclude":
+      case "review_restore": {
+        const f = intent.filter;
+        if (!f.ids && !f.names && !f.cities && f.minScore === undefined && f.maxScore === undefined && !f.top && !f.large && !f.lacksSignal && !f.status && !f.all) {
+          r.say(L(loc, "أي جهات؟ مثلاً: «استبعد شركات دبي» أو «استبعد Oasis».", "Which ones? e.g. “exclude Dubai companies” or “exclude Oasis”."));
+          return;
+        }
+        const restore = intent.type === "review_restore";
+        const items = selectItems(run.review, restore ? { ...f, status: ["excluded"] } : f);
+        for (const i of items) { i.status = restore ? (i.flags.length ? "needs_edit" : "ready") : "excluded"; i.updatedAt = now; }
+        const text = restore ? L(loc, `رجّعت ${orgs(loc, items.length)} للمراجعة.`, `Restored ${orgs(loc, items.length)} to review.`) : L(loc, `استبعدت ${orgs(loc, items.length)}.`, `Excluded ${orgs(loc, items.length)}.`);
+        const updated = await this.saveReview(run, items.length ? text : undefined);
+        r.say(items.length ? text : L(loc, "ما لقيت جهات تطابق هذا.", "Nothing matches that."), this.remaining(loc, reviewCounts(updated.review)));
+        return;
+      }
+      case "review_rewrite": {
+        let f = intent.filter;
+        const instruction = intent.rewrite;
+        const hasScope = Boolean(f.ids?.length || f.names?.length || f.cities?.length || f.minScore !== undefined || f.top || f.large || f.lacksSignal || f.status);
+        if (!Object.keys(instruction).length) {
+          const items = selectItems(run.review, f);
+          conv.reviewScope = f;
+          await this.deps.conversations.put(conv);
+          const which = f.ids?.length || (f.names?.length && items.length === 1) ? L(loc, `رسالة ${items[0]?.company ?? ""}`, `the message to ${items[0]?.company ?? ""}`) : msgs(loc, items.length);
+          r.say(L(loc, `وش تبي أعدل في ${which}؟ مثلاً: أقصر، أكثر مباشرة، بالعربي، اذكر التقارير، لا تذكر Meta.`, `What should I change in ${which}? e.g. shorter, more direct, in Arabic, mention reporting, don't mention Meta.`));
+          return;
+        }
+        if (!hasScope && conv.reviewScope) { f = conv.reviewScope; conv.reviewScope = undefined; await this.deps.conversations.put(conv); }
+        const targets = selectItems(run.review, f);
+        const single = Boolean(f.ids?.length) || (Boolean(f.names?.length) && targets.length === 1);
+        const offer = plan ? this.offerText(plan) : { name: run.cfg.offer.name, value: { ar: run.cfg.offer.valueProposition, en: run.cfg.offer.valueProposition }, cta: { ar: run.cfg.offer.callToAction, en: run.cfg.offer.callToAction } };
+        const res = rewriteItems(targets, instruction, offer, now, single, loc);
+        const what = [
+          instruction.short ? L(loc, "أقصر", "shorter") : "",
+          instruction.direct ? L(loc, "أكثر مباشرة", "more direct") : "",
+          instruction.language ? L(loc, `بال${instruction.language === "ar" ? "عربية" : "إنجليزية"}`, `in ${instruction.language === "ar" ? "Arabic" : "English"}`) : "",
+          instruction.avoid?.length ? L(loc, `بدون ذكر ${instruction.avoid.join("، ")}`, `without mentioning ${instruction.avoid.join(", ")}`) : "",
+          instruction.mention?.length ? L(loc, `مع ذكر ${instruction.mention.join("، ")} حيث يوجد مصدر`, `mentioning ${instruction.mention.join(", ")} where a source supports it`) : "",
+        ].filter(Boolean).join(L(loc, " و", " and "));
+        if (single) {
+          await this.saveReview(run);
+          r.say(L(loc, `عدّلت رسالة ${targets[0]?.company ?? ""} لتكون ${what}. راجع «قبل/بعد» في بطاقتها واعتمد التعديل إذا يناسبك.`, `I rewrote the message to ${targets[0]?.company ?? ""} to be ${what}. Check before/after on its card and accept the edit if it works.`), ...res.notes.slice(0, 2));
+          return;
+        }
+        const flagged = targets.filter((i) => i.status === "needs_edit").length;
+        await this.saveReview(run, L(loc, `عدّلت ${msgs(loc, targets.length)}: ${what}.`, `Rewrote ${msgs(loc, targets.length)}: ${what}.`));
+        r.say(
+          L(loc, `تم. عدّلت ${msgs(loc, targets.length)} لتكون ${what}.`, `Done. I rewrote ${msgs(loc, targets.length)} to be ${what}.`),
+          flagged ? L(loc, `راجعت ${msgs(loc, flagged)} فيها معلومات غير مؤكدة وتركتها للمراجعة.`, `${msgs(loc, flagged)} contain unconfirmed details — I left them for your review.`) : "",
+          res.reopened ? L(loc, `${msgs(loc, res.reopened)} كانت معتمدة ورجعت للمراجعة بعد التعديل.`, `${msgs(loc, res.reopened)} were approved and went back to review after the edit.`) : "",
+          ...res.notes.slice(0, 2),
+        );
+        return;
+      }
+    }
   }
 
   private async rerun(run: CampaignRun, plan: CampaignPlan, note: string): Promise<CampaignRun> {
@@ -652,8 +846,10 @@ export class AcquisitionAgent {
     const snapshot = await this.deps.execute(plan, cfg);
     const counts = countsOf(snapshot);
     const loc = plan.locale;
+    const review = buildReview(snapshot, this.offerText(plan), plan.strategy.messageLanguage, { now: this.now(), policy: run.reviewPolicy, previous: run.review, reviewLocale: loc, labels: this.signalLabels(plan) });
+    counts.messagesReady = reviewCounts(review).pending;
     const updated: CampaignRun = {
-      ...run, cfg, snapshot, counts, updatedAt: this.now(),
+      ...run, cfg, snapshot, counts, review, updatedAt: this.now(),
       activity: [...run.activity, { at: this.now(), text: note, kind: "info" }, ...activityFor(plan, counts, this.now()).slice(1).map((a) => ({ ...a, text: L(loc, `بعد التعديل: ${a.text}`, `After the change: ${a.text}`) }))],
     };
     await this.deps.runs.put(updated);

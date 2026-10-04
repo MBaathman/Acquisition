@@ -63,7 +63,7 @@ export async function snapshotCampaign(
       return {
         id: p.id, company: a?.name, domain: a?.domain, city: a?.city ?? c.city, country: a?.country ?? c.country, employees: a?.employees,
         sector: (answers.sector as string) ?? (answers.agency_type as string) ?? (c.attributes.buyer_type as string) ?? a?.industry,
-        contact: [c.firstName, c.lastName].filter(Boolean).join(" "), title: c.title, channels: Object.keys(c.handles), handleSource: c.externalIds.handleSource,
+        contact: [c.firstName, c.lastName].filter(Boolean).join(" "), firstName: c.firstName, firstNameAr: c.attributes.firstNameAr as string | undefined, title: c.title, channels: Object.keys(c.handles), handleSource: c.externalIds.handleSource,
         persona: p.persona, score: p.score, scoreMax: p.scoreMax, tier: p.tier, breakdown: p.scoreBreakdown ?? [],
         researchStatus: p.researchStatus, signals: p.research?.signals ?? [], missing: p.research?.missing ?? [], rejected: p.research?.rejected ?? [], researchConfidence: p.research?.confidence,
         contactStatus: p.contactStatus, stage: p.stage, status: p.status, parkedReason: p.attributes.parkedReason, lostReason: p.attributes.lostReason,

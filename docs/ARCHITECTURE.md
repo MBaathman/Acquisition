@@ -247,6 +247,38 @@ The form-based setup remains as **advanced setup**, and the operational pages
 (ICP, scoring, research, outreach, automation, audit...) as **advanced
 details** — available, but not the way the product is run.
 
+### The agent workspace: review and approve in place
+
+After a run, the conversation page *is* the review centre (no other page is
+needed): what the agent did → what it needs from you → the work list → chat →
+activity. The work list is `CampaignRun.review` (`src/agent/review.ts`): one
+`ReviewItem` per drafted message with the prospect, fit score, **why it was
+picked (sourced reasons only)**, unverified facts left out, the agent's
+reservations, and the message.
+
+- Status per message: `ready` · `approved` · `needs_edit` (the agent has a
+  reservation: unsourced facts, low research confidence, maybe not the decision
+  maker) · `excluded`. Approval means *approved for sending*; the prototype never
+  sends, and real sending will need its own approval.
+- Buttons act directly (`agent.reviewAction`): looks good / exclude / restore,
+  accept or discard a single rewrite; "approve all" asks for confirmation and
+  leaves flagged messages for review.
+- The chat controls the whole list — intents `review_approve`,
+  `review_exclude`, `review_restore`, `review_rewrite`, `review_policy` with a
+  `ReviewFilter` (names, cities, score above/below, first N, large companies,
+  fewer than N clients, flagged):
+  "خل الرسائل أقصر وأكثر مباشرة" · "اعتمد الرسائل اللي تقييمها فوق 85" ·
+  "استبعد شركات دبي" · "لا تذكر Meta" · "عدّل رسالة سارة فقط" ·
+  "اعتمد تلقائياً الرسائل التي تتجاوز 90" · "خلني أوافق على كل رسالة".
+- Messages are composed from parts (greeting, sourced hook, value, call to
+  action) with a style (short, direct, language, avoid, mention), so rewrites
+  are deterministic and can only use facts that have a source; asking to
+  mention something without a source is reported, not invented. A model-backed
+  rewriter can replace the composer behind the same interface.
+- A single card has its own composer ("وش تبي أعدل في رسالة …؟"); its rewrite
+  waits as before/after until accepted.
+- Operational pages (outreach, approvals) show the same decisions.
+
 ## Hybrid intelligence (LLM only where it adds something)
 
 ```
