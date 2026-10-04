@@ -610,6 +610,10 @@ pre.code { background: var(--surface-2); border-radius: 8px; padding: 12px; font
   .rv-why li { flex-direction: column; gap: 0; }
   .rv-top .btn { width: 100%; }
 }
+.cp-rows dd .unknown { color: var(--warn-ink); font-weight: 600; }
+.changelog { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.changelog li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding-block: 4px; border-bottom: 1px dashed var(--line); font-size: .88rem; }
+.changelog s { color: var(--ink-3); }
 </style>
 
 <div class="app" id="app">
@@ -948,7 +952,16 @@ function runCampaign(run) {
 }
 const runOf = (campaignId) => WS.runs.find((r) => r.id === campaignId);
 const curConv = () => WS.conversations.find((c) => c.id === WS.agent.convId) || null;
-const planOf = (conv) => (conv?.planId ? WS.plans.find((p) => p.id === conv.planId) : null);
+function planOf(conv) {
+  const p = conv?.planId ? WS.plans.find((x) => x.id === conv.planId) : null;
+  if (p && !p.state) {
+    // Plans saved before the campaign state existed: rebuild them from what the conversation recorded.
+    const migrated = AcqEngine.applyChanges(p, {}, planCtx(p.locale));
+    Object.assign(p, { ...migrated, status: p.status });
+    saveWS();
+  }
+  return p;
+}
 const goalText = (u) => AcqEngine.countOf(S.lang, u.outcome.goal, u.outcome.label, u.outcome.plural);
 const EXAMPLES = () => S.lang === "ar"
   ? ["أبغى 100 عميل مدفوع لـ DataSpeaks في الإمارات من وكالات التسويق", "20 اجتماع مؤهل لـ Tatimmah مع شركات كبيرة في السعودية", "Qualified Leads لعقارات سكنية فاخرة في الرياض"]
@@ -1010,23 +1023,31 @@ function loopStrip(c) {
 /* --------------------------------------------------------------- cards */
 const autonomyText = (a) => (a === "human_approval" ? tr("كل رسالة بموافقتك", "You approve every message") : a === "assisted" ? tr("مساعد: الآمن يُرسل تلقائياً", "Assisted: safe ones go automatically") : tr("تلقائي", "Autonomous"));
 function planCardHtml(p, opts = {}) {
-  const s = p.strategy; const u = p.understanding; const running = Boolean(opts.running);
-  const size = s.size && (s.size.min != null || s.size.max != null) ? tr(`${s.size.min ?? 1}–${s.size.max ?? "∞"} موظف`, `${s.size.min ?? 1}–${s.size.max ?? "∞"} employees`) : (s.size ? tr("كل الأحجام", "Any size") : "");
+  // Everything here reads the campaign state the conversation built — the single source of truth.
+  const s = p.strategy; const st = p.state; const u = p.understanding; const running = Boolean(opts.running);
+  const kind = st.audience.kind === "people" ? tr("أشخاص", "People") : st.audience.kind === "individuals" ? tr("أفراد", "Individuals") : st.audience.kind === "companies" ? tr("شركات", "Companies") : "";
+  const unknown = `<span class="unknown">${esc(tr("غير محدد — قل لي", "Not set — tell me"))}</span>`;
   const rows = [
-    [tr("الهدف", "Goal"), goalText(u)], [tr("الجمهور", "Audience"), u.audience.label], [tr("السوق", "Market"), u.market.place],
-    ...(size ? [[tr("الحجم", "Size"), size]] : []), ...(s.minClients ? [[tr("الحد الأدنى للعملاء", "Min. clients"), `${s.minClients}+`]] : []),
-    ...(s.decisionMakersOnly ? [[tr("الأشخاص", "People"), tr("أصحاب القرار فقط", "Decision makers only")]] : []),
-    [tr("حد التأهيل", "Qualification"), `${s.threshold}/${s.maxScore}`], [tr("القنوات", "Channels"), s.channels.join(" + ")],
-    [tr("لغة الرسائل", "Language"), s.messageLanguage === "ar" ? tr("العربية", "Arabic") : tr("الإنجليزية", "English")], [tr("الإرسال", "Sending"), autonomyText(s.autonomy)],
+    [tr("الهدف", "Goal"), esc(goalText(u))],
+    [tr("الجمهور", "Audience"), st.audience.label ? `${esc(st.audience.label)}${kind ? ` <em class="chip outline">${esc(kind)}</em>` : ""}` : unknown],
+    ...(st.audience.kind === "people" ? [[tr("المسميات", "Job titles"), esc(st.audience.titles.slice(0, 4).join(" · "))]] : []),
+    [tr("الجغرافيا", "Geography"), esc(st.geography.place)],
+    ...(st.companySize ? [[st.audience.kind === "people" ? tr("حجم جهة العمل", "Employer size") : tr("الحجم", "Size"), esc(st.companySize.label)]] : []),
+    ...(st.qualification.minClients ? [[tr("الحد الأدنى للعملاء", "Min. clients"), `${st.qualification.minClients}+`]] : []),
+    ...(st.qualification.decisionMakersOnly ? [[tr("الأشخاص", "People"), esc(tr("أصحاب القرار فقط", "Decision makers only"))]] : []),
+    [tr("حد التأهيل", "Qualification"), `${st.qualification.threshold}/${st.qualification.maxScore}`], [tr("القنوات", "Channels"), esc(s.channels.join(" + "))],
+    [tr("لغة الرسائل", "Language"), esc(st.language === "ar" ? tr("العربية", "Arabic") : tr("الإنجليزية", "English"))],
+    [tr("اعتماد الرسائل", "Message approval"), esc(st.approval.mode === "auto" ? tr(`تلقائي للرسائل بدرجة ${st.approval.autoAbove}+`, `Automatic at ${st.approval.autoAbove}+`) : tr("يدوي — كل رسالة بموافقتك", "Manual — you approve each"))],
+    [tr("الإرسال", "Sending"), esc(autonomyText(st.autonomy))],
   ];
   const by = (m) => AcqEngine.DECISION_POLICY.filter((d) => d.mode === m).map((d) => `<li>${esc(d.label[S.lang])}</li>`).join("");
   return `<div class="card-plan">
     <div class="cp-head"><b>${esc(tr("خطة الاكتساب", "Acquisition plan"))}</b><span class="chip ${running ? "good" : p.questions.length ? "warn" : "accent"}">${esc(running ? tr("تعمل", "Running") : p.questions.length ? tr("بانتظار نقطة", "One point open") : tr("جاهزة", "Ready"))}</span></div>
-    <dl class="cp-rows">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+    <dl class="cp-rows">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join("")}</dl>
     <div class="cp-modes"><div><b>${esc(tr("أقرره بنفسي", "I decide"))}</b><ul>${by("auto")}</ul></div><div><b>${esc(tr("أسألك عنه", "I ask"))}</b><ul>${by("ask")}</ul></div><div><b>${esc(tr("يحتاج موافقتك", "Needs your approval"))}</b><ul>${by("approval")}</ul></div></div>
     <details class="signals"><summary>${esc(tr("تفاصيل الخطة", "Plan details"))}</summary><ol class="flow">${AcqEngine.planSteps(p).map((x) => `<li class="on"><span>${esc(x.text)}</span></li>`).join("")}</ol>
       <ul>${s.signals.map((x) => `<li><span>${esc(x.label)}${x.timing ? ` <em class="chip outline">${esc(tr("توقيت", "timing"))}</em>` : ""}</span><b class="num">${x.points}</b></li>`).join("")}</ul></details>
-    ${opts.actions === false ? "" : `<div class="card-actions">${running ? "" : `<button type="button" class="btn primary lg" data-act="say" data-v="${esc(tr("ابدأ البحث", "Start"))}">${esc(tr("ابدأ البحث", "Start"))}</button>`}<button type="button" class="btn lg" data-act="editPlan">${esc(tr("تعديل الخطة", "Edit the plan"))}</button></div>`}
+    ${opts.actions === false ? "" : `<div class="card-actions"><button type="button" class="btn lg" data-act="editPlan">${esc(tr("تعديل الخطة", "Edit the plan"))}</button></div>`}
   </div>`;
 }
 function assumptionsHtml(p, live) {
@@ -1052,7 +1073,8 @@ function cardHtml(card, msg, conv, isLast) {
     case "assumptions": return p ? assumptionsHtml(p, isLast) : "";
     case "questions": {
       const open = new Set((p?.questions || []).map((q) => q.id));
-      return card.questions.map((q) => `<div class="card-q ${open.has(q.id) ? "" : "done"}"><b>${esc(q.text)}</b>${open.has(q.id) ? `<div class="q-opts">${q.options.filter((o) => !o.custom).map((o) => `<button type="button" class="btn lg ${q.default === o.id ? "primary-soft" : ""}" data-act="say" data-v="${esc(o.label)}">${esc(o.label)}</button>`).join("")}</div><span class="tiny muted">${esc(tr("أو اكتب إجابتك بكلامك.", "Or answer in your own words."))}</span>` : `<span class="tiny muted">✓ ${esc(tr("تمت الإجابة", "Answered"))}</span>`}</div>`).join("");
+      // A question that no longer applies (e.g. the audience changed) disappears; an answered one says so.
+      return card.questions.filter((q) => open.has(q.id) || p?.answers?.[q.id]).map((q) => `<div class="card-q ${open.has(q.id) ? "" : "done"}"><b>${esc(q.text)}</b>${open.has(q.id) ? `<div class="q-opts">${q.options.filter((o) => !o.custom).map((o) => `<button type="button" class="btn lg ${q.default === o.id ? "primary-soft" : ""}" data-act="say" data-v="${esc(o.label)}">${esc(o.label)}</button>`).join("")}</div><span class="tiny muted">${esc(tr("أو اكتب إجابتك بكلامك.", "Or answer in your own words."))}</span>` : `<span class="tiny muted">✓ ${esc(tr("تمت الإجابة", "Answered"))}</span>`}</div>`).join("");
     }
     case "diff": {
       const ap = card.approvalId ? WS.approvals.find((a) => a.id === card.approvalId) : null;
@@ -1137,8 +1159,8 @@ function composerHtml(conv, reviewing = false) {
    prospect with why, sources and the message) → chat to steer it → activity.
    Buttons act directly; anything broader is said in the chat and applied to
    the whole list by the agent. Nothing here navigates away. */
-const msgsTxt = (n) => (S.lang === "ar" ? (n === 1 ? "رسالة واحدة" : AcqEngine.countOf("ar", n, "رسالة", "رسائل")) : `${n} message${n === 1 ? "" : "s"}`);
-const orgsTxt = (n) => (S.lang === "ar" ? AcqEngine.countOf("ar", n, "جهة", "جهات") : `${n} prospect${n === 1 ? "" : "s"}`);
+const msgsTxt = (n) => (S.lang === "ar" ? (n === 1 ? "رسالة واحدة" : n === 2 ? "رسالتين" : AcqEngine.countOf("ar", n, "رسالة", "رسائل")) : `${n} message${n === 1 ? "" : "s"}`);
+const orgsTxt = (n) => (S.lang === "ar" ? (n === 1 ? "جهة واحدة" : n === 2 ? "جهتين" : AcqEngine.countOf("ar", n, "جهة", "جهات")) : `${n} prospect${n === 1 ? "" : "s"}`);
 const RV_STATUS = {
   ready: ["جاهزة للمراجعة", "Ready for review", "accent"],
   approved: ["معتمدة", "Approved", "good"],
@@ -1267,6 +1289,11 @@ function pageAgent() {
     ${nowPanel(conv)}
   </section>`;
 }
+function changeLogHtml(p) {
+  const log = (p.changeLog || []).filter((e) => e.source !== "initial");
+  if (!log.length) return `<p class="muted small">${esc(tr("لا تغييرات بعد الطلب الأول.", "No changes since the first request."))}</p>`;
+  return `<ol class="changelog">${log.map((e) => `<li><span class="num tiny muted">#${e.n}</span><b>${esc(e.label)}</b><s>${esc(e.from)}</s><span aria-hidden="true">${S.lang === "ar" ? "←" : "→"}</span><span>${esc(e.to)}</span><span class="tiny muted">${esc(e.source === "answer" ? tr("إجابة", "answer") : tr("رسالة", "message"))}</span></li>`).join("")}</ol>`;
+}
 /** The stored plan behind the current campaign (no model call — just the saved structure). */
 function pagePlan() {
   const c = C(); const run = runOf(c.config.id);
@@ -1275,6 +1302,7 @@ function pagePlan() {
   if (!p) return `${head}<section class="grid"><article class="panel"><h2>${esc(tr("حلقة العمل", "The loop"))}</h2>${loopStrip(c)}</article><article class="panel"><p>${esc(tr("أُعدّت هذه الحملة من الإعدادات المتقدمة. تفاصيلها في «الإعدادات».", "This campaign was configured in advanced settings; its details are under Settings."))}</p><div class="actions"><a class="btn" href="#settings">${esc(tr("الإعدادات", "Settings"))}</a><a class="btn primary" href="#agent">${esc(tr("اسأل الوكيل عنها", "Ask the agent about it"))}</a></div></article></section>`;
   return `${head}<section class="grid g2">
     <article class="panel"><h2>${esc(tr("طلبك", "Your request"))}</h2><blockquote class="req">${esc(p.request)}</blockquote>${planCardHtml(p, { running: true, actions: false })}<div class="actions"><a class="btn primary" href="#agent" data-act="editPlanNav">${esc(tr("تعديل الخطة بالمحادثة", "Change the plan by chat"))}</a></div></article>
+    <article class="panel"><h2>${esc(tr("سجل التغييرات", "Change log"))}</h2><p class="small muted">${esc(tr("كل ما غيّرته المحادثة في الخطة، بالترتيب.", "Everything the conversation changed in the plan, in order."))}</p>${changeLogHtml(p)}</article>
     <article class="panel"><h2>${esc(tr("حلقة العمل", "The loop"))}</h2>${loopStrip(c)}${assumptionsHtml(p, false)}<p class="small muted">${esc(tr("للتفاصيل الكاملة (ICP، التقييم، البحث، القنوات، السياسات): «عرض التفاصيل المتقدمة».", "Full detail (ICP, scoring, research, channels, policies): “Show advanced details”."))}</p></article>
   </section>`;
 }

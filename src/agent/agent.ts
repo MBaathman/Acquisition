@@ -6,7 +6,7 @@ import { newId } from "../runtime/ids.js";
 import { interpretMessage } from "../intelligence/prompts.js";
 import type { IntelligenceService } from "../intelligence/service.js";
 import { parseMessage, sanitizeIntents, type AgentIntent, type QueryTopic } from "./intents.js";
-import { applyAnswer, applyChanges, buildPlan, countOf, diffPlans, planSteps, type CampaignPlan, type PlanChanges, type PlannerContext, type PlanQuestion } from "./planner.js";
+import { applyAnswer, applyChanges, countOf, normalize, startPlan, diffPlans, planSteps, type CampaignPlan, type PlanChanges, type PlannerContext, type PlanQuestion } from "./planner.js";
 import { understandRequest } from "./plans.js";
 import type { CampaignSnapshot } from "./snapshot.js";
 import { acceptEdit, autoApprove, buildReview, reviewCounts, rewriteItems, selectItems, type OfferText, type ReviewFilter, type ReviewItem, type ReviewPolicy } from "./review.js";
@@ -126,6 +126,8 @@ export interface Conversation {
   messages: ConversationMessage[];
   /** A change to a running campaign waiting for yes/no. */
   pendingApprovalId?: string;
+  /** A big audience switch on a draft plan, waiting for yes/no. */
+  pendingUpdate?: { changes: PlanChanges; rows: AgentApproval["rows"]; messageId?: string };
   /** Messages the user picked for a rewrite before saying how ("عدّل رسالة سارة" → next message says what). */
   reviewScope?: ReviewFilter;
 }
@@ -180,8 +182,8 @@ export function countsOf(s: SnapshotLike): RunCounts {
 
 const L = (loc: Locale, ar: string, en: string) => (loc === "ar" ? ar : en);
 /** "رسالة واحدة / 5 رسائل / 21 رسالة" — Arabic number agreement for the nouns the agent reports. */
-const msgs = (loc: Locale, n: number) => (loc === "ar" ? (n === 1 ? "رسالة واحدة" : countOf("ar", n, "رسالة", "رسائل")) : `${n} message${n === 1 ? "" : "s"}`);
-const orgs = (loc: Locale, n: number) => (loc === "ar" ? countOf("ar", n, "جهة", "جهات") : `${n} prospect${n === 1 ? "" : "s"}`);
+const msgs = (loc: Locale, n: number) => (loc === "ar" ? (n === 1 ? "رسالة واحدة" : n === 2 ? "رسالتين" : countOf("ar", n, "رسالة", "رسائل")) : `${n} message${n === 1 ? "" : "s"}`);
+const orgs = (loc: Locale, n: number) => (loc === "ar" ? (n === 1 ? "جهة واحدة" : n === 2 ? "جهتين" : countOf("ar", n, "جهة", "جهات")) : `${n} prospect${n === 1 ? "" : "s"}`);
 
 export function activityFor(plan: CampaignPlan, k: RunCounts, at: string): ActivityItem[] {
   const loc = plan.locale;
@@ -231,10 +233,12 @@ class Reply {
   get text() { return this.cards.filter((c): c is Extract<AgentCard, { kind: "text" }> => c.kind === "text").map((c) => c.text); }
 }
 
-const MATERIAL = new Set(["market", "goal", "size", "minClients", "dm", "threshold"]);
+const MATERIAL = new Set(["audience", "market", "goal", "size", "minClients", "dm", "threshold"]);
 const LOOSER = (from: string, to: string) => ["human_approval", "assisted", "autonomous"].indexOf(to) > ["human_approval", "assisted", "autonomous"].indexOf(from);
 
 export class AcquisitionAgent {
+  /** The user message being handled (recorded on every change it causes). */
+  private messageId?: string;
   constructor(private readonly deps: AgentDeps) {}
 
   private now() {
@@ -281,6 +285,7 @@ export class AcquisitionAgent {
     const run = conv.campaignId ? await this.deps.runs.get(conv.campaignId) : undefined;
     const view = !plan && conv.campaignId ? await this.deps.campaignView?.(conv.campaignId) : undefined;
 
+    this.messageId = userMsg.id;
     const { intents, understoodBy } = await this.interpret(text, conv, planner, plan, Boolean(run || view), run, userMsg.target?.id);
     userMsg.intents = intents;
     userMsg.understoodBy = understoodBy;
@@ -343,7 +348,7 @@ export class AcquisitionAgent {
 
   private async interpret(text: string, conv: Conversation, planner: PlannerContext, plan: CampaignPlan | undefined, running: boolean, run?: CampaignRun, target?: string) {
     const names = (run?.review ?? []).flatMap((i) => [i.company, i.company.split(" ")[0] ?? "", i.person, i.firstName, i.firstNameAr ?? ""]).filter((n) => n.length >= 3);
-    const ctx = { planner, plan, running, pending: Boolean(conv.pendingApprovalId), review: run?.review.length ? { names: [...new Set(names)] } : undefined, target };
+    const ctx = { planner, plan, running, pending: Boolean(conv.pendingApprovalId || conv.pendingUpdate), review: run?.review.length ? { names: [...new Set(names)] } : undefined, target };
     const rules = parseMessage(text, ctx);
     const ai = this.deps.ai;
     const input = {
@@ -382,13 +387,17 @@ export class AcquisitionAgent {
   private async createPlan(conv: Conversation, request: string, planner: PlannerContext, r: Reply): Promise<CampaignPlan> {
     const loc = conv.locale;
     const { extraction, understoodBy } = await understandRequest(request, planner, this.deps.ai);
-    let plan = buildPlan(extraction, planner, { request, createdAt: this.now(), understoodBy });
+    let plan = startPlan(extraction, planner, { request, createdAt: this.now(), understoodBy }, this.messageId);
     plan.id = newId("plan");
-    // Anything else the sentence already said (language, channels, approval policy...) is applied, not asked again.
+    // Anything else the sentence already said (language, channels, approval rule, size...) is applied, not asked again.
     const extra = parseMessage(request, { planner, plan }).find((i): i is Extract<AgentIntent, { type: "update_plan" }> => i.type === "update_plan");
     if (extra) {
-      const { countries: _c, cities: _ci, goal: _g, ...rest } = extra.changes;
-      if (Object.keys(rest).length) plan = applyChanges(plan, rest, planner);
+      const { countries: _c, cities: _ci, goal: _g, archetype: _a, audienceExplicit: _e, alsoArchetypes: _al, audienceDescription: _d, ...rest } = extra.changes;
+      // The audience's own words ("شركات كبيرة" for large enterprises) are not also a size change.
+      const arch = planner.knowledge.archetypes.find((a) => a.key === plan.state.audience.archetype);
+      const sizeWords = rest.sizePreset ? planner.knowledge.sizePresets?.[rest.sizePreset]?.keywords.map(normalize) ?? [] : [];
+      if (arch && arch.keywords.some((k) => sizeWords.includes(normalize(k)))) delete rest.sizePreset;
+      if (Object.keys(rest).length) plan = applyChanges(plan, rest, planner, this.messageId, "initial");
     }
     await this.deps.plans.put(plan);
     conv.planId = plan.id;
@@ -398,14 +407,19 @@ export class AcquisitionAgent {
 
     const u = plan.understanding;
     const arch = planner.knowledge.archetypes.find((a) => a.key === u.audience.archetype);
-    const bullets = [u.audience.label, u.market.place, ...(arch?.assumptions[loc] ?? []).slice(0, 2)];
+    const known = Boolean(plan.state.audience.label);
+    const bullets = known ? [u.audience.label, u.market.place, ...(arch?.assumptions[loc] ?? []).slice(0, 2)] : [u.market.place];
     r.say(
       L(loc, "فهمتك.", "Got it."),
       L(loc, `هدفك: ${goalText} لـ${u.client.name}`, `Your goal: ${goalText} for ${u.client.name}`),
-      L(loc, "سأستهدف مبدئياً:", "To start, I'll target:"),
+      known ? L(loc, "سأستهدف مبدئياً:", "To start, I'll target:") : L(loc, "ما أعرفه حتى الآن:", "What I know so far:"),
       ...bullets.map((b) => `• ${b}`),
-      arch?.targetType === "individual"
+      !known
+        ? L(loc, "ما ذكرت من تبغى نستهدف، فما راح أفترض جمهوراً من عندي.", "You didn't say who to target, so I won't assume an audience.")
+        : arch?.targetType === "individual"
         ? L(loc, "وسأبحث عن المهتمين فعلاً وأبني قائمة العملاء المحتملين.", "I'll look for people with real interest and build the prospect list.")
+        : arch?.kind === "people"
+        ? L(loc, "وسأبحث عن هؤلاء الأشخاص داخل الجهات المناسبة وأبني القائمة.", "I'll find these people inside the right organizations and build the list.")
         : L(loc, "وسأبحث عن أصحاب القرار وأبني قائمة العملاء المحتملين.", "I'll find the decision makers and build the prospect list."),
     );
     this.nextStep(plan, r);
@@ -414,36 +428,81 @@ export class AcquisitionAgent {
     return plan;
   }
 
+  /**
+   * After the state changed: one line per change in plain words ("تم تعديل الجمهور إلى Media Buyers"),
+   * the before/after, the live plan, and what's next.
+   */
+  private planUpdated(r: Reply, before: CampaignPlan, after: CampaignPlan, running: boolean, correction: boolean, askedBefore: string[] = []) {
+    const loc = after.locale;
+    const rows = diffPlans(before, after);
+    const kb = this.deps.planner(loc).knowledge;
+    const oldArch = kb.archetypes.find((a) => a.key === before.state.audience.archetype);
+    const newArch = kb.archetypes.find((a) => a.key === after.state.audience.archetype);
+    const lines: string[] = [];
+    const consequences: string[] = [];
+    for (const row of rows) {
+      // Re-derived from the new criteria, not something the user asked for: say it as a consequence.
+      if (row.key === "threshold" && before.changes.threshold === after.changes.threshold) { consequences.push(L(loc, `حد التأهيل صار ${row.to} تبعاً للمعايير الجديدة`, `the qualification bar is now ${row.to} to match the new criteria`)); continue; }
+      switch (row.key) {
+        case "audience":
+          if (oldArch && newArch && (oldArch.counterpart === newArch.key || correction))
+            lines.push(L(loc, `فهمت. تقصد ${newArch.label.ar}، وليس ${oldArch.label.ar}.`, `Got it. You mean ${newArch.label.en}, not ${oldArch.label.en}.`));
+          else lines.push(L(loc, `تم تعديل الجمهور إلى ${after.state.audience.label}.`, `Audience updated to ${after.state.audience.label}.`));
+          break;
+        case "size": lines.push(L(loc, `تم. سأركز على ${row.to}.`, `Done. I'll focus on ${row.to}.`)); break;
+        case "market": lines.push(L(loc, `تم. سأركز على ${row.to}.`, `Done. I'll focus on ${row.to}.`)); break;
+        case "channels": lines.push(after.strategy.channelKeys.length === 1 ? L(loc, `تم. سأستخدم ${row.to} فقط.`, `Done. I'll use ${row.to} only.`) : L(loc, `تم. القنوات: ${row.to}.`, `Done. Channels: ${row.to}.`)); break;
+        case "language": lines.push(L(loc, `تم. الرسائل ب${row.to}.`, `Done. Messages in ${row.to}.`)); break;
+        case "approval":
+          lines.push(after.state.approval.mode === "auto"
+            ? L(loc, `تم. عند تجهيز الرسائل سأعتمد تلقائياً اللي درجتها ${after.state.approval.autoAbove}+ ولا عندي عليها تحفظ. (الاعتماد = جاهزة للإرسال؛ لا يُرسل شيء فعلياً.)`, `Done. When messages are drafted I'll auto-approve clean ones scoring ${after.state.approval.autoAbove}+. (Approved = ready to send; nothing is actually sent.)`)
+            : L(loc, "تم. كل رسالة بموافقتك.", "Done. You approve every message."));
+          break;
+        case "goal": lines.push(L(loc, `تم. الهدف الآن ${row.to}.`, `Done. The goal is now ${row.to}.`)); break;
+        default: lines.push(L(loc, `تم. ${row.label}: ${row.to}.`, `Done. ${row.label}: ${row.to}.`));
+      }
+    }
+    if (consequences.length) lines.push(L(loc, `(${consequences.join("، ")}.)`, `(${consequences.join("; ")}.)`));
+    r.say(...(lines.length ? [...new Set(lines)] : [L(loc, "تمام.", "OK.")]));
+    if (rows.length) r.card({ kind: "diff", rows, notes: after.notes });
+    if (running) return;
+    r.card({ kind: "plan" });
+    if (after.state.audience.kind === null && !after.questions.some((q) => q.id === "audience_pick")) return;
+    this.nextStep(after, r, askedBefore);
+  }
+
   /** Ask what still matters, or offer to start. */
-  private nextStep(plan: CampaignPlan, r: Reply) {
+  private nextStep(plan: CampaignPlan, r: Reply, askedBefore: string[] = []) {
     const loc = plan.locale;
-    if (plan.questions.length) {
+    if (plan.questions.length && plan.questions.every((q) => askedBefore.includes(q.id))) {
+      // Already asked: a short reminder, not the same opening again.
+      r.say(L(loc, "وما زال عندي سؤال:", "One question is still open:"));
+      r.card({ kind: "questions", questions: plan.questions });
+    } else if (plan.questions.length) {
       r.say(plan.questions.length === 1
         ? L(loc, "قبل أن أبدأ، عندي نقطة واحدة أحتاج تأكيدها:", "Before I start, one thing to confirm:")
         : L(loc, "قبل أن أبدأ، عندي نقطتان أحتاج تأكيدهما:", "Before I start, two things to confirm:"));
       r.card({ kind: "questions", questions: plan.questions });
     } else {
-      r.say(L(loc, "الخطة جاهزة. أبدأ البحث؟", "The plan is ready. Shall I start?"));
+      r.say(L(loc, "الخطة جاهزة. أبدأ؟", "The plan is ready. Shall I start?"));
       r.card({ kind: "actions", actions: [
-        { label: L(loc, "ابدأ البحث", "Start"), say: L(loc, "ابدأ البحث", "Start"), primary: true },
-        { label: L(loc, "عدّل الخطة", "Change the plan"), edit: true },
+        { label: L(loc, "اعتمد الخطة وابدأ", "Approve the plan and start"), say: L(loc, "ابدأ البحث", "Start"), primary: true },
+        { label: L(loc, "عدّل شيء آخر", "Change something else"), edit: true },
       ] });
     }
   }
 
   private async handle(intent: AgentIntent, conv: Conversation, r: Reply, planner: PlannerContext, plan: CampaignPlan | undefined, run: CampaignRun | undefined, view: CampaignView | undefined): Promise<void> {
     const loc = conv.locale;
+    const lastAgent = [...conv.messages].reverse().find((m) => m.role === "agent");
+    const asked = (lastAgent?.cards ?? []).flatMap((c) => (c.kind === "questions" ? c.questions.map((q) => q.id) : []));
     switch (intent.type) {
       case "answer": {
         if (!plan) return;
-        const q = plan.questions.find((x) => x.id === intent.questionId);
-        const next = applyAnswer(plan, intent.questionId, intent.value, planner);
-        const rows = diffPlans(plan, next);
+        const before = plan;
+        const next = applyAnswer(plan, intent.questionId, intent.value, planner, this.messageId);
         await this.deps.plans.put(run ? { ...next, status: "approved" } : next);
-        const label = q?.options.find((o) => o.id === intent.value)?.label ?? intent.value;
-        r.say(L(loc, `تمام — ${label}.`, `Done — ${label}.`));
-        if (rows.length) r.card({ kind: "diff", rows, notes: next.notes });
-        if (!run) this.nextStep(next, r);
+        this.planUpdated(r, before, next, Boolean(run), false, asked);
         return;
       }
       case "update_plan": {
@@ -451,12 +510,30 @@ export class AcquisitionAgent {
           r.say(L(loc, "هذه الحملة أُعدّت من الإعدادات المتقدمة، لذا تعديلها من هناك. ابدأ هدفاً جديداً بجملة واحدة لتديره بالمحادثة.", "This campaign was configured in advanced settings, so change it there. Start a new goal in one sentence to run it by conversation."));
           return;
         }
-        const next = applyChanges(plan, intent.changes, planner);
+        if (run && intent.changes.approval) {
+          await this.handleReview({ type: "review_policy", policy: { mode: intent.changes.approval.mode, autoAbove: intent.changes.approval.autoAbove } }, conv, r, plan, run);
+          const { approval: _a, ...rest } = intent.changes;
+          if (!Object.keys(rest).length) return;
+          intent = { ...intent, changes: rest };
+        }
+        const next = applyChanges(plan, intent.changes, planner, this.messageId);
         const rows = diffPlans(plan, next);
         if (!rows.length) {
           r.say(intent.changes.autonomy === "human_approval"
             ? L(loc, "هذا هو الإعداد الحالي أصلاً: لا يُرسل أي شيء قبل موافقتك.", "That's already the setting: nothing is sent before you approve.")
             : L(loc, "هذا مطبّق في الخطة أصلاً.", "The plan already does that."));
+          return;
+        }
+        // Switching the core audience to another domain is confirmed first — unless the user is correcting me.
+        const kb = planner.knowledge;
+        const oldArch = kb.archetypes.find((a) => a.key === plan!.state.audience.archetype);
+        const newArch = kb.archetypes.find((a) => a.key === next.state.audience.archetype);
+        if (!run && !intent.correction && oldArch?.domain && newArch?.domain && oldArch.domain !== newArch.domain) {
+          conv.pendingUpdate = { changes: intent.changes, rows, messageId: this.messageId };
+          await this.deps.conversations.put(conv);
+          r.say(L(loc, `هذا يغيّر الجمهور الأساسي للحملة من «${oldArch.label.ar}» إلى «${newArch.label.ar}». أحدّث الخطة؟`, `This changes the campaign's core audience from “${oldArch.label.en}” to “${newArch.label.en}”. Update the plan?`));
+          r.card({ kind: "diff", rows, notes: [] });
+          r.card({ kind: "actions", actions: [{ label: L(loc, "نعم، حدّثها", "Yes, update it"), say: L(loc, "نعم", "yes"), primary: true }, { label: L(loc, "لا", "No"), say: L(loc, "لا", "no") }] });
           return;
         }
         const material = rows.some((x) => MATERIAL.has(x.key)) || (rows.some((x) => x.key === "autonomy") && LOOSER(plan.strategy.autonomy, next.strategy.autonomy));
@@ -479,20 +556,31 @@ export class AcquisitionAgent {
           const cfg = this.configFor(next, run.id, run.status);
           await this.deps.runs.put({ ...run, cfg, updatedAt: this.now(), activity: [...run.activity, { at: this.now(), text: L(loc, `حدّثت الحملة: ${rows.map((x) => `${x.label} ← ${x.to}`).join("، ")}.`, `Updated the campaign: ${rows.map((x) => `${x.label} → ${x.to}`).join(", ")}.`), kind: "info" }] });
         }
-        r.say(L(loc, "تم.", "Done."), L(loc, "عدّلت الخطة إلى:", "I updated the plan:"));
-        r.card({ kind: "diff", rows, notes: next.notes });
-        if (!run) r.card({ kind: "plan" });
-        if (!run && next.questions.length) this.nextStep(next, r);
-        else if (!run) r.card({ kind: "actions", actions: [{ label: L(loc, "ابدأ البحث", "Start"), say: L(loc, "ابدأ البحث", "Start"), primary: true }, { label: L(loc, "اعرض الخطة", "Show the plan"), say: L(loc, "وش الخطة؟", "What's the plan?") }] });
+        this.planUpdated(r, plan, next, Boolean(run), Boolean(intent.correction), asked);
         return;
       }
       case "confirm": {
+        if (conv.pendingUpdate && plan) {
+          const pending = conv.pendingUpdate;
+          conv.pendingUpdate = undefined;
+          await this.deps.conversations.put(conv);
+          const next = applyChanges(plan, pending.changes, planner, pending.messageId);
+          await this.deps.plans.put(next);
+          this.planUpdated(r, plan, next, false, true);
+          return;
+        }
         if (conv.pendingApprovalId) { await this.decide(conv.pendingApprovalId, true); return; }
         if (plan && !run) return this.handle({ type: "start" }, conv, r, planner, plan, run, view);
         r.say(L(loc, "تمام.", "OK."));
         return;
       }
       case "reject": {
+        if (conv.pendingUpdate) {
+          conv.pendingUpdate = undefined;
+          await this.deps.conversations.put(conv);
+          r.say(L(loc, "تمام، الخطة كما هي.", "OK, the plan stays as it is."));
+          return;
+        }
         if (conv.pendingApprovalId) { await this.decide(conv.pendingApprovalId, false); return; }
         r.say(L(loc, "تمام، لن أغيّر شيئاً.", "OK, I won't change anything."));
         return;
@@ -625,6 +713,11 @@ export class AcquisitionAgent {
 
   private async launch(conv: Conversation, plan: CampaignPlan, planner: PlannerContext, r: Reply) {
     const loc = conv.locale;
+    if (!plan.state.audience.label) {
+      r.say(L(loc, "قبل أبدأ أحتاج أعرف من نستهدف — ما أبغى أبحث عن جمهور خمّنته.", "Before I start I need to know who to target — I won't search for an audience I guessed."));
+      r.card({ kind: "questions", questions: plan.questions.filter((q) => q.id === "audience_pick") });
+      return;
+    }
     // Unanswered questions take their sensible default; say which.
     const assumed: string[] = [];
     for (const q of plan.questions) {
@@ -639,7 +732,8 @@ export class AcquisitionAgent {
     const counts = countsOf(snapshot);
     plan = { ...plan, status: "approved", assumptions: plan.assumptions.map((a) => (a.status === "proposed" ? { ...a, status: "accepted" as const } : a)) };
     await this.deps.plans.put(plan);
-    const reviewPolicy: ReviewPolicy = { mode: "manual" };
+    // The approval rule the user set in the conversation applies as soon as messages exist.
+    const reviewPolicy: ReviewPolicy = plan.state.approval.mode === "auto" && plan.state.approval.autoAbove !== null ? { mode: "auto", autoAbove: plan.state.approval.autoAbove } : { mode: "manual" };
     const review = buildReview(snapshot, this.offerText(plan), plan.strategy.messageLanguage, { now: this.now(), policy: reviewPolicy, reviewLocale: loc, labels: this.signalLabels(plan) });
     const rc = reviewCounts(review);
     counts.messagesReady = rc.pending;

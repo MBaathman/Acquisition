@@ -247,6 +247,40 @@ The form-based setup remains as **advanced setup**, and the operational pages
 (ICP, scoring, research, outreach, automation, audit...) as **advanced
 details** — available, but not the way the product is run.
 
+### Campaign state: the conversation is the source of truth
+
+```
+message → intent parser → state update (add · replace · remove) → validation (rebuild) → campaign state → plan / outreach / approvals → agent reply
+```
+
+`CampaignPlan.state` (`AgentCampaignState`, `src/agent/planner.ts`) is the one
+place the campaign is defined: client, outcome & goal, **audience** (archetype,
+kind = companies · people · individuals, label, job titles, company types),
+company size, geography, channels, language, offer, qualification,
+**message-approval rule**, autonomy — each with provenance (user · inferred ·
+default). Every view reads it; nothing keeps its own copy.
+
+- **Replace, not append.** "ميديا بايرز" after "وكالات التسويق" replaces the
+  audience; titles/company types/signals switch with it, and answers that were
+  only about the old audience are dropped. Adding happens only when said
+  ("أضف … مع …").
+- **Context decides meaning.** "الشركات الكبيرة" narrows a known audience
+  (company size) instead of switching to large enterprises; with no audience yet
+  it is the audience.
+- **Ask only when it matters.** Ambiguous audiences ask once (media buyers:
+  people vs. firms) while the plan already reflects the literal reading;
+  a switch to another domain ("بدل الوكالات، استهدف شركات العقار") is confirmed
+  first; a correction ("لا، خلهم شركات ميديا باينغ") applies at once and the
+  agent says what it understood ("تقصد…، وليس…").
+- **Unknown stays unknown.** A goal without an audience is planned with the
+  audience *not set*; no example-campaign defaults (agencies, Meta, "3 clients")
+  are borrowed, and the agent won't start until it knows who to target.
+- **Change log.** Every update is recorded: field, before → after, what caused
+  it (first sentence, a later message, an answer) and the message id — shown on
+  the plan page, available for audit and agent memory.
+- Rules before launch carry over: "اعتمد كل الرسائل اللي فوق 85" becomes the
+  approval rule applied when messages are drafted.
+
 ### The agent workspace: review and approve in place
 
 After a run, the conversation page *is* the review centre (no other page is

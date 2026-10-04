@@ -475,7 +475,9 @@
           "Collective"
         ]
       },
-      "industry": "marketing"
+      "industry": "marketing",
+      "domain": "marketing",
+      "kind": "companies"
     },
     {
       "key": "enterprise",
@@ -660,7 +662,9 @@
           "Investments"
         ]
       },
-      "industry": "enterprise"
+      "industry": "enterprise",
+      "domain": "enterprise",
+      "kind": "companies"
     },
     {
       "key": "luxury_residential",
@@ -783,6 +787,436 @@
         "a": [],
         "b": []
       },
+      "industry": "real_estate",
+      "domain": "real_estate",
+      "kind": "individuals"
+    },
+    {
+      "key": "media_buyers",
+      "domain": "marketing",
+      "kind": "people",
+      "counterpart": "media_buying_companies",
+      "keywords": [
+        "ميديا بايرز",
+        "ميديا باير",
+        "ميديا بايرس",
+        "media buyers",
+        "media buyer",
+        "مشتري الاعلانات",
+        "مشتري الإعلانات",
+        "مسؤولي شراء الاعلانات"
+      ],
+      "label": {
+        "ar": "Media Buyers (مسؤولو شراء الإعلانات)",
+        "en": "Media buyers"
+      },
+      "short": {
+        "ar": "Media Buyers",
+        "en": "media buyer"
+      },
+      "campaignName": {
+        "ar": "Media Buyers في {place}",
+        "en": "{Place} media buyers"
+      },
+      "targetType": "account",
+      "companyTypes": {
+        "ar": [
+          "معلنون",
+          "وكالات"
+        ],
+        "en": [
+          "Advertiser",
+          "Agency"
+        ]
+      },
+      "titles": {
+        "ar": [
+          "Media Buyer",
+          "Senior Media Buyer",
+          "مدير الإعلانات المدفوعة",
+          "Head of Media"
+        ],
+        "en": [
+          "Media Buyer",
+          "Senior Media Buyer",
+          "Paid Media Manager",
+          "Head of Media",
+          "Performance Marketing Manager"
+        ]
+      },
+      "requireTitle": true,
+      "signals": [
+        {
+          "label": {
+            "ar": "المسمى الوظيفي: شراء الإعلانات",
+            "en": "Job title: media buying"
+          },
+          "points": 30,
+          "check": "role"
+        },
+        {
+          "label": {
+            "ar": "يدير حملات مدفوعة نشطة",
+            "en": "Runs active paid campaigns"
+          },
+          "points": 25
+        },
+        {
+          "label": {
+            "ar": "يعمل على أكثر من منصة إعلانية",
+            "en": "Works across several ad platforms"
+          },
+          "points": 15
+        },
+        {
+          "label": {
+            "ar": "الشركة ضمن الحجم المستهدف",
+            "en": "Employer within the target size"
+          },
+          "points": 15,
+          "check": "size"
+        },
+        {
+          "label": {
+            "ar": "توظيف أو توسع حديث في فريق الإعلانات",
+            "en": "Recent hiring or growth in the ads team"
+          },
+          "points": 15,
+          "timing": true
+        }
+      ],
+      "summarySignals": {
+        "ar": [
+          "مسمى Media Buyer",
+          "حملات مدفوعة نشطة",
+          "عدة منصات",
+          "نشاط حديث"
+        ],
+        "en": [
+          "Media buyer title",
+          "Active paid campaigns",
+          "Several platforms",
+          "Recent activity"
+        ]
+      },
+      "understood": {
+        "ar": "تريد الوصول إلى {audience} في {place}.",
+        "en": "You want to reach {audience} in {place}."
+      },
+      "assumptions": {
+        "ar": [
+          "أشخاص وظيفتهم شراء الإعلانات داخل الشركات أو الوكالات"
+        ],
+        "en": [
+          "People whose job is buying media, inside companies or agencies"
+        ]
+      },
+      "question": "media_kind",
+      "namePool": {
+        "a": [
+          "Atlas",
+          "Summit",
+          "Cedar",
+          "Harbor",
+          "Nova",
+          "Falcon",
+          "Pearl",
+          "Oasis"
+        ],
+        "b": [
+          "Brands",
+          "Retail",
+          "Group",
+          "Media",
+          "Holding",
+          "Foods",
+          "Digital"
+        ]
+      },
+      "industry": "advertising"
+    },
+    {
+      "key": "media_buying_companies",
+      "domain": "marketing",
+      "kind": "companies",
+      "counterpart": "media_buyers",
+      "keywords": [
+        "شركات ميديا باينج",
+        "شركات ميديا باينغ",
+        "وكالات ميديا باينج",
+        "وكالات ميديا باينغ",
+        "ميديا باينج",
+        "ميديا باينغ",
+        "شركات شراء الاعلانات",
+        "وكالات شراء الاعلانات",
+        "media buying companies",
+        "media buying agencies",
+        "media buying firms",
+        "media buying"
+      ],
+      "label": {
+        "ar": "شركات ووكالات متخصصة في Media Buying",
+        "en": "Media buying companies and agencies"
+      },
+      "short": {
+        "ar": "شركات Media Buying",
+        "en": "media buying firm"
+      },
+      "campaignName": {
+        "ar": "شركات Media Buying في {place}",
+        "en": "{Place} media buying firms"
+      },
+      "targetType": "account",
+      "companyTypes": {
+        "ar": [
+          "وكالة شراء إعلانات"
+        ],
+        "en": [
+          "Media buying agency"
+        ]
+      },
+      "titles": {
+        "ar": [
+          "المؤسس",
+          "المدير العام",
+          "مدير الميديا"
+        ],
+        "en": [
+          "Founder",
+          "Managing Director",
+          "Head of Media",
+          "CEO"
+        ]
+      },
+      "signals": [
+        {
+          "label": {
+            "ar": "متخصصة في شراء الإعلانات",
+            "en": "Specializes in media buying"
+          },
+          "points": 30
+        },
+        {
+          "label": {
+            "ar": "تدير ميزانيات لعدة معلنين",
+            "en": "Manages budgets for several advertisers"
+          },
+          "points": 20
+        },
+        {
+          "label": {
+            "ar": "تعمل على عدة منصات إعلانية",
+            "en": "Works across several ad platforms"
+          },
+          "points": 15
+        },
+        {
+          "label": {
+            "ar": "وجود صاحب قرار",
+            "en": "A decision maker is reachable"
+          },
+          "points": 15,
+          "check": "role"
+        },
+        {
+          "label": {
+            "ar": "ضمن الحجم المستهدف",
+            "en": "Within the target size"
+          },
+          "points": 10,
+          "check": "size"
+        },
+        {
+          "label": {
+            "ar": "إشارة نمو أو توسع",
+            "en": "Growth or expansion signal"
+          },
+          "points": 10,
+          "timing": true
+        }
+      ],
+      "summarySignals": {
+        "ar": [
+          "تخصص في شراء الإعلانات",
+          "عدة معلنين",
+          "عدة منصات",
+          "صاحب قرار"
+        ],
+        "en": [
+          "Media buying specialist",
+          "Several advertisers",
+          "Several platforms",
+          "Decision maker"
+        ]
+      },
+      "understood": {
+        "ar": "تريد الوصول إلى {audience} في {place}.",
+        "en": "You want to reach {audience} in {place}."
+      },
+      "assumptions": {
+        "ar": [
+          "الجهة نفسها متخصصة في شراء الإعلانات",
+          "نتواصل مع صاحب القرار فيها"
+        ],
+        "en": [
+          "The firm itself specializes in media buying",
+          "We contact its decision maker"
+        ]
+      },
+      "namePool": {
+        "a": [
+          "Falcon",
+          "Dune",
+          "Pearl",
+          "Marina",
+          "Atlas",
+          "Zenith",
+          "Mirage",
+          "Nomad"
+        ],
+        "b": [
+          "Media",
+          "Media Buying",
+          "Ads",
+          "Reach",
+          "Spend"
+        ]
+      },
+      "industry": "marketing"
+    },
+    {
+      "key": "real_estate_companies",
+      "domain": "real_estate",
+      "kind": "companies",
+      "keywords": [
+        "شركات العقار",
+        "شركات عقاريه",
+        "الشركات العقاريه",
+        "مطورين عقاريين",
+        "المطورين العقاريين",
+        "real estate companies",
+        "property developers",
+        "real estate developers"
+      ],
+      "label": {
+        "ar": "شركات العقار والمطورون العقاريون",
+        "en": "Real-estate companies and developers"
+      },
+      "short": {
+        "ar": "شركات العقار",
+        "en": "real-estate company"
+      },
+      "campaignName": {
+        "ar": "شركات العقار في {place}",
+        "en": "{Place} property companies"
+      },
+      "targetType": "account",
+      "companyTypes": {
+        "ar": [
+          "شركة عقارية",
+          "مطور عقاري"
+        ],
+        "en": [
+          "Real-estate company",
+          "Property developer"
+        ]
+      },
+      "size": {
+        "min": 20
+      },
+      "titles": {
+        "ar": [
+          "المدير العام",
+          "مدير التسويق",
+          "مدير المبيعات"
+        ],
+        "en": [
+          "CEO",
+          "Managing Director",
+          "Marketing Director",
+          "Sales Director"
+        ]
+      },
+      "signals": [
+        {
+          "label": {
+            "ar": "شركة عقارية أو مطور",
+            "en": "Real-estate company or developer"
+          },
+          "points": 30
+        },
+        {
+          "label": {
+            "ar": "مشاريع حالية أو قادمة",
+            "en": "Current or upcoming projects"
+          },
+          "points": 25,
+          "timing": true
+        },
+        {
+          "label": {
+            "ar": "وجود صاحب قرار",
+            "en": "A decision maker is reachable"
+          },
+          "points": 20,
+          "check": "role"
+        },
+        {
+          "label": {
+            "ar": "ضمن الحجم المستهدف",
+            "en": "Within the target size"
+          },
+          "points": 15,
+          "check": "size"
+        },
+        {
+          "label": {
+            "ar": "نشاط تسويقي ملحوظ",
+            "en": "Visible marketing activity"
+          },
+          "points": 10
+        }
+      ],
+      "summarySignals": {
+        "ar": [
+          "نشاط عقاري",
+          "مشاريع قادمة",
+          "صاحب قرار"
+        ],
+        "en": [
+          "Real-estate activity",
+          "Upcoming projects",
+          "Decision maker"
+        ]
+      },
+      "understood": {
+        "ar": "تريد الوصول إلى {audience} في {place}.",
+        "en": "You want to reach {audience} in {place}."
+      },
+      "assumptions": {
+        "ar": [
+          "شركات عقارية ومطورون لديهم مشاريع"
+        ],
+        "en": [
+          "Real-estate companies and developers with projects"
+        ]
+      },
+      "namePool": {
+        "a": [
+          "Rawabi",
+          "Najd",
+          "Masar",
+          "Bayan",
+          "Qimam",
+          "Afaq"
+        ],
+        "b": [
+          "Development",
+          "Real Estate",
+          "Properties",
+          "Holding"
+        ]
+      },
       "industry": "real_estate"
     },
     {
@@ -790,12 +1224,12 @@
       "fallback": true,
       "keywords": [],
       "label": {
-        "ar": "الشركات المناسبة لعرضك",
-        "en": "Companies that fit your offer"
+        "ar": "غير محدد بعد",
+        "en": "Not set yet"
       },
       "short": {
-        "ar": "الشركات",
-        "en": "company"
+        "ar": "الجهات",
+        "en": "prospect"
       },
       "campaignName": {
         "ar": "حملة {outcome} — {place}",
@@ -851,33 +1285,25 @@
       ],
       "summarySignals": {
         "ar": [
-          "مطابقة الوصف",
-          "احتياج واضح",
-          "صاحب قرار",
-          "نمو"
+          "مطابقة الجمهور الذي تحدده",
+          "احتياج واضح لعرضك",
+          "وجود صاحب قرار"
         ],
         "en": [
-          "Matches the description",
-          "Clear need",
-          "Decision maker",
-          "Growth"
+          "Matches the audience you set",
+          "Clear need for your offer",
+          "A reachable decision maker"
         ]
       },
       "understood": {
-        "ar": "تريد {outcome} من {audience} في {place}.",
-        "en": "You want {outcome} from {audience} in {place}."
+        "ar": "تريد {outcome} في {place}. بقي أن نحدد من نستهدف.",
+        "en": "You want {outcome} in {place}. We still need to decide who to target."
       },
       "assumptions": {
-        "ar": [
-          "الشركات التي يطابق نشاطها وصفك",
-          "صاحب القرار هو المؤسس أو المدير العام"
-        ],
-        "en": [
-          "Companies whose business matches your description",
-          "The decision maker is the founder or CEO"
-        ]
+        "ar": [],
+        "en": []
       },
-      "question": "audience_detail",
+      "question": "audience_pick",
       "namePool": {
         "a": [
           "Nova",
@@ -897,7 +1323,9 @@
           "Co"
         ]
       },
-      "industry": "general"
+      "industry": "general",
+      "domain": null,
+      "kind": null
     }
   ],
   "questions": {
@@ -1208,6 +1636,61 @@
         }
       ],
       "default": "yes"
+    },
+    "media_kind": {
+      "text": {
+        "ar": "تقصد:",
+        "en": "Do you mean:"
+      },
+      "effect": "archetype",
+      "options": [
+        {
+          "id": "media_buyers",
+          "label": {
+            "ar": "أشخاص وظيفتهم Media Buyer داخل الشركات",
+            "en": "People whose job is media buying, inside companies"
+          },
+          "aliases": [
+            "اشخاص",
+            "الاشخاص",
+            "موظفين",
+            "وظيفتهم",
+            "افراد",
+            "people",
+            "persons",
+            "individuals",
+            "الخيار 1",
+            "1"
+          ]
+        },
+        {
+          "id": "media_buying_companies",
+          "label": {
+            "ar": "شركات أو وكالات متخصصة في Media Buying",
+            "en": "Companies or agencies specialized in media buying"
+          },
+          "aliases": [
+            "شركات ميديا",
+            "وكالات ميديا",
+            "متخصصه",
+            "companies",
+            "agencies",
+            "firms",
+            "الخيار 2",
+            "2"
+          ]
+        }
+      ],
+      "default": "media_buyers"
+    },
+    "audience_pick": {
+      "text": {
+        "ar": "من تبغى نستهدف؟ اختر أو اكتب بكلامك.",
+        "en": "Who should we target? Pick one or say it in your own words."
+      },
+      "effect": "archetype",
+      "options": [],
+      "custom": "text"
     }
   },
   "defaults": {
@@ -1250,5 +1733,55 @@
     "Owner",
     "Partner",
     "VP"
-  ]
+  ],
+  "sizePresets": {
+    "large": {
+      "min": 250,
+      "max": null,
+      "keywords": [
+        "الشركات الكبيره",
+        "شركات كبيره",
+        "الشركات الكبري",
+        "شركات كبري",
+        "كبيره الحجم",
+        "large companies",
+        "big companies",
+        "large firms"
+      ],
+      "label": {
+        "ar": "الشركات الكبيرة (250+ موظف)",
+        "en": "Large companies (250+ employees)"
+      }
+    },
+    "small_mid": {
+      "min": 5,
+      "max": 250,
+      "keywords": [
+        "الصغيره والمتوسطه",
+        "صغيره ومتوسطه",
+        "الشركات الصغيره",
+        "small and mid",
+        "smes",
+        "small and medium"
+      ],
+      "label": {
+        "ar": "الصغيرة والمتوسطة (5–250 موظف)",
+        "en": "Small and mid-size (5–250 employees)"
+      }
+    },
+    "any": {
+      "min": null,
+      "max": null,
+      "keywords": [
+        "كل الاحجام",
+        "جميع الاحجام",
+        "all sizes",
+        "any size"
+      ],
+      "label": {
+        "ar": "كل الأحجام",
+        "en": "Any size"
+      }
+    }
+  }
 }

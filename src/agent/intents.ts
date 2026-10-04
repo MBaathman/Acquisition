@@ -13,7 +13,8 @@ export type QueryTopic = "status" | "results" | "top" | "explain" | "approvals" 
 
 export type AgentIntent =
   | { type: "new_goal"; request: string }
-  | { type: "update_plan"; changes: PlanChanges }
+  /** `correction`: the user is correcting the agent ("لا، أقصد…") — apply without a confirmation step. */
+  | { type: "update_plan"; changes: PlanChanges; correction?: boolean }
   | { type: "answer"; questionId: string; value: string }
   | { type: "confirm" }
   | { type: "reject" }
@@ -131,7 +132,7 @@ function marketsIn(t: string, ctx: PlannerContext): { countries: string[]; citie
 }
 
 /** Matches a free-text reply to one of the open questions. */
-function answerFor(t: string, plan: CampaignPlan, ctx: PlannerContext): { questionId: string; value: string } | undefined {
+function answerFor(t: string, plan: CampaignPlan, ctx: PlannerContext): { questionId: string; value: string; freeText?: boolean } | undefined {
   for (const q of plan.questions) {
     const kb = ctx.knowledge.questions[q.id];
     if (!kb) continue;
@@ -160,7 +161,7 @@ function answerFor(t: string, plan: CampaignPlan, ctx: PlannerContext): { questi
       }
     }
     if (best) return { questionId: q.id, value: best.id };
-    if (kb.custom === "text" && t.length > 6) return { questionId: q.id, value: t };
+    if (kb.custom === "text" && t.length > 3) return { questionId: q.id, value: t, freeText: true };
   }
   return undefined;
 }
@@ -191,7 +192,9 @@ function changesIn(t: string, ctx: ParseContext): PlanChanges {
     const cap = kb.defaults.excludeLargeMax ?? 200;
     c.sizeMax = Math.min(plan?.strategy.size?.max ?? cap, cap);
   }
-  if (has(t, /كل الاحجام|جميع الاحجام|all sizes|any size/)) { c.sizeMin = null; c.sizeMax = null; }
+  const preset = sizePresetIn(t, ctx);
+  if (preset && !(c.sizeMax !== undefined)) c.sizePreset = preset;
+  else if (has(t, /كل الاحجام|جميع الاحجام|all sizes|any size/)) { c.sizeMin = null; c.sizeMax = null; }
   const range = t.match(/(\d+)\s*[-–الى to]+\s*(\d+)\s*(?:موظف|employees|staff)/);
   if (range) { c.sizeMin = Number(range[1]); c.sizeMax = Number(range[2]); }
 
@@ -219,6 +222,52 @@ function changesIn(t: string, ctx: ParseContext): PlanChanges {
   const autonomy = policyIn(t);
   if (autonomy) c.autonomy = autonomy;
   return c;
+}
+
+/** "الشركات الكبيرة", "الصغيرة والمتوسطة", "كل الأحجام" → a size preset from the knowledge base. */
+function sizePresetIn(t: string, ctx: ParseContext): string | undefined {
+  let best: { key: string; len: number } | undefined;
+  for (const [key, p] of Object.entries(ctx.planner.knowledge.sizePresets ?? {})) {
+    for (const k of p.keywords) {
+      const n = normalize(k);
+      if (word(n).test(t) && (!best || n.length > best.len)) best = { key, len: n.length };
+    }
+  }
+  return best?.key;
+}
+
+/**
+ * Who the campaign targets, said in the conversation. A new audience REPLACES
+ * the current one ("ميديا بايرز" after "وكالات التسويق"); it is only added when
+ * the user says so ("أضف ميديا بايرز مع الوكالات"). A size phrase like
+ * "الشركات الكبيرة" narrows a known audience instead of replacing it.
+ */
+function audienceIn(t: string, raw: string, ctx: ParseContext): { changes: PlanChanges; correction: boolean } | undefined {
+  const plan = ctx.plan;
+  if (!plan) return undefined;
+  const x = extractGoal(raw, ctx.planner);
+  const current = plan.state?.audience.archetype ?? null;
+  const correction = /^(?:لا|لا،|no|nope|not)\b|^لا\s/.test(t) || has(t, /اقصد|قصدي|i mean|i meant/);
+  if (!x.archetype || x.archetype === current) {
+    // Free text while we're asking "who do we target?" is the audience in the user's words.
+    if (!x.archetype && !current && plan.questions.some((q) => q.id === "audience_pick") && x.audience) return { changes: { audienceDescription: x.audience }, correction };
+    return undefined;
+  }
+  const verb = has(t, /استهدف|بدل|عوضا|target|instead|switch to|focus on/);
+  if (current && sizePresetIn(t, ctx) && !verb) return undefined;
+  const arch = ctx.planner.knowledge.archetypes.find((a) => a.key === x.archetype);
+  const saysPeople = has(t, /اشخاص|الاشخاص|وظيفتهم|مسمي|موظفين|people|job title|individuals/);
+  const saysCompanies = has(t, /شركات|وكالات|companies|agencies|firms/);
+  const explicit = (arch?.kind === "people" && saysPeople) || (arch?.kind === "companies" && saysCompanies) || correction;
+  if (current && has(t, /^(?:اضف|ضيف|زيد)|بالاضافه|(?:^|\s)add\s|as well|also/)) return { changes: { alsoArchetypes: [...(plan.changes.alsoArchetypes ?? []), x.archetype] }, correction: true };
+  return { changes: { archetype: x.archetype, ...(explicit ? { audienceExplicit: true } : {}) }, correction };
+}
+
+/** "اعتمد كل الرسائل اللي فوق 85" before any message exists = a batch approval rule for when they're drafted. */
+function approvalRuleIn(t: string): PlanChanges["approval"] | undefined {
+  if (!has(t, /اعتمد|وافق|approve/) || !has(t, /رسائل|الرسائل|رساله|messages/)) return undefined;
+  const n = t.match(/(?:فوق|اكثر من|اعلي من|تتجاوز|above|over|at least)\s*(\d+)/);
+  return n ? { mode: "auto", autoAbove: Number(n[1]) } : undefined;
 }
 
 function policyIn(t: string): AutonomyLevel | undefined {
@@ -257,22 +306,36 @@ export function parseMessage(raw: string, ctx: ParseContext): AgentIntent[] {
   const out: AgentIntent[] = [];
   const review = ctx.review || ctx.target ? reviewIntents(t, raw, ctx) : [];
   out.push(...review);
-  const answer = ctx.plan && ctx.plan.questions.length ? answerFor(t, ctx.plan, ctx.planner) : undefined;
-  if (answer) out.push({ type: "answer", ...answer });
+  let answer = ctx.plan && ctx.plan.questions.length ? answerFor(t, ctx.plan, ctx.planner) : undefined;
 
   const changes = changesIn(t, ctx);
+  const audience = audienceIn(t, raw, ctx);
+  if (audience) {
+    Object.assign(changes, audience.changes);
+    // The audience phrase ("شركات كبيرة" inside "استهدف شركات كبيرة") is not also a size change.
+    if (audience.changes.archetype && changes.sizePreset && !ctx.plan?.state?.audience.archetype) delete changes.sizePreset;
+  }
+  if (!ctx.review) {
+    const rule = approvalRuleIn(t);
+    if (rule) changes.approval = rule;
+  }
   // An answer already covers what it matched; don't double-apply it as a change.
   if (answer?.questionId === "market") delete changes.countries;
   if (answer?.questionId === "goal") delete changes.goal;
   if (answer?.questionId === "region_focus") delete changes.cities;
-  if (answer?.questionId === "company_size") { delete changes.sizeMin; delete changes.sizeMax; }
+  if (answer?.questionId === "company_size") { delete changes.sizeMin; delete changes.sizeMax; delete changes.sizePreset; }
+  // Free text only answers "who do we target?" when the message turns out to be nothing else (checked at the end).
+  const freeText = answer?.freeText ? answer : undefined;
+  if (freeText) answer = undefined;
+  if (answer && ctx.planner.knowledge.questions[answer.questionId]?.effect === "archetype") { delete changes.archetype; delete changes.audienceExplicit; delete changes.audienceDescription; }
+  if (answer) out.push({ type: "answer", questionId: answer.questionId, value: answer.value });
   // Words that select messages ("شركات دبي", "فوق 85", "أقل من 3 عملاء") are filters here, not plan changes.
   if (review.some((i) => i.type !== "review_policy")) {
     for (const k of ["countries", "cities", "goal", "minClients", "threshold", "sizeMin", "sizeMax"] as const) delete changes[k];
   }
   if (review.some((i) => i.type === "review_policy" && i.policy.mode === "auto")) delete changes.autonomy;
   if (ctx.target) for (const k of Object.keys(changes) as (keyof PlanChanges)[]) delete changes[k];
-  if (Object.keys(changes).length) out.push({ type: "update_plan", changes });
+  if (Object.keys(changes).length) out.push({ type: "update_plan", changes, ...(audience?.correction ? { correction: true } : {}) });
 
   if (has(t, /جهز (?:ال)?تواصل|جهز (?:ال)?رسائل|اكتب (?:ال)?رسائل|prepare (?:the )?outreach|draft (?:the )?messages|prepare (?:the )?messages/)) out.push({ type: "prepare_outreach" });
   if (has(t, START) && !has(t, NEGATED_START) && !out.some((i) => i.type === "prepare_outreach")) out.push({ type: "start" });
@@ -291,6 +354,7 @@ export function parseMessage(raw: string, ctx: ParseContext): AgentIntent[] {
     : undefined;
   if (query) out.push({ type: "query", topic: query });
 
+  if (!out.length && freeText) out.push({ type: "answer", questionId: freeText.questionId, value: freeText.value });
   if (!out.length) {
     if (has(t, /^(?:نعم|ايه|ايوه|اي|تمام|اوكي|موافق|اعتمد|اعتمد التعديل|اعتمده|طيب|ok|okay|yes|approve|confirm|sure|go)$/)) out.push({ type: "confirm" });
     else if (has(t, /^(?:لا|الغ|الغيه|cancel|no|nope|رفض)$/)) out.push({ type: "reject" });

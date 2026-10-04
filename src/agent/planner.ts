@@ -55,6 +55,14 @@ export interface KnowledgeArchetype {
   understood: Text;
   assumptions: Record<Locale, string[]>;
   question?: string;
+  /** companies (B2B accounts) · people (a role inside companies) · individuals (consumers). */
+  kind?: "companies" | "people" | "individuals" | null;
+  /** Broad area; switching audience across domains is confirmed first. */
+  domain?: string | null;
+  /** The audience people often mean instead (e.g. media buyers ↔ media-buying firms). */
+  counterpart?: string;
+  /** Only contacts with these titles fit (role-based audiences). */
+  requireTitle?: boolean;
   budgetOptions?: number[];
   budgetCurrency?: string;
   industry?: string;
@@ -64,7 +72,7 @@ export interface KnowledgeArchetype {
 
 export interface KnowledgeQuestion {
   text: Text;
-  effect: "goal" | "country" | "cities" | "companyTypes" | "budget" | "audience" | "size" | "client";
+  effect: "goal" | "country" | "cities" | "companyTypes" | "budget" | "audience" | "size" | "client" | "archetype";
   options: { id: string; label: Text; custom?: string; aliases?: string[]; companyTypes?: Record<Locale, string[]> | null }[];
   custom?: string;
   default?: string;
@@ -88,6 +96,8 @@ export interface Knowledge {
   };
   /** Title keywords that mark a decision maker. */
   seniorTitleKeywords?: string[];
+  /** Company-size phrases the user can say ("الشركات الكبيرة"). */
+  sizePresets?: Record<string, { min: number | null; max: number | null; keywords: string[]; label: Text }>;
 }
 
 export interface PlannerContext {
@@ -126,6 +136,42 @@ export interface PlanAssumption {
   status: "proposed" | "accepted" | "edited";
 }
 
+/** The campaign as the conversation has defined it so far. Unknown stays null — nothing is borrowed from an example campaign. */
+export interface AgentCampaignState {
+  client: { id: string; name: string | null; existing: boolean };
+  outcome: { preset: string; label: string; goal: number | null };
+  audience: {
+    archetype: string | null;
+    kind: "companies" | "people" | "individuals" | null;
+    label: string | null;
+    description: string | null;
+    companyTypes: string[];
+    titles: string[];
+  };
+  companySize: { min: number | null; max: number | null; label: string } | null;
+  geography: { countries: string[]; cities: string[]; place: string };
+  channels: string[];
+  language: Locale;
+  offer: { cta: string };
+  qualification: { threshold: number; maxScore: number; minClients: number | null; decisionMakersOnly: boolean; minBudget: number | null };
+  approval: { mode: "manual" | "auto"; autoAbove: number | null };
+  autonomy: AutonomyLevel;
+  /** user = said in the conversation · inferred = follows from the audience · default = product default. */
+  provenance: Record<string, "user" | "inferred" | "default">;
+}
+
+export interface ChangeLogEntry {
+  n: number;
+  at: string;
+  field: string;
+  label: string;
+  from: string;
+  to: string;
+  /** What caused it: the first sentence, a later message, or an answer to a question. */
+  source: "initial" | "message" | "answer";
+  messageId?: string;
+}
+
 export interface CampaignPlan {
   version: 1;
   id: string;
@@ -140,12 +186,16 @@ export interface CampaignPlan {
   changes: PlanChanges;
   /** Consequences the agent applied and should mention (e.g. a widened size band). */
   notes: string[];
+  /** THE source of truth for the campaign: every view (plan, outreach, approvals, progress) reads this. */
+  state: AgentCampaignState;
+  /** Every change to the state: field, before → after, and what caused it. */
+  changeLog: ChangeLogEntry[];
   status: "needs_input" | "ready" | "approved";
   understanding: {
     client: { id: string; name: string; existing: boolean; placeholder: boolean };
     outcome: { preset: string; label: string; plural: string; goal: number; goalStated: boolean };
     market: { countries: string[]; cities: string[]; place: string };
-    audience: { archetype: string; label: string; companyTypes: string[]; titles: string[]; needs: string[] };
+    audience: { archetype: string; label: string; kind: "companies" | "people" | "individuals" | null; companyTypes: string[]; titles: string[]; needs: string[] };
   };
   explanation: { understood: string; research: string[]; why: string; need: string[] };
   assumptions: PlanAssumption[];
@@ -162,8 +212,10 @@ export interface CampaignPlan {
     autonomy: AutonomyLevel;
     messageLanguage: Locale;
     size: { min: number | null; max: number | null } | null;
+    sizeLabel: string;
     minClients: number | null;
     decisionMakersOnly: boolean;
+    approval: { mode: "manual" | "auto"; autoAbove: number | null };
   };
   draft: CampaignDraft;
 }
@@ -311,6 +363,17 @@ export function sanitizeExtraction(x: GoalExtraction, ctx: PlannerContext): Goal
  * plan and are re-applied on every rebuild, so nothing the user said is lost.
  */
 export interface PlanChanges {
+  /** Replace the audience (a knowledge archetype); null = back to "not set". */
+  archetype?: string | null;
+  /** Free-text audience when no archetype fits ("مطاعم في الرياض"). */
+  audienceDescription?: string;
+  /** The user said which kind they meant (people vs companies) — don't ask again. */
+  audienceExplicit?: boolean;
+  /** Audiences ADDED to the main one ("أضف ميديا بايرز مع الوكالات"). */
+  alsoArchetypes?: string[];
+  sizePreset?: string;
+  /** Batch approval rule for drafted messages ("اعتمد كل الرسائل اللي فوق 85"). */
+  approval?: { mode: "manual" | "auto"; autoAbove?: number };
   countries?: string[];
   cities?: string[];
   goal?: number;
@@ -327,10 +390,18 @@ export interface PlanChanges {
 
 export const CHANGE_KEYS = ["countries", "cities", "goal", "sizeMin", "sizeMax", "minClients", "channels", "language", "threshold", "decisionMakersOnly", "autonomy"] as const;
 
-/** Later changes win; `channels` merges. */
+/** Later changes win (replace, not add); `channels` merges. */
 export function mergeChanges(a: PlanChanges, b: PlanChanges): PlanChanges {
   const out: PlanChanges = { ...a, ...b };
   if (a.channels || b.channels) out.channels = { ...a.channels, ...b.channels };
+  // A new audience replaces the old one and whatever was only about it.
+  if (b.archetype !== undefined && b.archetype !== a.archetype) {
+    if (b.audienceDescription === undefined) delete out.audienceDescription;
+    if (b.audienceExplicit === undefined) delete out.audienceExplicit;
+  }
+  if (b.audienceDescription !== undefined && b.archetype === undefined) out.archetype = null;
+  if (b.sizePreset !== undefined) { delete out.sizeMin; delete out.sizeMax; }
+  if (b.sizeMin !== undefined || b.sizeMax !== undefined) delete out.sizePreset;
   if (b.countries && !b.cities) delete out.cities; // a new market resets city focus unless cities came with it
   return out;
 }
@@ -407,6 +478,7 @@ export interface BuildPlanOptions {
   understoodBy?: "rules" | "llm";
   answers?: Record<string, string>;
   changes?: PlanChanges;
+  changeLog?: ChangeLogEntry[];
   assumptionStatus?: Record<string, PlanAssumption["status"]>;
 }
 
@@ -428,7 +500,9 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
   const x = extraction;
   const notes: string[] = [];
 
-  const arch = kb.archetypes.find((a) => a.key === x.archetype) ?? kb.archetypes.find((a) => a.fallback)!;
+  const archetypeKey = ch.archetype !== undefined ? ch.archetype : x.archetype;
+  const arch = kb.archetypes.find((a) => a.key === archetypeKey && !a.fallback) ?? kb.archetypes.find((a) => a.fallback)!;
+  const audienceKnown = !arch.fallback || Boolean(ch.audienceDescription ?? x.audience);
   const preset = ctx.outcomes.find((o) => o.key === (x.outcome ?? kb.defaults.outcome)) ?? ctx.outcomes[0]!;
   const individual = arch.targetType === "individual";
 
@@ -471,13 +545,16 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
   let companyTypes = arch.companyTypes;
   const sectorAnswer = answers.public_sector && kb.questions.public_sector?.options.find((o) => o.id === answers.public_sector);
   if (sectorAnswer && sectorAnswer.companyTypes) companyTypes = sectorAnswer.companyTypes;
-  const audienceLabel = answers.audience_detail || (arch.fallback && x.audience) || arch.label[loc];
+  const also = (ch.alsoArchetypes ?? []).map((k) => kb.archetypes.find((a) => a.key === k && !a.fallback)).filter((a): a is KnowledgeArchetype => Boolean(a) && a!.key !== arch.key);
+  const audienceLabel = [(arch.fallback && (ch.audienceDescription ?? answers.audience_detail ?? x.audience)) || arch.label[loc], ...also.map((a) => a.label[loc])].join(" + ");
   const budgetAnswer = answers.min_budget ?? kb.questions.min_budget?.default;
   const budgetMin = budgetAnswer && budgetAnswer !== "none" ? Number(budgetAnswer) : 0;
 
   let sizeMin = individual ? undefined : arch.size?.min;
   let sizeMax = individual ? undefined : arch.size?.max;
   if (answers.company_size === "all") [sizeMin, sizeMax] = [undefined, undefined];
+  const sizePreset = ch.sizePreset ? kb.sizePresets?.[ch.sizePreset] : undefined;
+  if (sizePreset) [sizeMin, sizeMax] = [sizePreset.min ?? undefined, sizePreset.max ?? undefined];
   if (ch.sizeMin !== undefined) sizeMin = ch.sizeMin ?? undefined;
   if (ch.sizeMax !== undefined) sizeMax = ch.sizeMax ?? undefined;
   // Asking for bigger client books shrinks the market: widen the size band (unless the user set it).
@@ -488,7 +565,8 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
     notes.push(copy.widenedSize(sizeMin, sizeMax));
   }
 
-  let titles = arch.titles.en.length ? arch.titles.en : ["Founder", "CEO"];
+  let titles = [...new Set([...(arch.titles.en.length ? arch.titles.en : ["Founder", "CEO"]), ...also.flatMap((a) => a.titles.en)])];
+  if (also.length) companyTypes = { ar: [...new Set([...companyTypes.ar, ...also.flatMap((a) => a.companyTypes.ar)])], en: [...new Set([...companyTypes.en, ...also.flatMap((a) => a.companyTypes.en)])] };
   if (ch.decisionMakersOnly) {
     const senior = titles.filter((t) => (kb.seniorTitleKeywords ?? []).some((k) => t.toLowerCase().includes(k.toLowerCase())));
     titles = senior.length ? senior : kb.seniorTitleKeywords ?? titles;
@@ -507,7 +585,8 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
   const labelOf = (s: KnowledgeSignal, lang: Locale = loc) => {
     let l = s.label[lang];
     if (s.param === "minClients") l = fill(l, { n: String(minClients ?? s.paramDefault ?? 3) });
-    if (s.check === "size" && sizeText && (sizeMin !== arch.size?.min || sizeMax !== arch.size?.max)) l = l.replace(/\(?\d+\s*[–-]\s*\d+\)?|\(\d+\+\s*[^)]*\)/, `(${sizeText})`);
+    if (s.check === "size" && sizePreset) l = sizePreset.label[lang];
+    else if (s.check === "size" && sizeText && (sizeMin !== arch.size?.min || sizeMax !== arch.size?.max)) l = l.replace(/\(?\d+\s*[–-]\s*\d+\)?|\(\d+\+\s*[^)]*\)/, `(${sizeText})`);
     return l;
   };
   const signals = arch.signals.filter((s) => !(s.check === "size" && sizeMin === undefined && sizeMax === undefined));
@@ -552,7 +631,7 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
       sizeMax,
       sectors: [],
       titles,
-      requireTitle: Boolean(ch.decisionMakersOnly),
+      requireTitle: Boolean(ch.decisionMakersOnly || arch.requireTitle),
       traits: [],
     },
     offer: {
@@ -570,11 +649,14 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
   // Questions: at most two, the most important first. Anything the user already said is never asked.
   const qIds: string[] = [];
   if (near && !answers.client_confirm) qIds.push("client_confirm");
+  if (!audienceKnown) qIds.push("audience_pick");
   if (!goalStated && !answers.goal) qIds.push("goal");
   if (!marketKnown && !answers.market) qIds.push("market");
   const archQ = arch.question;
   const archQAnswered =
-    !archQ || archQ in answers ||
+    !archQ || archQ in answers || archQ === "audience_pick" ||
+    (archQ === "media_kind" && Boolean(ch.audienceExplicit)) ||
+    (archQ === "company_size" && Boolean(ch.sizePreset)) ||
     (archQ === "region_focus" && (x.cities.length > 0 || ch.cities !== undefined || !primary?.focusCities.length)) ||
     (archQ === "company_size" && (ch.sizeMin !== undefined || ch.sizeMax !== undefined || minClients !== undefined));
   if (archQ && !archQAnswered) qIds.push(archQ);
@@ -584,7 +666,10 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
     return {
       id,
       text: fill(q.text[loc], qVars),
-      options: q.options.map((o) => ({ id: o.id, label: fill(o.label[loc], qVars), custom: o.custom, aliases: o.aliases })),
+      // "Who should we target?" offers the audiences the agent knows; any other answer is taken as a description.
+      options: q.effect === "archetype" && !q.options.length
+        ? kb.archetypes.filter((a) => !a.fallback).map((a) => ({ id: a.key, label: a.label[loc], aliases: a.keywords }))
+        : q.options.map((o) => ({ id: o.id, label: fill(o.label[loc], qVars), custom: o.custom, aliases: o.aliases })),
       custom: q.custom,
       default: q.default,
     };
@@ -602,6 +687,38 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
   const assumptions = assumptionTexts.map(([id, text]) => ({ id, text, status: status[id] ?? ("proposed" as const) }));
 
   const channelList = [channels.email && "email", channels.linkedin && "linkedin"].filter(Boolean) as string[];
+  const sizeLabel = individual ? "" : sizePreset ? sizePreset.label[loc] : sizeMin === undefined && sizeMax === undefined ? (loc === "ar" ? "كل الأحجام" : "Any size") : loc === "ar" ? `${sizeMin ?? 1}–${sizeMax ?? "∞"} موظف` : `${sizeMin ?? 1}–${sizeMax ?? "∞"} employees`;
+  const approval = { mode: ch.approval?.mode ?? ("manual" as const), autoAbove: ch.approval?.autoAbove ?? null };
+  const kind = arch.fallback ? null : arch.kind ?? (individual ? "individuals" : "companies");
+  const state: AgentCampaignState = {
+    client: { id: clientId, name: placeholder ? null : clientName, existing: Boolean(existing) },
+    outcome: { preset: preset.key, label: preset.label[loc], goal: goalStated ? goal : null },
+    audience: {
+      archetype: arch.fallback ? null : arch.key,
+      kind,
+      label: audienceKnown ? audienceLabel : null,
+      description: arch.fallback ? (ch.audienceDescription ?? x.audience ?? null) : null,
+      companyTypes: companyTypes[loc],
+      titles: kind === "people" || ch.decisionMakersOnly ? titles : arch.titles[loc],
+    },
+    companySize: individual ? null : { min: sizeMin ?? null, max: sizeMax ?? null, label: sizeLabel },
+    geography: { countries, cities, place },
+    channels: channelList,
+    language: messageLanguage,
+    offer: { cta: draft.offer.callToAction },
+    qualification: { threshold, maxScore, minClients: minClients ?? null, decisionMakersOnly: Boolean(ch.decisionMakersOnly), minBudget: individual ? budgetMin : null },
+    approval,
+    autonomy,
+    provenance: {
+      audience: ch.archetype !== undefined || ch.audienceDescription !== undefined || x.archetype || x.audience ? "user" : "default",
+      companySize: ch.sizePreset || ch.sizeMin !== undefined || ch.sizeMax !== undefined || answers.company_size ? "user" : arch.size ? "inferred" : "default",
+      geography: x.countries.length || ch.countries || ch.cities || answers.market ? "user" : "default",
+      goal: goalStated ? "user" : "default",
+      channels: ch.channels ? "user" : "default",
+      language: ch.language ? "user" : "inferred",
+      approval: ch.approval ? "user" : "default",
+    },
+  };
   return {
     version: 1,
     id: opts.id ?? `plan-${slug([clientName, arch.key, ...countries, preset.key].join(" "))}`,
@@ -613,12 +730,14 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
     answers,
     changes: ch,
     notes,
+    state,
+    changeLog: opts.changeLog ?? [],
     status: questions.length ? "needs_input" : "ready",
     understanding: {
       client: { id: clientId, name: clientName, existing: Boolean(existing), placeholder },
       outcome: { preset: preset.key, label: preset.label[loc], plural: preset.plural[loc], goal, goalStated },
       market: { countries, cities, place },
-      audience: { archetype: arch.key, label: audienceLabel, companyTypes: companyTypes[loc], titles: ch.decisionMakersOnly ? titles : arch.titles[loc], needs: arch.needs?.[loc] ?? [] },
+      audience: { archetype: arch.key, label: audienceKnown ? audienceLabel : arch.label[loc], kind, companyTypes: companyTypes[loc], titles: state.audience.titles, needs: arch.needs?.[loc] ?? [] },
     },
     explanation: {
       understood: fill(arch.understood[loc], vars),
@@ -641,6 +760,8 @@ export function buildPlan(extraction: GoalExtraction, ctx: PlannerContext, opts:
       size: individual ? null : { min: sizeMin ?? null, max: sizeMax ?? null },
       minClients: minClients ?? null,
       decisionMakersOnly: Boolean(ch.decisionMakersOnly),
+      sizeLabel,
+      approval,
     },
     draft,
   };
@@ -654,23 +775,76 @@ const replan = (plan: CampaignPlan, ctx: PlannerContext, over: Partial<BuildPlan
     understoodBy: plan.understoodBy,
     answers: plan.answers,
     changes: plan.changes,
+    changeLog: plan.changeLog,
     assumptionStatus: Object.fromEntries(plan.assumptions.map((a) => [a.id, a.status])),
     ...over,
   });
 
+/** Appends what changed in the state to the plan's change log. */
+function logged(before: CampaignPlan | null, after: CampaignPlan, source: ChangeLogEntry["source"], messageId?: string): CampaignPlan {
+  const rows = before ? diffPlans(before, after) : stateRows(after).filter((r) => r[2] !== "—").map(([key, label, value]) => ({ key, label, from: "—", to: value }));
+  const at = new Date().toISOString();
+  const log = [...(after.changeLog ?? [])];
+  for (const r of rows) log.push({ n: log.length + 1, at, field: r.key, label: r.label, from: r.from, to: r.to, source, messageId });
+  return { ...after, changeLog: log };
+}
+
+/** The first version of a plan, with its initial state in the change log. */
+export function startPlan(extraction: GoalExtraction, ctx: PlannerContext, opts: BuildPlanOptions = {}, messageId?: string): CampaignPlan {
+  return logged(null, buildPlan(extraction, ctx, opts), "initial", messageId);
+}
+
 /** One sentence → plan, deterministically. */
 export function planFromRequest(request: string, ctx: PlannerContext, opts: BuildPlanOptions = {}): CampaignPlan {
-  return buildPlan(extractGoal(request, ctx), ctx, { ...opts, request });
+  return logged(null, buildPlan(extractGoal(request, ctx), ctx, { ...opts, request }), "initial");
 }
 
 /** Records an answer and re-plans. No LLM call: the extraction is reused. */
-export function applyAnswer(plan: CampaignPlan, questionId: string, value: string, ctx: PlannerContext): CampaignPlan {
-  return replan(plan, ctx, { answers: { ...plan.answers, [questionId]: value } });
+export function applyAnswer(plan: CampaignPlan, questionId: string, value: string, ctx: PlannerContext, messageId?: string): CampaignPlan {
+  const q = ctx.knowledge.questions[questionId];
+  if (q?.effect === "archetype") {
+    // "Who do we target?" — an audience the agent knows, or the user's own description.
+    const known = ctx.knowledge.archetypes.find((a) => a.key === value && !a.fallback)?.key ?? extractGoal(value, ctx).archetype;
+    const answered = { ...plan, answers: { ...plan.answers, [questionId]: value } };
+    // Answering the people-vs-companies question settles the kind; picking an audience from the list doesn't.
+    const settles = questionId !== "audience_pick";
+    return applyChanges(answered, known ? { archetype: known, ...(settles ? { audienceExplicit: true } : {}) } : { audienceDescription: value }, ctx, messageId, "answer");
+  }
+  return logged(plan, replan(plan, ctx, { answers: { ...plan.answers, [questionId]: value } }), "answer", messageId);
 }
 
-/** Applies conversational changes and re-plans (keeps every earlier answer and change). */
-export function applyChanges(plan: CampaignPlan, changes: PlanChanges, ctx: PlannerContext): CampaignPlan {
-  return replan(plan, ctx, { changes: mergeChanges(plan.changes ?? {}, changes) });
+/** Answers that were only about one audience. */
+const AUDIENCE_ANSWERS = ["company_size", "public_sector", "min_budget", "media_kind", "region_focus"];
+
+/** Applies conversational changes (add, replace, remove) and re-plans, keeping every earlier answer and change that still applies. */
+export function applyChanges(plan: CampaignPlan, changes: PlanChanges, ctx: PlannerContext, messageId?: string, source: ChangeLogEntry["source"] = "message"): CampaignPlan {
+  const current = plan.state?.audience.archetype ?? null;
+  let answers = plan.answers;
+  if (changes.archetype !== undefined && changes.archetype !== current) {
+    answers = Object.fromEntries(Object.entries(plan.answers).filter(([k]) => !AUDIENCE_ANSWERS.includes(k) || (k === "media_kind" && changes.audienceExplicit)));
+  }
+  return logged(plan, replan(plan, ctx, { answers, changes: mergeChanges(plan.changes ?? {}, changes) }), source, messageId);
+}
+
+/** The state as labelled rows (for diffs, the change log and summaries). */
+export function stateRows(p: CampaignPlan): [string, string, string][] {
+  const loc = p.locale;
+  const L = (a: string, e: string) => (loc === "ar" ? a : e);
+  const st = p.state;
+  const kindLabel = st.audience.kind === "people" ? L("أشخاص", "people") : st.audience.kind === "individuals" ? L("أفراد", "individuals") : st.audience.kind === "companies" ? L("شركات", "companies") : "";
+  return [
+    ["audience", L("الجمهور", "Audience"), st.audience.label ? `${st.audience.label}${kindLabel ? ` (${kindLabel})` : ""}` : L("غير محدد", "Not set")],
+    ["market", L("الجغرافيا", "Geography"), st.geography.place],
+    ["goal", L("الهدف", "Goal"), countOf(loc, p.understanding.outcome.goal, p.understanding.outcome.label, p.understanding.outcome.plural)],
+    ["size", L("حجم الشركات", "Company size"), st.companySize?.label ?? "—"],
+    ["minClients", L("الحد الأدنى للعملاء", "Minimum clients"), st.qualification.minClients ? `${st.qualification.minClients}+` : "—"],
+    ["dm", L("أصحاب القرار فقط", "Decision makers only"), st.qualification.decisionMakersOnly ? L("نعم", "yes") : L("لا", "no")],
+    ["threshold", L("حد التأهيل", "Qualification threshold"), `${st.qualification.threshold}/${st.qualification.maxScore}`],
+    ["channels", L("القنوات", "Channels"), p.strategy.channels.join(" + ")],
+    ["language", L("لغة الرسائل", "Message language"), COPY[loc].langName[st.language]],
+    ["approval", L("اعتماد الرسائل", "Message approval"), st.approval.mode === "auto" ? L(`تلقائي للرسائل بدرجة ${st.approval.autoAbove}+`, `Automatic at ${st.approval.autoAbove}+`) : L("يدوي — كل رسالة بموافقتك", "Manual — you approve each")],
+    ["autonomy", L("الإرسال", "Sending"), st.autonomy === "human_approval" ? L("بموافقتك فقط", "Only with your approval") : st.autonomy === "assisted" ? L("مساعد", "Assisted") : L("تلقائي", "Autonomous")],
+  ];
 }
 
 /** Human-readable plan steps. */
@@ -690,24 +864,8 @@ export function planSteps(plan: CampaignPlan): { key: string; text: string }[] {
   ];
 }
 
-/** Human-readable differences between two versions of a plan. */
+/** Human-readable differences between two versions of a plan (state field by field). */
 export function diffPlans(before: CampaignPlan, after: CampaignPlan): { key: string; label: string; from: string; to: string }[] {
-  const loc = after.locale;
-  const ar = loc === "ar";
-  const L = (a: string, e: string) => (ar ? a : e);
-  const yes = L("نعم", "yes");
-  const no = L("لا", "no");
-  const size = (p: CampaignPlan) => (p.strategy.size && (p.strategy.size.min !== null || p.strategy.size.max !== null) ? `${p.strategy.size.min ?? 1}–${p.strategy.size.max ?? "∞"}` : L("كل الأحجام", "any size"));
-  const rows: [string, string, (p: CampaignPlan) => string][] = [
-    ["market", L("السوق", "Market"), (p) => p.understanding.market.place],
-    ["goal", L("الهدف", "Goal"), (p) => countOf(loc, p.understanding.outcome.goal, p.understanding.outcome.label, p.understanding.outcome.plural)],
-    ["size", L("حجم الشركات", "Company size"), size],
-    ["minClients", L("الحد الأدنى للعملاء", "Minimum clients"), (p) => (p.strategy.minClients ? `${p.strategy.minClients}+` : "—")],
-    ["dm", L("أصحاب القرار فقط", "Decision makers only"), (p) => (p.strategy.decisionMakersOnly ? yes : no)],
-    ["threshold", L("حد التأهيل", "Qualification threshold"), (p) => `${p.strategy.threshold}/${p.strategy.maxScore}`],
-    ["channels", L("القنوات", "Channels"), (p) => p.strategy.channels.join(" + ")],
-    ["language", L("لغة الرسائل", "Message language"), (p) => COPY[loc].langName[p.strategy.messageLanguage]],
-    ["autonomy", L("الموافقة", "Approval"), (p) => (p.strategy.autonomy === "human_approval" ? L("كل رسالة بموافقتك", "You approve every message") : p.strategy.autonomy === "assisted" ? L("مساعد", "Assisted") : L("تلقائي", "Autonomous"))],
-  ];
-  return rows.map(([key, label, f]) => ({ key, label, from: f(before), to: f(after) })).filter((r) => r.from !== r.to);
+  const old = new Map(stateRows(before).map(([k, , v]) => [k, v]));
+  return stateRows(after).map(([key, label, to]) => ({ key, label, from: old.get(key) ?? "—", to })).filter((r) => r.from !== r.to);
 }
